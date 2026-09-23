@@ -32,6 +32,16 @@ operationId. The same name is the REST operation and the MCP tool, so a recipe s
 The API is growing. If `references/endpoints.md` does not list an operation this skill names,
 that operation is not live yet. Tell the user and stop. Do not guess a path.
 
+Four operations may still carry older names in `references/endpoints.md`. Treat them as the
+same operation:
+
+| Name in this skill | Older name |
+|---|---|
+| `contacts_upsert` | `ContactsController_upsert` |
+| `sequences_list` | `PublicSequencesController_listSequences` |
+| `sequences_list_enrollments` | `PublicSequencesController_listEnrollments` |
+| `contacts_list_enrollments` | `PublicSequencesController_listContactEnrollments` |
+
 ## Authenticate
 
 Send the key as a bearer token on every request:
@@ -46,8 +56,8 @@ comes from the key, never from a request body, so you cannot reach another organ
 
 ## Start with whoami
 
-Call `me_get` (`GET /api/v1/me`) before anything else. It needs no scope beyond a live key. It
-returns:
+Call `me_get` (`GET /api/v1/me`) before anything else. If `references/endpoints.md` does not
+list `me_get` yet, skip this step and go on. It needs no scope beyond a live key. It returns:
 
 - `organization`: the `id` and `name` you act on. Tell the user which organization it is.
 - `api_key.scopes`: what this key may do. Do not call an operation whose scope is missing.
