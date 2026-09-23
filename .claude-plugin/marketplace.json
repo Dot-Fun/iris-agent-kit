@@ -1,0 +1,11 @@
+{
+  "name": "iris",
+  "owner": { "name": "dotfun", "url": "https://iris.dotfun.co" },
+  "plugins": [
+    {
+      "name": "iris",
+      "source": "./",
+      "description": "Iris public API skill and MCP connector"
+    }
+  ]
+}

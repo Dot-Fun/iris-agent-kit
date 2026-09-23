@@ -1,0 +1,8 @@
+{
+  "name": "iris",
+  "description": "Iris public API skill and MCP connector",
+  "author": { "name": "dotfun", "url": "https://iris.dotfun.co" },
+  "homepage": "https://github.com/Dot-Fun/iris-agent-kit",
+  "repository": "https://github.com/Dot-Fun/iris-agent-kit",
+  "license": "MIT"
+}

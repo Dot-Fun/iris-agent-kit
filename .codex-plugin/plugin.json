@@ -1,0 +1,21 @@
+{
+  "name": "iris",
+  "version": "1.0.0",
+  "description": "Iris public API skill and MCP connector",
+  "author": {
+    "name": "dotfun",
+    "url": "https://iris.dotfun.co"
+  },
+  "homepage": "https://github.com/Dot-Fun/iris-agent-kit",
+  "repository": "https://github.com/Dot-Fun/iris-agent-kit",
+  "license": "MIT",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Iris",
+    "shortDescription": "Work an Iris organization: contacts, sequences, enrollments and send logs",
+    "developerName": "dotfun",
+    "category": "Productivity",
+    "websiteURL": "https://iris.dotfun.co",
+    "brandColor": "#6528F7"
+  }
+}

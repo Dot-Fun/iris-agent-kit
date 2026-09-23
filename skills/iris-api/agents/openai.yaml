@@ -1,0 +1,13 @@
+interface:
+  display_name: "Iris"
+  short_description: "Work the Iris AI receptionist CRM: contacts, sequences, enrollments and send logs"
+  brand_color: "#6528F7"
+  default_prompt: "Use the iris-api skill to check who my Iris API key belongs to, then help me with my contacts and sequences."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "iris"
+      description: "Iris MCP server"
+      transport: "streamable_http"
+      url: "https://api.iris.dotfun.co/api/v1/mcp"

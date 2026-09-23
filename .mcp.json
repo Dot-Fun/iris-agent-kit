@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "iris": {
+      "type": "http",
+      "url": "https://api.iris.dotfun.co/api/v1/mcp",
+      "headers": { "Authorization": "Bearer ${IRIS_API_KEY}" }
+    }
+  }
+}

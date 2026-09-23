@@ -1,0 +1,85 @@
+# Authentication and connection
+
+## Get a key
+
+1. Sign in to the Iris dashboard at https://iris.dotfun.co.
+2. Open Organization > API keys.
+3. Create a key. Pick only the scopes the agent needs.
+4. Copy the key. Iris shows it once and stores only a hash.
+5. Put it in the `IRIS_API_KEY` environment variable of the agent.
+
+A key looks like `iris_sk_` followed by 32 characters. It belongs to one organization and acts on
+the whole organization. Revoke a key in the same screen. A revoked key gets 401 at once.
+
+## Send the key
+
+```
+Authorization: Bearer iris_sk_...
+```
+
+The scheme name `Bearer` is case-insensitive. Nothing else authenticates a public call: no query
+parameter, no cookie, no body field.
+
+## What the answers mean
+
+- **401** `Invalid API key`: the header is missing, uses another scheme, or the key is malformed,
+  unknown or revoked. All five cases give the same answer on purpose. Ask the user for a new key.
+- **403** `insufficient_scope`: the key is live but lacks the scope named in `required`. The
+  user adds the scope to a new key under Organization > API keys.
+
+Call `me_get` to see the organization, the key's scopes and the full scope catalog.
+
+## Scopes
+
+| Scope | Label |
+|---|---|
+| `contacts:read` | Search and read contacts |
+| `contacts:write` | Create and update contacts, notes, tags, suppression, SMS consent |
+| `sequences:read` | Read sequences, enrollments, send logs and totals |
+| `sequences:write` | Author, activate, pause, resume and duplicate sequences, enroll and cancel |
+| `appointments:read` | Read appointments and calendars |
+| `appointments:write` | Book, reschedule and cancel appointments |
+| `conversations:read` | Read conversations and messages |
+| `conversations:write` | Send an SMS |
+| `calls:read` | Read calls and transcripts |
+| `audiences:read` | Read audiences |
+| `audiences:write` | Add and remove audience members |
+
+`me_get` returns the live catalog. When this table and `me_get` differ, trust `me_get`.
+
+## Rate limit
+
+600 requests a minute per client address on each public route. A 429 means wait 60 seconds.
+
+## MCP connection
+
+The MCP server is `https://api.iris.dotfun.co/api/v1/mcp` (Streamable HTTP, stateless). It is
+rolling out behind a feature flag. An organization without the flag gets 404 after the key is
+checked. Tool names are the operationIds, and read tools carry `readOnlyHint: true`.
+
+Clients that can send a header use the key today:
+
+- Claude Code: the `iris` plugin's `.mcp.json` sends `Authorization: Bearer ${IRIS_API_KEY}`.
+- Codex: in `~/.codex/config.toml`:
+
+  ```toml
+  [mcp_servers.iris]
+  url = "https://api.iris.dotfun.co/api/v1/mcp"
+  bearer_token_env_var = "IRIS_API_KEY"
+  ```
+
+- Hermes Agent: in `~/.hermes/config.yaml`:
+
+  ```yaml
+  mcp_servers:
+    iris:
+      url: "https://api.iris.dotfun.co/api/v1/mcp"
+      headers:
+        Authorization: "Bearer ${IRIS_API_KEY}"
+  ```
+
+- OpenClaw: `openclaw mcp add iris --url https://api.iris.dotfun.co/api/v1/mcp --transport streamable-http`,
+  then set the `Authorization` header in the Settings config editor.
+
+claude.ai, Claude Desktop chat, Claude Cowork connectors and ChatGPT cannot send a custom header.
+They need OAuth on the Iris server, which is not live yet.

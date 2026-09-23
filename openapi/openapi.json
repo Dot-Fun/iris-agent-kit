@@ -1,0 +1,869 @@
+{
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/contacts": {
+      "post": {
+        "description": "Upserts a contact in the organization the API key belongs to, keyed on email.\n\n`cancel_events` are processed first, then `events` are fired, so one request can replace\nthe journey a contact is on. Cancellations and other events are best effort.\n`assessment_abandoned` requires transactional acceptance: failures fail the request even if\nthe contact was already upserted. Only a matching `assessmentAbandonment` receipt with\n`status: accepted` confirms durable enrollment acceptance; delivery is not guaranteed.\nAn event whose name no active sequence subscribes to leaves its `key` unspent, so a later\nretry still enrolls.",
+        "operationId": "ContactsController_upsert",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactUpsertDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactUpsertResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request body"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `contacts:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Create or update a contact by email",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/sequences": {
+      "get": {
+        "description": "Every sequence the API key’s organization owns, newest first.",
+        "operationId": "PublicSequencesController_listSequences",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SequenceSummaryDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the organization’s sequences",
+        "tags": [
+          "PublicSequences",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/sequences/{sequenceId}/enrollments": {
+      "get": {
+        "description": "Newest first. `email` resolves the contact in the key’s organization and then filters by\nit, so an email no contact carries returns an empty page rather than a 404.\n\nRead `next_step_due_at` for the next send time and fall back to `next_run_at`;\n`current_step_index` is the step, `created_at` is when the contact was enrolled, and\n`updated_at` read together with `status` is when a completed or cancelled enrollment ended.",
+        "operationId": "PublicSequencesController_listEnrollments",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (capped at 100)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Only enrollments with this status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "completed",
+                "cancelled",
+                "failed"
+              ]
+            }
+          },
+          {
+            "name": "contact_id",
+            "required": false,
+            "in": "query",
+            "description": "Only this contact's enrollments in the sequence",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "email",
+            "required": false,
+            "in": "query",
+            "description": "Only the enrollments of the contact with this email, in the key’s organization. Matched without regard to case. Takes precedence over `contact_id`. An email no contact carries returns an empty page, not a 404. When more than one contact carries the email, the one that owns it as its identity is used.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceEnrollmentPageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sequence in this organization"
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the contacts enrolled in one sequence",
+        "tags": [
+          "PublicSequences",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/contacts/{contactId}/enrollments": {
+      "get": {
+        "description": "Newest first. The contact must belong to the API key’s organization.",
+        "operationId": "PublicSequencesController_listContactEnrollments",
+        "parameters": [
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (capped at 100)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactEnrollmentPageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such contact in this organization"
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List one contact’s enrollments across every sequence",
+        "tags": [
+          "PublicSequences",
+          "Public API"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Iris Public API",
+    "description": "The public, versioned API of Iris. Authenticate with an organization API key:\n`Authorization: Bearer iris_sk_…`. Keys are minted in the dashboard under\nOrganization → API keys and carry scopes; a key without a route’s scope gets a 403\nwith `{ \"error\": \"insufficient_scope\" }`.\n\nEvery path is versioned. `v1` only ever grows: a breaking change ships as `v2`, and the\nold version keeps serving with `Deprecation` and `Sunset` headers until it is retired.",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [
+    {
+      "url": "https://api.iris.dotfun.co"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "apiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "An organization API key: the opaque `iris_sk_…` string shown once at creation."
+      }
+    },
+    "schemas": {
+      "ContactCancelEventDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Event name whose enrollments should be cancelled for this contact.",
+            "example": "cart_abandoned",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why the journey ended. Defaults to `goal_met`.",
+            "enum": [
+              "replied",
+              "booked",
+              "opted_out",
+              "manual",
+              "sequence_deactivated",
+              "converted",
+              "stage_reached",
+              "goal_met",
+              "schedule_cancelled",
+              "assessment_retake"
+            ],
+            "example": "goal_met"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "ContactEventDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Event name. Matched as free text against the `event_name` of every active `event` sequence in the organization.",
+            "example": "trial_started",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "key": {
+            "type": "string",
+            "description": "Caller-owned idempotency key for this event. Stable for \"the same logical event\", so a redelivery is a no-op. Surrounding whitespace is trimmed.",
+            "example": "trial_started:sub_01H8XYZ",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "supersedes": {
+            "description": "Events whose running enrollments this one REPLACES. Cancelled after this event claims its `key` and before it enrolls, so a redelivery with the same `key` cancels nothing and enrolls nothing. Use this for mutually exclusive states of one subject; use the top-level `cancel_events` for an unconditional exit.",
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactCancelEventDto"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "key"
+        ]
+      },
+      "ContactUpsertDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Contact full name",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "email": {
+            "type": "string",
+            "description": "Contact email address — the upsert key, matched case-insensitively",
+            "format": "email",
+            "maxLength": 255
+          },
+          "phone": {
+            "type": "string",
+            "description": "Contact phone number. Stored in field_values; the contact itself stays email-keyed with phone_number NULL.",
+            "maxLength": 255
+          },
+          "source": {
+            "type": "string",
+            "description": "Attribution source",
+            "example": "web-form",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "fields": {
+            "type": "object",
+            "description": "Arbitrary key/value data merged into the contact's CRM field values. At most 200 keys.",
+            "additionalProperties": true,
+            "maxProperties": 200
+          },
+          "cancel_events": {
+            "description": "Sequence events to CANCEL for this contact, unconditionally. Processed before `events`, and idempotent because a second call cancels nothing. Use it for a goal exit, such as ending a win-back nurture once the contact converts.",
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactCancelEventDto"
+            }
+          },
+          "events": {
+            "description": "Sequence events to FIRE for this contact, after the cancellations. Each event in turn claims its `key`, cancels the enrollments named in its `supersedes`, then enrolls. An event with no subscribing sequence leaves its key unspent, so a later retry still enrolls.",
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactEventDto"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "source"
+        ]
+      },
+      "AssessmentAbandonmentReceiptDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Exact event key supplied by the producer"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "accepted",
+              "no_subscriber",
+              "legacy_unverified"
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "status"
+        ]
+      },
+      "ContactUpsertResponseDto": {
+        "type": "object",
+        "properties": {
+          "contactId": {
+            "type": "string",
+            "description": "CRM contact id the request wrote to",
+            "format": "uuid"
+          },
+          "created": {
+            "type": "boolean",
+            "description": "true when a new contact was created, false when an existing one was updated"
+          },
+          "assessmentAbandonment": {
+            "description": "Only accepted proves durable sequence enrollment. Other outcomes remain eligible for producer retry.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssessmentAbandonmentReceiptDto"
+            }
+          }
+        },
+        "required": [
+          "contactId",
+          "created"
+        ]
+      },
+      "PublicApiErrorDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "description": "HTTP status code, repeated in the body",
+            "example": 401
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "When the failure was answered",
+            "format": "date-time"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path the request asked for",
+            "example": "/api/v1/contacts"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable explanation",
+            "example": "Invalid API key"
+          },
+          "error": {
+            "type": "string",
+            "description": "Machine-readable error code. `insufficient_scope` on a 403.",
+            "example": "Unauthorized"
+          },
+          "required": {
+            "type": "string",
+            "description": "On a 403 only: the scope the key would need.",
+            "example": "contacts:write"
+          }
+        },
+        "required": [
+          "statusCode",
+          "timestamp",
+          "path"
+        ]
+      },
+      "SequenceSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name the organization gave the sequence"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "automation",
+              "broadcast"
+            ],
+            "description": "'automation' fires per contact off a trigger; 'broadcast' fans an audience out on a schedule"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "description": "'active' while the sequence enrolls and sends; 'inactive' while it is paused"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "When the sequence was created (ISO 8601)"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "status",
+          "created_at"
+        ]
+      },
+      "SequenceEnrollmentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contact_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contact_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null when the contact row was deleted"
+          },
+          "contact_email": {
+            "type": "string",
+            "nullable": true
+          },
+          "contact_phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "completed",
+              "cancelled",
+              "failed"
+            ]
+          },
+          "current_step_index": {
+            "type": "number",
+            "description": "Zero-based index of the step the enrollment is on"
+          },
+          "loop_iteration": {
+            "type": "number",
+            "description": "Backward traversals made (0 when the sequence never loops)"
+          },
+          "total_iterations": {
+            "type": "number",
+            "description": "Completed visits across loop passes (0 = never looped)"
+          },
+          "enrolled_via": {
+            "type": "string",
+            "description": "What enrolled the contact, e.g. `lead_created` or `manual`"
+          },
+          "cancel_reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why a cancelled enrollment exited"
+          },
+          "next_run_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "When the next step was scheduled to fire. Read `next_step_due_at` first."
+          },
+          "variant_key": {
+            "type": "string",
+            "nullable": true,
+            "description": "A/B arm assigned; null for non-variant"
+          },
+          "last_email_sent_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "When Iris last emailed this contact"
+          },
+          "last_email_subject": {
+            "type": "string",
+            "nullable": true,
+            "description": "Subject of that last email"
+          },
+          "next_step_due_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "When the next step is actually due, from the live step run. Null when no step is pending. This, not `next_run_at`, is the authoritative next send time."
+          },
+          "created_at": {
+            "type": "string",
+            "description": "When the contact was enrolled (ISO 8601)"
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "When the enrollment last changed (ISO 8601). Read with `status`: for a `completed` or `cancelled` enrollment this is when it ended."
+          }
+        },
+        "required": [
+          "id",
+          "contact_id",
+          "status",
+          "current_step_index",
+          "loop_iteration",
+          "total_iterations",
+          "enrolled_via",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "SequenceEnrollmentPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceEnrollmentDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total matching enrollments across all pages"
+          },
+          "page": {
+            "type": "number",
+            "description": "1-based page number echoed back"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Page size echoed back"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "ContactEnrollmentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sequence_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sequence_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null when the sequence row was deleted"
+          },
+          "sequence_kind": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "automation",
+              "broadcast"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "completed",
+              "cancelled",
+              "failed"
+            ]
+          },
+          "current_step_index": {
+            "type": "number",
+            "description": "Zero-based index of the step the enrollment is on"
+          },
+          "loop_iteration": {
+            "type": "number",
+            "description": "Backward traversals made (0 when the sequence never loops)"
+          },
+          "total_iterations": {
+            "type": "number",
+            "description": "Completed visits across loop passes (0 = never looped)"
+          },
+          "cancel_reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why a cancelled enrollment exited"
+          },
+          "next_run_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "When the next step was scheduled to fire"
+          },
+          "enrolled_via": {
+            "type": "string",
+            "description": "What enrolled the contact"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "When the contact was enrolled (ISO 8601)"
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "When the enrollment last changed (ISO 8601). Read with `status`: for a `completed` or `cancelled` enrollment this is when it ended."
+          }
+        },
+        "required": [
+          "id",
+          "sequence_id",
+          "status",
+          "current_step_index",
+          "loop_iteration",
+          "total_iterations",
+          "enrolled_via",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "ContactEnrollmentPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactEnrollmentDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total enrollments for the contact across all pages"
+          },
+          "page": {
+            "type": "number",
+            "description": "1-based page number echoed back"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Page size echoed back"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      }
+    }
+  }
+}

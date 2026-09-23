@@ -1,0 +1,21 @@
+# Iris
+
+> Iris is an AI receptionist for small businesses by dotfun. It answers calls and texts, books appointments, keeps a CRM of contacts, and follows up with email and SMS sequences. Agents act on one Iris organization with an API key over REST at https://api.iris.dotfun.co or over MCP at https://api.iris.dotfun.co/api/v1/mcp.
+
+Authenticate with `Authorization: Bearer iris_sk_...`. Keys come from Organization > API keys in the Iris dashboard. Call `me_get` (`GET /api/v1/me`) first.
+
+## Docs
+
+- [Iris agent kit](https://dot-fun.github.io/iris-agent-kit/index.md): what the kit holds and how each agent client installs it
+- [iris-api skill](https://dot-fun.github.io/iris-agent-kit/skills/iris-api/SKILL.md): auth, errors, paging, scopes and the operator recipes
+- [Endpoint reference](https://dot-fun.github.io/iris-agent-kit/skills/iris-api/references/endpoints.md): every operation with its scope and parameters
+- [Authentication](https://dot-fun.github.io/iris-agent-kit/skills/iris-api/references/auth.md): keys, scopes and MCP connection per client
+
+## API
+
+- [OpenAPI document](https://dot-fun.github.io/iris-agent-kit/openapi.json): the public v1 contract
+
+## Optional
+
+- [Everything in one file](https://dot-fun.github.io/iris-agent-kit/llms-full.txt): this kit, the skill and its references
+- [Source repository](https://github.com/Dot-Fun/iris-agent-kit): manifests, skill and install steps
