@@ -4,7 +4,7 @@
     "/api/v1/contacts": {
       "post": {
         "description": "Upserts a contact in the organization the API key belongs to, keyed on email.\n\n`cancel_events` are processed first, then `events` are fired, so one request can replace\nthe journey a contact is on. Cancellations and other events are best effort.\n`assessment_abandoned` requires transactional acceptance: failures fail the request even if\nthe contact was already upserted. Only a matching `assessmentAbandonment` receipt with\n`status: accepted` confirms durable enrollment acceptance; delivery is not guaranteed.\nAn event whose name no active sequence subscribes to leaves its `key` unspent, so a later\nretry still enrolls.",
-        "operationId": "ContactsController_upsert",
+        "operationId": "contacts_upsert",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -71,12 +71,660 @@
           "Contacts",
           "Public API"
         ]
+      },
+      "get": {
+        "description": "Finds contacts in the key’s organization. Send at most one filter:\n\n- `q`: free text, matched against name, email and phone, without regard to case.\n- `email`: the exact email, without regard to case. Returns at most one contact.\n- `phone`: the exact phone number. Returns at most one contact.\n\nWith no filter, lists every contact, most recently seen first.",
+        "operationId": "contacts_search",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (capped at 100)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Free text. Matches contacts whose name, email or phone contains it, without regard to case.",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "email",
+            "required": false,
+            "in": "query",
+            "description": "Exact email, without regard to case",
+            "schema": {
+              "format": "email",
+              "type": "string"
+            }
+          },
+          {
+            "name": "phone",
+            "required": false,
+            "in": "query",
+            "description": "Exact phone number with its country code. Spaces, dashes and brackets are ignored, so `+1 (415) 555-0100` works. Matches the contact's phone number, not a phone held in `custom_fields`.",
+            "schema": {
+              "example": "+14155550100",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactPageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "More than one filter, or an invalid one"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `contacts:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Search contacts",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/contacts/{contactId}": {
+      "get": {
+        "description": "The contact with its pipeline stage, tags, custom fields and number of notes.",
+        "operationId": "contacts_get",
+        "parameters": [
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `contacts:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get one contact",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ]
+      },
+      "patch": {
+        "description": "Changes only the fields sent. `stage_id` must be a stage of the organization’s pipeline,\nand every `custom_fields` key must be a custom field the organization defines: an unknown\none is a 400 that names it, and nothing is written. Returns the contact as `contacts_get` does.",
+        "operationId": "contacts_update",
+        "parameters": [
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, unknown custom field or unknown stage"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `contacts:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Another contact already uses that phone number or email"
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Update a contact",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/contacts/{contactId}/notes": {
+      "post": {
+        "description": "The team sees the note on the contact. Notes cannot be edited or deleted.",
+        "operationId": "contacts_add_note",
+        "parameters": [
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactNoteCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactNoteDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `contacts:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Add a note to a contact",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/contacts/{contactId}/tags": {
+      "post": {
+        "description": "Idempotent: adding a tag the contact already carries changes nothing. A tag the organization does not have yet is created.",
+        "operationId": "contacts_add_tag",
+        "parameters": [
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactTagCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactTagsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `contacts:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The organization has reached its tag limit"
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Add a tag to a contact",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/contacts/{contactId}/tags/{tag}": {
+      "delete": {
+        "description": "Idempotent: removing a tag the contact does not carry changes nothing and still answers 200.",
+        "operationId": "contacts_remove_tag",
+        "parameters": [
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tag",
+            "required": true,
+            "in": "path",
+            "description": "Tag name, URL-encoded",
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactTagsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `contacts:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Remove a tag from a contact",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/contacts/{contactId}/suppress": {
+      "post": {
+        "description": "Honours an unsubscribe at once. `email` blocks every further email to the contact’s address.\n`sms` records an SMS opt-out, revokes consent and cancels the contact’s SMS sequences.\nThe contact is not told. Suppressing an address that is already suppressed changes nothing.",
+        "operationId": "contacts_suppress",
+        "parameters": [
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactSuppressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactSuppressResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or the contact has no address on a named channel"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `contacts:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Suppress a contact on email or SMS",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ]
       }
     },
     "/api/v1/sequences": {
       "get": {
         "description": "Every sequence the API key’s organization owns, newest first.",
-        "operationId": "PublicSequencesController_listSequences",
+        "operationId": "sequences_list",
         "parameters": [],
         "responses": {
           "200": {
@@ -130,7 +778,87 @@
         ],
         "summary": "List the organization’s sequences",
         "tags": [
-          "PublicSequences",
+          "Sequences",
+          "Public API"
+        ]
+      },
+      "post": {
+        "description": "Creates an inactive draft from a name, a trigger and ordered steps. Nothing sends until\n`sequences_activate`. Sending `is_active: true` is a 400. Take triggers, variables and\nconditions from the discovery operations.",
+        "operationId": "sequences_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SequenceCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such audience in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Create a draft sequence",
+        "tags": [
+          "Sequences",
           "Public API"
         ]
       }
@@ -138,7 +866,7 @@
     "/api/v1/sequences/{sequenceId}/enrollments": {
       "get": {
         "description": "Newest first. `email` resolves the contact in the key’s organization and then filters by\nit, so an email no contact carries returns an empty page rather than a 404.\n\nRead `next_step_due_at` for the next send time and fall back to `next_run_at`;\n`current_step_index` is the step, `created_at` is when the contact was enrolled, and\n`updated_at` read together with `status` is when a completed or cancelled enrollment ended.",
-        "operationId": "PublicSequencesController_listEnrollments",
+        "operationId": "sequences_list_enrollments",
         "parameters": [
           {
             "name": "sequenceId",
@@ -181,6 +909,7 @@
               "type": "string",
               "enum": [
                 "active",
+                "paused",
                 "completed",
                 "cancelled",
                 "failed"
@@ -239,7 +968,14 @@
             }
           },
           "404": {
-            "description": "No such sequence in this organization"
+            "description": "No such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
           },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
@@ -259,7 +995,107 @@
         ],
         "summary": "List the contacts enrolled in one sequence",
         "tags": [
-          "PublicSequences",
+          "Sequences",
+          "Public API"
+        ]
+      },
+      "post": {
+        "description": "Send `contact_id` or `email`. Safe to retry: a contact already active or paused in the\nsequence answers `status: skipped`, `reason: already_enrolled` with that enrollment, and\nnothing changes. An inactive sequence answers 409 `sequence_inactive`, a paused one 409\n`sequence_paused`. A broadcast takes contacts from its audience, not from this call.",
+        "operationId": "sequences_enroll",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SequenceEnrollDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceEnrollResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Neither or both of contact_id and email, an unknown start step, or a broadcast"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`sequence_inactive` or `sequence_paused`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Enroll a contact in a sequence",
+        "tags": [
+          "Sequences",
           "Public API"
         ]
       }
@@ -267,7 +1103,7 @@
     "/api/v1/contacts/{contactId}/enrollments": {
       "get": {
         "description": "Newest first. The contact must belong to the API key’s organization.",
-        "operationId": "PublicSequencesController_listContactEnrollments",
+        "operationId": "contacts_list_enrollments",
         "parameters": [
           {
             "name": "contactId",
@@ -334,7 +1170,14 @@
             }
           },
           "404": {
-            "description": "No such contact in this organization"
+            "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
           },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
@@ -354,22 +1197,2464 @@
         ],
         "summary": "List one contact’s enrollments across every sequence",
         "tags": [
-          "PublicSequences",
+          "Sequences",
           "Public API"
+        ]
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "description": "Returns the organization the credential belongs to, the key itself (or, for an OAuth access token, the connected client and its granted scopes), every scope a credential can carry, and the rate limit. Needs no scope: any live key or token may call it.",
+        "operationId": "me_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Describe the calling API key or connected client",
+        "tags": [
+          "Me",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/appointments": {
+      "get": {
+        "description": "Appointments that overlap the window, earliest first. The window defaults to the next\n30 days and can span at most 92 days.\nCancelled appointments are left out. A repeating appointment appears once per occurrence.\nEvery occurrence has the series id as its `id`, `recurring: true` and its own `occurrence_start`.\nThe API cannot cancel or reschedule a repeating appointment: change it in the Iris dashboard.\n\n`contact_id` keeps the contact’s appointments only: bookings made for the contact, and\nbookings whose attendee phone or email is the contact’s.",
+        "operationId": "appointments_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (capped at 100)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          },
+          {
+            "name": "contact_id",
+            "required": false,
+            "in": "query",
+            "description": "Only this contact’s appointments: bookings made for the contact, and bookings whose attendee phone or email is the contact’s.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Start of the window. Defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "End of the window. Defaults to 30 days after `from`. At most 92 days after it.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentPageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query, or a window that is empty or too long"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `appointments:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List appointments in a time window",
+        "tags": [
+          "Appointments",
+          "Public API"
+        ]
+      },
+      "post": {
+        "description": "Books the slot on a calendar from `calendars_list`, at that calendar’s location, and\nqueues it for Google Calendar. The booking is made in the name of the user who created\nthe API key. A slot that is not available is a 409.\nA location that sells services needs a service chosen, which v1 cannot do yet: booking\nthere answers 409 `offering_required`. Book at that location from the Iris dashboard.\nRetry with the same `idempotency_key` to get the first booking back rather than a second one.",
+        "operationId": "appointments_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or an end time that is not after the start"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `appointments:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such calendar or contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The slot is not available, the idempotency key was used with other details, or the location sells services and needs one chosen (`offering_required`)"
+          },
+          "422": {
+            "description": "The calendar is not active, or the key has no creator to book in the name of"
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Book an appointment for a contact",
+        "tags": [
+          "Appointments",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/appointments/{appointmentId}": {
+      "get": {
+        "description": "The appointment in any status, cancelled included.\nFor a repeating appointment, `recurring` is true and `series_id` names the series.",
+        "operationId": "appointments_get",
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `appointments:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such appointment in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get one appointment",
+        "tags": [
+          "Appointments",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/appointments/{appointmentId}/reschedule": {
+      "post": {
+        "description": "Sets the new start and end, moves the Google Calendar copy, and re-times the appointment reminders.\nA repeating appointment answers 409 `recurring_series_not_supported` and nothing changes:\none occurrence carries the series id, so a change would move every occurrence. Change it in the Iris dashboard.",
+        "operationId": "appointments_reschedule",
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentRescheduleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or an end time that is not after the start"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `appointments:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such appointment in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`recurring_series_not_supported`: the appointment repeats. Change it in the Iris dashboard."
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Move an appointment to a new time",
+        "tags": [
+          "Appointments",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/appointments/{appointmentId}/cancel": {
+      "post": {
+        "description": "Cancels the appointment, removes it from Google Calendar and stops its reminders.\nIdempotent: cancelling a cancelled appointment returns it and only retries the Google removal.\nA repeating appointment answers 409 `recurring_series_not_supported` and nothing changes:\none occurrence carries the series id, so a cancel would cancel every occurrence. Change it in the Iris dashboard.",
+        "operationId": "appointments_cancel",
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `appointments:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such appointment in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`recurring_series_not_supported`: the appointment repeats. Change it in the Iris dashboard."
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Cancel an appointment",
+        "tags": [
+          "Appointments",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/calendars": {
+      "get": {
+        "description": "One calendar per location with an active Google calendar connection. Pass its `id` as `calendar_id` to `appointments_create`.",
+        "operationId": "calendars_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CalendarDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `appointments:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the calendars appointments can be booked on",
+        "tags": [
+          "Calendars",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/conversations": {
+      "get": {
+        "description": "Newest activity first. Pages by cursor: pass `next_cursor` back as `cursor` until it is null.\nA page can hold fewer than `limit` items and still have a next page.",
+        "operationId": "conversations_list",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "The `next_cursor` of the page before. Leave out for the first page.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          },
+          {
+            "name": "channel",
+            "required": false,
+            "in": "query",
+            "description": "Only this channel. Both when left out.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "email",
+                "sms"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Free text search",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationPageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `conversations:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List email and SMS conversations",
+        "tags": [
+          "Conversations",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/conversations/{conversationId}": {
+      "get": {
+        "description": "Every message of an email conversation, or the latest 50 messages of an SMS conversation, oldest first.\nReading an email conversation marks it as read: its unread count in the Iris inbox goes to zero.",
+        "operationId": "conversations_get",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationDetailDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `conversations:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such conversation in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get one conversation with its messages",
+        "tags": [
+          "Conversations",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/conversations/sms": {
+      "post": {
+        "description": "Sends from the organization’s default SMS number to `contact_id`’s phone or to `phone`.\nSend exactly one of them. The recipient must have active SMS consent and must not have\nopted out: otherwise the answer is 409 `sms_not_permitted` and nothing is sent. The daily\nper-contact cap applies. This call is not idempotent: a retry after a 5xx can send twice.",
+        "operationId": "conversations_send_sms",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SmsSendDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SentSmsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, both or neither recipient, or a contact with no phone"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `conversations:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`sms_not_permitted`: the recipient opted out or has not consented"
+          },
+          "422": {
+            "description": "No default SMS number, the daily cap is reached, or the provider refused the send"
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Send an SMS to a contact who has consented",
+        "tags": [
+          "Conversations",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/contacts/{contactId}/sms-consent": {
+      "post": {
+        "description": "`opt_in` records consent the contact gave you, for example on your web form. Iris may text\nthe contact a one-time confirmation. A contact who texted STOP cannot be opted back in\nthis way: the answer is 409 `sms_not_permitted`, and the contact must text START.\n`opt_out` revokes consent, suppresses the number and cancels the contact’s SMS sequences.\nThe contact is not told. Both are safe to repeat.",
+        "operationId": "contacts_record_sms_consent",
+        "parameters": [
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SmsConsentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmsConsentResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or the contact has no phone number"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `contacts:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`sms_not_permitted`: the contact opted out by text"
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Record a contact’s SMS opt-in or opt-out",
+        "tags": [
+          "Conversations",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/calls": {
+      "get": {
+        "description": "Newest first. Pages by cursor: pass `next_cursor` back as `cursor` until it is null.\n`contact_id` keeps the calls to or from the contact’s phone number. A contact with no phone\nnumber has no calls.",
+        "operationId": "calls_list",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "The `next_cursor` of the page before. Leave out for the first page.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          },
+          {
+            "name": "contact_id",
+            "required": false,
+            "in": "query",
+            "description": "Only calls to or from this contact’s phone number",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Only calls that started at or after this time",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Only calls that started at or before this time",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallPageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query, or a cursor from another query"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calls:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List calls",
+        "tags": [
+          "Calls",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/calls/{callId}": {
+      "get": {
+        "description": "The call, its full transcript in order, and whether a recording exists.",
+        "operationId": "calls_get",
+        "parameters": [
+          {
+            "name": "callId",
+            "required": true,
+            "in": "path",
+            "description": "The `id` from `calls_list`",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calls:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such call in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The voice provider did not return the call. Retry once."
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get one call with its transcript",
+        "tags": [
+          "Calls",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/audiences": {
+      "get": {
+        "description": "Every audience that is not archived, newest first. Only a `static` audience takes members.",
+        "operationId": "audiences_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AudienceSummaryDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `audiences:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the organization’s audiences",
+        "tags": [
+          "Audiences",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/audiences/{audienceId}/members": {
+      "post": {
+        "description": "Idempotent: adding a member changes nothing. A new member can start the sequences that watch the audience.",
+        "operationId": "audiences_add_member",
+        "parameters": [
+          {
+            "name": "audienceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudienceMemberAddDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudienceMembershipDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or a dynamic audience"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `audiences:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such audience or contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Add a contact to a static audience",
+        "tags": [
+          "Audiences",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/audiences/{audienceId}/members/{contactId}": {
+      "delete": {
+        "description": "Idempotent: removing a contact who is not a member changes nothing and still answers 200.",
+        "operationId": "audiences_remove_member",
+        "parameters": [
+          {
+            "name": "audienceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudienceMembershipDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A dynamic audience"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `audiences:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such audience or contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Remove a contact from a static audience",
+        "tags": [
+          "Audiences",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/sequences/capabilities": {
+      "get": {
+        "description": "Read before you build a sequence. `multi_trigger_writes_enabled` says whether a sequence may carry more than one trigger.",
+        "operationId": "sequences_capabilities",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceCapabilitiesDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "What sequence authoring this server allows",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/sequences/triggers": {
+      "get": {
+        "description": "Use a `key` whose `authorable` is true as `trigger_type`. The `event` trigger lists the event names this organization has seen.",
+        "operationId": "sequences_list_triggers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SequenceTriggerDescriptorDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the triggers a sequence can start on",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/sequences/variables": {
+      "get": {
+        "description": "Write a token as `{{token}}` in a subject, preheader or body. The list includes the organization’s CRM fields.",
+        "operationId": "sequences_list_variables",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceVariableCatalogDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the variables step copy may use",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/sequences/condition-vocabulary": {
+      "get": {
+        "description": "A condition is an object such as `{ \"signal\": \"replied\", \"occurred\": true, \"windowMinutes\": 1440 }`. Use a signal with `exit_available` in an exit condition, and one with `routing_status: available` on a branch edge.",
+        "operationId": "sequences_get_condition_vocabulary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SequenceConditionSignalDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the signals a condition can test",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/sequences/{sequenceId}": {
+      "get": {
+        "description": "The sequence with its status, triggers, steps, branch edges, exit conditions and send window. Read it before you change it.",
+        "operationId": "sequences_get",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get one sequence with its steps",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ]
+      },
+      "patch": {
+        "description": "Changes only the fields sent. `steps`, `edges` and `exit_conditions` each replace the whole\nlist: read the sequence with `sequences_get`, edit it, and send the full list back. Keep each\n`step_key`. `is_active: false` turns the sequence off and cancels every enrollment. To hold\ncontacts in place, use `sequences_pause` instead.",
+        "operationId": "sequences_update",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SequenceUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change a sequence",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/sequences/{sequenceId}/activate": {
+      "post": {
+        "description": "Checks that the organization can send what the sequence sends, then turns it on. The\nsequence starts enrolling and sending at once. When it cannot send, answers 400\n`sequence_activation_blocked` with `blockers`, and nothing changes. `activation_warnings`\non success name email setup that may keep mail from landing. A paused sequence stays paused:\ncall `sequences_resume` for it.",
+        "operationId": "sequences_activate",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`sequence_activation_blocked`: `blockers` says what to fix",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Turn a sequence on",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/sequences/{sequenceId}/pause": {
+      "post": {
+        "description": "Holds every enrollment where it is. Nothing sends and nobody new enrolls until `sequences_resume`. Only an active sequence can pause, and not a broadcast or a sequence Iris manages.",
+        "operationId": "sequences_pause",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The sequence is not active, is a broadcast, or is managed by Iris"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Pause a sequence",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/sequences/{sequenceId}/resume": {
+      "post": {
+        "description": "Each enrollment continues from its current step. Due times move later by the time spent paused, so the spacing stays the same. A sequence that is not paused is returned unchanged.",
+        "operationId": "sequences_resume",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Resume a paused sequence",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/sequences/{sequenceId}/duplicate": {
+      "post": {
+        "description": "Copies the steps, edges, triggers, exit conditions and send window into a new inactive draft, and returns the draft.",
+        "operationId": "sequences_duplicate",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Copy a sequence into a new draft",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/sequences/{sequenceId}/enrollments/{enrollmentId}": {
+      "get": {
+        "description": "The enrollment, each step run in the order it ran, and each event (sent, delivered, opened, clicked, replied, bounced) oldest first.",
+        "operationId": "sequences_get_enrollment",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "enrollmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentDetailDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sequence in this organization\n\nNo such enrollment in this sequence",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get the send log of one enrollment",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/sequences/{sequenceId}/enrollments/{enrollmentId}/cancel": {
+      "post": {
+        "description": "Cancels the enrollment and its pending sends, and returns it. Safe to retry: an enrollment that already ended is returned as it is.",
+        "operationId": "sequences_cancel_enrollment",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "enrollmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sequence in this organization\n\nNo such enrollment in this sequence",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Remove a contact from a sequence",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/sequences/{sequenceId}/analytics": {
+      "get": {
+        "description": "Event counts per step and for the whole sequence. Read `email_delivery_reporting` before\nyou report email numbers: `unsupported` means delivered and bounced are unknown, not zero.",
+        "operationId": "sequences_analytics",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceAnalyticsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get the send totals of a sequence",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/mcp": {
+      "post": {
+        "description": "The Iris MCP server, over stateless Streamable HTTP. Point an MCP client at this URL with\nthe key as a bearer token. Every other operation in this document is a tool named by its\noperationId, and `tools/list` shows only the tools the key’s scopes allow. A tool call runs\nthe REST operation, so it answers what the REST call answers. A failing call has\n`isError: true` and the REST error body as its text. Send\n`Accept: application/json, text/event-stream`. Answers 404 while the organization does\nnot have the MCP server turned on.",
+        "operationId": "mcp_request",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The JSON-RPC answer"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The MCP server is not turned on for this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Send one MCP JSON-RPC message",
+        "tags": [
+          "Public API",
+          "MCP"
         ]
       }
     }
   },
   "info": {
     "title": "Iris Public API",
-    "description": "The public, versioned API of Iris. Authenticate with an organization API key:\n`Authorization: Bearer iris_sk_…`. Keys are minted in the dashboard under\nOrganization → API keys and carry scopes; a key without a route’s scope gets a 403\nwith `{ \"error\": \"insufficient_scope\" }`.\n\nEvery path is versioned. `v1` only ever grows: a breaking change ships as `v2`, and the\nold version keeps serving with `Deprecation` and `Sunset` headers until it is retired.",
+    "description": "The public, versioned API of Iris. Authenticate with an organization API key:\n`Authorization: Bearer iris_sk_…`. Keys are minted in the dashboard under\nOrganization → API keys and carry scopes; a key without a route’s scope gets a 403\nwith `{ \"error\": \"insufficient_scope\" }`.\n\nAgent clients that cannot hold a key (Claude Desktop, claude.ai, ChatGPT) use OAuth 2.1 with\nPKCE instead. They discover the authorization server from `/.well-known/oauth-protected-resource`,\nand send the access token the same way. Its scopes are the scopes above.\n\nEvery path is versioned. `v1` only ever grows: a breaking change ships as `v2`, and the\nold version keeps serving with `Deprecation` and `Sunset` headers until it is retired.",
     "version": "1.0.0",
     "contact": {}
   },
   "tags": [],
   "servers": [
     {
-      "url": "https://api.iris.dotfun.co"
+      "url": "https://api.iris.dotfun.co",
+      "description": "REST base URL. The MCP server (Streamable HTTP) is https://api.iris.dotfun.co/api/v1/mcp, with every operation below as a tool named by its operationId."
     }
   ],
   "components": {
@@ -377,7 +3662,7 @@
       "apiKey": {
         "type": "http",
         "scheme": "bearer",
-        "description": "An organization API key: the opaque `iris_sk_…` string shown once at creation."
+        "description": "An organization API key: the opaque `iris_sk_…` string shown once at creation. An OAuth access token from the Iris authorization server is accepted here too."
       }
     },
     "schemas": {
@@ -586,6 +3871,320 @@
           "path"
         ]
       },
+      "ContactStageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The stage value stored on the contact. Send it back as `stage_id`."
+          },
+          "name": {
+            "type": "string",
+            "description": "The label the pipeline shows"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "ContactSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "E.164"
+          },
+          "stage": {
+            "nullable": true,
+            "description": "Null when the organization has no pipeline stage field or the contact has no stage",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactStageDto"
+              }
+            ]
+          },
+          "custom_fields": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Custom field values keyed by field name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "phone",
+          "stage",
+          "custom_fields",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "ContactPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactSummaryDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "ContactDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "E.164"
+          },
+          "stage": {
+            "nullable": true,
+            "description": "Null when the organization has no pipeline stage field or the contact has no stage",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactStageDto"
+              }
+            ]
+          },
+          "custom_fields": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Custom field values keyed by field name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tags": {
+            "description": "Tag names, sorted",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "notes_count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "phone",
+          "stage",
+          "custom_fields",
+          "created_at",
+          "updated_at",
+          "tags",
+          "notes_count"
+        ]
+      },
+      "ContactUpdateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "phone": {
+            "type": "string",
+            "description": "E.164, e.g. +14155550100",
+            "pattern": "^\\+\\d{7,15}$"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 255
+          },
+          "stage_id": {
+            "type": "string",
+            "description": "A stage `id` from the organization's pipeline"
+          },
+          "custom_fields": {
+            "type": "object",
+            "description": "Custom field values to merge, keyed by field name. An unknown name is a 400 that names it. At most 200 keys.",
+            "additionalProperties": true,
+            "maxProperties": 200
+          }
+        }
+      },
+      "ContactNoteCreateDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "pattern": "\\S",
+            "maxLength": 10000
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "ContactNoteDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contact_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "contact_id",
+          "body",
+          "created_at"
+        ]
+      },
+      "ContactTagCreateDto": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "type": "string",
+            "description": "Tag name. Matched without regard to case or surrounding space; created on first use.",
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "tag"
+        ]
+      },
+      "ContactTagsDto": {
+        "type": "object",
+        "properties": {
+          "contact_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tags": {
+            "description": "Every tag the contact carries after the change, sorted",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "contact_id",
+          "tags"
+        ]
+      },
+      "ContactSuppressDto": {
+        "type": "object",
+        "properties": {
+          "channels": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 2,
+            "items": {
+              "type": "string",
+              "enum": [
+                "email",
+                "sms"
+              ]
+            }
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why, for example \"asked to stop on a call\". Written to the server log; not stored on the contact.",
+            "maxLength": 255
+          }
+        },
+        "required": [
+          "channels"
+        ]
+      },
+      "ContactSuppressResponseDto": {
+        "type": "object",
+        "properties": {
+          "contact_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "suppressed": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "email",
+                "sms"
+              ]
+            }
+          }
+        },
+        "required": [
+          "contact_id",
+          "suppressed"
+        ]
+      },
       "SequenceSummaryDto": {
         "type": "object",
         "properties": {
@@ -609,9 +4208,10 @@
             "type": "string",
             "enum": [
               "active",
+              "paused",
               "inactive"
             ],
-            "description": "'active' while the sequence enrolls and sends; 'inactive' while it is paused"
+            "description": "'active' while the sequence enrolls and sends; 'paused' while it holds every enrollment in place; 'inactive' while it is off"
           },
           "created_at": {
             "type": "string",
@@ -654,6 +4254,7 @@
             "type": "string",
             "enum": [
               "active",
+              "paused",
               "completed",
               "cancelled",
               "failed"
@@ -783,6 +4384,7 @@
             "type": "string",
             "enum": [
               "active",
+              "paused",
               "completed",
               "cancelled",
               "failed"
@@ -862,6 +4464,2231 @@
           "total",
           "page",
           "limit"
+        ]
+      },
+      "MeOrganizationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null only when the name could not be read"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "MeApiKeyDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name the key was given when it was minted"
+          },
+          "key_prefix": {
+            "type": "string",
+            "description": "The first characters of the key, as the dashboard shows them"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "contacts:read",
+                "contacts:write",
+                "sequences:read",
+                "sequences:write",
+                "appointments:read",
+                "appointments:write",
+                "conversations:read",
+                "conversations:write",
+                "calls:read",
+                "audiences:read",
+                "audiences:write"
+              ]
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_used_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Refreshed at most every five minutes, so it can lag this request"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "key_prefix",
+          "scopes",
+          "created_at",
+          "last_used_at"
+        ]
+      },
+      "MeOauthClientDto": {
+        "type": "object",
+        "properties": {
+          "client_id": {
+            "type": "string",
+            "description": "The client id, or the URL of its metadata document"
+          },
+          "client_name": {
+            "type": "string",
+            "description": "The name the client registered with"
+          },
+          "scopes": {
+            "type": "array",
+            "description": "The scopes the owner granted",
+            "items": {
+              "type": "string",
+              "enum": [
+                "contacts:read",
+                "contacts:write",
+                "sequences:read",
+                "sequences:write",
+                "appointments:read",
+                "appointments:write",
+                "conversations:read",
+                "conversations:write",
+                "calls:read",
+                "audiences:read",
+                "audiences:write"
+              ]
+            }
+          }
+        },
+        "required": [
+          "client_id",
+          "client_name",
+          "scopes"
+        ]
+      },
+      "MeScopeDto": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "contacts:read",
+              "contacts:write",
+              "sequences:read",
+              "sequences:write",
+              "appointments:read",
+              "appointments:write",
+              "conversations:read",
+              "conversations:write",
+              "calls:read",
+              "audiences:read",
+              "audiences:write"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "scope",
+          "label",
+          "description"
+        ]
+      },
+      "MeRateLimitDto": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "Requests allowed in one window"
+          },
+          "window_seconds": {
+            "type": "number"
+          },
+          "bucket": {
+            "type": "string",
+            "enum": [
+              "client_ip"
+            ],
+            "description": "What the limit counts against. It is the client address, not the key."
+          }
+        },
+        "required": [
+          "limit",
+          "window_seconds",
+          "bucket"
+        ]
+      },
+      "MeResponseDto": {
+        "type": "object",
+        "properties": {
+          "organization": {
+            "$ref": "#/components/schemas/MeOrganizationDto"
+          },
+          "api_key": {
+            "nullable": true,
+            "description": "The calling key. Null for an OAuth access token.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MeApiKeyDto"
+              }
+            ]
+          },
+          "oauth_client": {
+            "nullable": true,
+            "description": "The connected client an OAuth access token was issued to. Null for an API key.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MeOauthClientDto"
+              }
+            ]
+          },
+          "scopes_available": {
+            "description": "Every scope a key can be granted, with its label",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeScopeDto"
+            }
+          },
+          "rate_limit": {
+            "$ref": "#/components/schemas/MeRateLimitDto"
+          }
+        },
+        "required": [
+          "organization",
+          "api_key",
+          "oauth_client",
+          "scopes_available",
+          "rate_limit"
+        ]
+      },
+      "AppointmentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "start_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "IANA time zone the appointment was booked in"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "tentative",
+              "confirmed",
+              "cancelled",
+              "completed",
+              "no_show"
+            ]
+          },
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The location the appointment is at"
+          },
+          "contact_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The contact the booking was made for, when it names one"
+          },
+          "attendee_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "attendee_phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "E.164"
+          },
+          "attendee_email": {
+            "type": "string",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "recurring": {
+            "type": "boolean",
+            "description": "True when the appointment repeats. Cancel and reschedule refuse a repeating appointment with 409 `recurring_series_not_supported`."
+          },
+          "series_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The repeating series the appointment belongs to, or null. Every occurrence of a series has the series id as its `id`."
+          },
+          "occurrence_start": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "In `appointments_list`, the start of this one occurrence of a repeating appointment. Null for an appointment that does not repeat, and in `appointments_get`."
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "start_time",
+          "end_time",
+          "timezone",
+          "status",
+          "location_id",
+          "contact_id",
+          "attendee_name",
+          "attendee_phone",
+          "attendee_email",
+          "created_at",
+          "updated_at",
+          "recurring",
+          "series_id",
+          "occurrence_start"
+        ]
+      },
+      "AppointmentPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppointmentDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "AppointmentCreateDto": {
+        "type": "object",
+        "properties": {
+          "calendar_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "A calendar from `calendars_list`. It sets the location."
+          },
+          "contact_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The contact the appointment is for"
+          },
+          "start_time": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-24T15:00:00Z"
+          },
+          "end_time": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-24T15:30:00Z"
+          },
+          "title": {
+            "type": "string",
+            "default": "Appointment",
+            "maxLength": 255
+          },
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this booking. A retry with the same key and the same details returns the first booking. The same key with other details is a 409."
+          }
+        },
+        "required": [
+          "calendar_id",
+          "contact_id",
+          "start_time",
+          "end_time",
+          "idempotency_key"
+        ]
+      },
+      "AppointmentRescheduleDto": {
+        "type": "object",
+        "properties": {
+          "start_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_time": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "start_time",
+          "end_time"
+        ]
+      },
+      "CalendarDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Send it as `calendar_id` to `appointments_create`"
+          },
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The location the calendar books for"
+          },
+          "name": {
+            "type": "string",
+            "description": "The Google calendar’s name, or its id when Google does not answer"
+          }
+        },
+        "required": [
+          "id",
+          "location_id",
+          "name"
+        ]
+      },
+      "ConversationSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms"
+            ]
+          },
+          "contact_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "description": "The contact’s name or address, or the email subject"
+          },
+          "preview": {
+            "type": "string",
+            "description": "The latest message, shortened"
+          },
+          "last_message_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "channel",
+          "contact_id",
+          "title",
+          "preview",
+          "last_message_at"
+        ]
+      },
+      "ConversationPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationSummaryDto"
+            }
+          },
+          "next_cursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Pass it as `cursor` for the next page. Null on the last page."
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ]
+      },
+      "ConversationMessageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "inbound",
+              "outbound"
+            ]
+          },
+          "from": {
+            "type": "string",
+            "nullable": true,
+            "description": "Phone number or email address"
+          },
+          "to": {
+            "type": "string",
+            "nullable": true,
+            "description": "Phone number or email address"
+          },
+          "subject": {
+            "type": "string",
+            "nullable": true,
+            "description": "Email only"
+          },
+          "body": {
+            "type": "string",
+            "nullable": true,
+            "description": "The text of the message"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true,
+            "description": "Delivery status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "direction",
+          "from",
+          "to",
+          "subject",
+          "body",
+          "status",
+          "created_at"
+        ]
+      },
+      "ConversationDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms"
+            ]
+          },
+          "contact_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "description": "The contact’s phone number, or the email subject"
+          },
+          "messages": {
+            "description": "Oldest first. Every email message, or the latest 50 SMS messages.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationMessageDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "channel",
+          "contact_id",
+          "title",
+          "messages"
+        ]
+      },
+      "SmsSendDto": {
+        "type": "object",
+        "properties": {
+          "contact_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Send to this contact’s phone number"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Send to this number, with its country code",
+            "example": "+14155550100"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 1600
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "SentSmsDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The stored message. Null when the provider accepted the send but Iris could not store it."
+          },
+          "to": {
+            "type": "string",
+            "description": "E.164"
+          },
+          "body": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "sent"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "to",
+          "body",
+          "status"
+        ]
+      },
+      "SmsConsentDto": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "opt_in",
+              "opt_out"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "description": "Where the contact gave or withdrew consent, for example \"web form\". Kept with an opt-in.",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "action"
+        ]
+      },
+      "SmsConsentResultDto": {
+        "type": "object",
+        "properties": {
+          "contact_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "phone": {
+            "type": "string",
+            "description": "E.164"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "opt_in",
+              "opt_out"
+            ]
+          },
+          "changed": {
+            "type": "boolean",
+            "description": "False when the contact was already in that state"
+          }
+        },
+        "required": [
+          "contact_id",
+          "phone",
+          "action",
+          "changed"
+        ]
+      },
+      "CallListItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The call id. Pass it to `calls_get`."
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "inbound",
+              "outbound"
+            ],
+            "nullable": true
+          },
+          "external_number": {
+            "type": "string",
+            "nullable": true,
+            "description": "The caller’s number, E.164"
+          },
+          "agent_number": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Iris number the call used, E.164"
+          },
+          "agent_name": {
+            "type": "string",
+            "description": "The Iris agent that took the call"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "success",
+              "failure",
+              "unknown"
+            ],
+            "description": "Whether the call reached its goal"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "duration_secs": {
+            "type": "number"
+          },
+          "summary": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "direction",
+          "external_number",
+          "agent_number",
+          "agent_name",
+          "outcome",
+          "started_at",
+          "duration_secs",
+          "summary"
+        ]
+      },
+      "CallPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CallListItemDto"
+            }
+          },
+          "next_cursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Pass it as `cursor` for the next page. Null on the last page."
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ]
+      },
+      "CallTranscriptEntryDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "agent"
+            ],
+            "description": "`user` is the caller"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "time_in_call_secs": {
+            "type": "number",
+            "description": "Seconds into the call"
+          }
+        },
+        "required": [
+          "role",
+          "message",
+          "time_in_call_secs"
+        ]
+      },
+      "CallDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The call id. Pass it to `calls_get`."
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "inbound",
+              "outbound"
+            ],
+            "nullable": true
+          },
+          "external_number": {
+            "type": "string",
+            "nullable": true,
+            "description": "The caller’s number, E.164"
+          },
+          "agent_number": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Iris number the call used, E.164"
+          },
+          "agent_name": {
+            "type": "string",
+            "description": "The Iris agent that took the call"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "success",
+              "failure",
+              "unknown"
+            ],
+            "description": "Whether the call reached its goal"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "duration_secs": {
+            "type": "number"
+          },
+          "summary": {
+            "type": "string",
+            "nullable": true
+          },
+          "transcript": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CallTranscriptEntryDto"
+            }
+          },
+          "has_audio": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "direction",
+          "external_number",
+          "agent_number",
+          "agent_name",
+          "outcome",
+          "started_at",
+          "duration_secs",
+          "summary",
+          "transcript",
+          "has_audio"
+        ]
+      },
+      "AudienceSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "static",
+              "dynamic"
+            ],
+            "description": "`static` lists hold the contacts added to them. `dynamic` ones match a filter, so members cannot be added."
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "any",
+              "email",
+              "sms"
+            ],
+            "description": "The channel the audience is meant for"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "kind",
+          "channel",
+          "created_at"
+        ]
+      },
+      "AudienceMemberAddDto": {
+        "type": "object",
+        "properties": {
+          "contact_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "contact_id"
+        ]
+      },
+      "AudienceMembershipDto": {
+        "type": "object",
+        "properties": {
+          "audience_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contact_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "member": {
+            "type": "boolean",
+            "description": "Whether the contact is a member after the call"
+          },
+          "changed": {
+            "type": "boolean",
+            "description": "False when the contact was already in that state"
+          }
+        },
+        "required": [
+          "audience_id",
+          "contact_id",
+          "member",
+          "changed"
+        ]
+      },
+      "SequenceCapabilitiesDto": {
+        "type": "object",
+        "properties": {
+          "multi_trigger_writes_enabled": {
+            "type": "boolean",
+            "description": "True when a sequence may carry more than one trigger"
+          }
+        },
+        "required": [
+          "multi_trigger_writes_enabled"
+        ]
+      },
+      "SequenceTriggerEventOptionDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "label",
+          "description",
+          "source"
+        ]
+      },
+      "SequenceTriggerDescriptorDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "The value for `trigger_type`"
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "authorable": {
+            "type": "boolean",
+            "description": "Only an authorable trigger can start a new sequence"
+          },
+          "enrollment_mode": {
+            "type": "string"
+          },
+          "consent_posture": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "available",
+              "coming_soon"
+            ]
+          },
+          "system_managed": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "event_options": {
+            "description": "Known event names, on the `event` trigger only",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceTriggerEventOptionDto"
+            }
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "description",
+          "authorable",
+          "enrollment_mode",
+          "consent_posture",
+          "status",
+          "system_managed"
+        ]
+      },
+      "SequenceVariableTokenDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Write it as `{{token}}`"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "label"
+        ]
+      },
+      "SequenceVariableGroupDto": {
+        "type": "object",
+        "properties": {
+          "group": {
+            "type": "string"
+          },
+          "tokens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceVariableTokenDto"
+            }
+          }
+        },
+        "required": [
+          "group",
+          "tokens"
+        ]
+      },
+      "SequenceVariableCatalogDto": {
+        "type": "object",
+        "properties": {
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceVariableGroupDto"
+            }
+          }
+        },
+        "required": [
+          "groups"
+        ]
+      },
+      "SequenceConditionSignalDto": {
+        "type": "object",
+        "properties": {
+          "signal": {
+            "type": "string",
+            "description": "The `signal` of a condition"
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "exit_available": {
+            "type": "boolean",
+            "description": "Usable in an exit condition"
+          },
+          "routing_status": {
+            "type": "string",
+            "enum": [
+              "available",
+              "coming_soon"
+            ],
+            "description": "Usable on a branch edge"
+          },
+          "routable": {
+            "type": "boolean",
+            "description": "False when the signal can never route a branch"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "signal",
+          "label",
+          "description",
+          "exit_available",
+          "routing_status",
+          "routable"
+        ]
+      },
+      "SequenceTriggerDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "config": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "type",
+          "config"
+        ]
+      },
+      "SendWindowDto": {
+        "type": "object",
+        "properties": {
+          "start_minute": {
+            "type": "number"
+          },
+          "end_minute": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "start_minute",
+          "end_minute"
+        ]
+      },
+      "SequenceStepDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "step_key": {
+            "type": "string",
+            "description": "Stable id of the step. Edges name steps by it."
+          },
+          "step_index": {
+            "type": "number"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms",
+              "wait",
+              "task"
+            ]
+          },
+          "delay_minutes": {
+            "type": "number"
+          },
+          "timing_mode": {
+            "type": "string",
+            "enum": [
+              "relative",
+              "anchor"
+            ],
+            "description": "`relative` runs `delay_minutes` after the previous step. `anchor` runs `offset_minutes` from an event."
+          },
+          "offset_minutes": {
+            "type": "number",
+            "nullable": true
+          },
+          "subject_template": {
+            "type": "string",
+            "nullable": true
+          },
+          "body_template": {
+            "type": "string",
+            "nullable": true
+          },
+          "preheader_template": {
+            "type": "string",
+            "nullable": true
+          },
+          "body_document": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true
+          },
+          "ai_enabled": {
+            "type": "boolean"
+          },
+          "ai_prompt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "step_key",
+          "step_index",
+          "channel",
+          "delay_minutes",
+          "timing_mode",
+          "ai_enabled"
+        ]
+      },
+      "SequenceEdgeDto": {
+        "type": "object",
+        "properties": {
+          "from_step_key": {
+            "type": "string"
+          },
+          "to_step_key": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null ends the sequence"
+          },
+          "condition": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "The routing condition in the condition DSL. Loop and A/B edges carry `maxIterations` and `variant` here."
+          },
+          "priority": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "from_step_key",
+          "condition",
+          "priority"
+        ]
+      },
+      "SequenceExitConditionDto": {
+        "type": "object",
+        "properties": {
+          "condition": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "cancel_reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "condition",
+          "cancel_reason"
+        ]
+      },
+      "SequenceVariableWarningDto": {
+        "type": "object",
+        "properties": {
+          "step_index": {
+            "type": "number"
+          },
+          "field": {
+            "type": "string",
+            "enum": [
+              "subject",
+              "preheader",
+              "body"
+            ]
+          },
+          "unknown_variables": {
+            "description": "Variables the organization does not have",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "step_index",
+          "field",
+          "unknown_variables"
+        ]
+      },
+      "SequenceActivationWarningDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "email",
+              "sms"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "SequenceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "automation",
+              "broadcast"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "inactive"
+            ],
+            "description": "`active` sends. `paused` holds every enrollment in place. `inactive` is off."
+          },
+          "paused_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "When it was paused. Null unless paused."
+          },
+          "trigger_type": {
+            "type": "string"
+          },
+          "trigger_config": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "triggers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceTriggerDto"
+            }
+          },
+          "audience_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "send_schedule_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "send_window": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SendWindowDto"
+              }
+            ]
+          },
+          "is_system_managed": {
+            "type": "boolean",
+            "description": "A platform sequence. Its copy can change, but its trigger, kind, steps and timing cannot."
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceStepDto"
+            }
+          },
+          "edges": {
+            "description": "Empty for a straight sequence",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceEdgeDto"
+            }
+          },
+          "exit_conditions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceExitConditionDto"
+            }
+          },
+          "variable_warnings": {
+            "description": "Unknown `{{variables}}`. Advice only.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceVariableWarningDto"
+            }
+          },
+          "activation_warnings": {
+            "description": "Only on the write that turned the sequence on: email setup that may keep mail from landing",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceActivationWarningDto"
+            }
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "status",
+          "trigger_type",
+          "trigger_config",
+          "triggers",
+          "is_system_managed",
+          "steps",
+          "edges",
+          "exit_conditions",
+          "variable_warnings",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "SequenceTriggerInputDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "A trigger `key` from `sequences_list_triggers` whose `authorable` is true"
+          },
+          "config": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Trigger settings"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "SequenceStepInputDto": {
+        "type": "object",
+        "properties": {
+          "step_index": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Zero-based position of the step"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms",
+              "wait",
+              "task"
+            ],
+            "description": "`email` and `sms` message the contact. `wait` only waits. `task` notifies the team: its subject is the title and its body the note."
+          },
+          "delay_minutes": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Minutes to wait after the previous step before this one runs"
+          },
+          "step_key": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Stable id of the step. Edges name steps by it. Keep it when you edit a step. Generated when omitted."
+          },
+          "subject_template": {
+            "type": "string",
+            "description": "Email subject, or the task title. May use `{{variables}}`."
+          },
+          "body_template": {
+            "type": "string",
+            "description": "Message body, or the task note. May use `{{variables}}`."
+          },
+          "preheader_template": {
+            "type": "string",
+            "description": "Email preview text shown next to the subject in the inbox"
+          },
+          "body_document": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true,
+            "description": "A designed email body (EmailDocument v1). Omit to keep the stored one. Null clears it."
+          },
+          "ai_enabled": {
+            "type": "boolean",
+            "default": false,
+            "description": "Let AI write the copy from `ai_prompt` at send time"
+          },
+          "ai_prompt": {
+            "type": "string",
+            "description": "What the AI should write, when `ai_enabled`"
+          }
+        },
+        "required": [
+          "step_index",
+          "channel",
+          "delay_minutes"
+        ]
+      },
+      "SequenceExitConditionInputDto": {
+        "type": "object",
+        "properties": {
+          "condition": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "A condition in the DSL `sequences_get_condition_vocabulary` describes, e.g. `{ \"signal\": \"replied\" }`"
+          },
+          "cancel_reason": {
+            "type": "string",
+            "enum": [
+              "goal_met",
+              "converted",
+              "stage_reached",
+              "replied",
+              "booked",
+              "opted_out"
+            ],
+            "description": "Recorded on the enrollment when this exit fires"
+          }
+        },
+        "required": [
+          "condition",
+          "cancel_reason"
+        ]
+      },
+      "SequenceEdgeInputDto": {
+        "type": "object",
+        "properties": {
+          "from_step_key": {
+            "type": "string",
+            "description": "`step_key` of the step the edge leaves"
+          },
+          "to_step_key": {
+            "type": "string",
+            "nullable": true,
+            "description": "`step_key` it goes to. Null ends the sequence."
+          },
+          "condition": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "A routing condition in the condition DSL. Omit for the fallback edge."
+          },
+          "priority": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Lower runs first. The first edge that matches wins."
+          },
+          "max_iterations": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Most passes through a loop. Required on an edge that goes back."
+          },
+          "variant_weight": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "A/B split weight. Every edge from the step must carry one, and they sum to 100."
+          }
+        },
+        "required": [
+          "from_step_key"
+        ]
+      },
+      "SendWindowInputDto": {
+        "type": "object",
+        "properties": {
+          "start_minute": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1439,
+            "description": "Opens at this minute of the day, organization time. 540 is 09:00."
+          },
+          "end_minute": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 1440,
+            "description": "Closes at this minute (exclusive). 1080 is 18:00."
+          }
+        },
+        "required": [
+          "start_minute",
+          "end_minute"
+        ]
+      },
+      "SequenceCreateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "trigger_type": {
+            "type": "string",
+            "description": "The primary trigger, a `key` from `sequences_list_triggers`"
+          },
+          "trigger_config": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Settings of the primary trigger"
+          },
+          "triggers": {
+            "description": "Every trigger. The first is the primary one and must match `trigger_type` when both are sent.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceTriggerInputDto"
+            }
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "automation",
+              "broadcast"
+            ],
+            "description": "`automation` runs off a trigger. `broadcast` sends to an audience."
+          },
+          "audience_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "For a broadcast: its audience"
+          },
+          "send_schedule_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "A saved send schedule. Null uses the organization default."
+          },
+          "is_active": {
+            "type": "boolean",
+            "enum": [
+              false
+            ],
+            "description": "Only `false`, and `true` is a 400. A new sequence is always an inactive draft. On an update, `false` turns the sequence off and cancels every enrollment. Turn a sequence on with `sequences_activate`, and hold contacts in place with `sequences_pause`."
+          },
+          "steps": {
+            "description": "The ordered steps. On an update, replaces them all.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceStepInputDto"
+            }
+          },
+          "exit_conditions": {
+            "description": "Replaces the exit conditions. An enrollment stops when any of them is met.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceExitConditionInputDto"
+            }
+          },
+          "edges": {
+            "description": "Replaces the branch edges. Omit for a straight sequence.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceEdgeInputDto"
+            }
+          },
+          "send_window": {
+            "nullable": true,
+            "description": "Hours of the day email and SMS may send. Null removes the window.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SendWindowInputDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "trigger_type",
+          "steps"
+        ]
+      },
+      "SequenceUpdateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "trigger_type": {
+            "type": "string",
+            "description": "The primary trigger, a `key` from `sequences_list_triggers`"
+          },
+          "trigger_config": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Settings of the primary trigger"
+          },
+          "triggers": {
+            "description": "Every trigger. The first is the primary one and must match `trigger_type` when both are sent.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceTriggerInputDto"
+            }
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "automation",
+              "broadcast"
+            ],
+            "description": "`automation` runs off a trigger. `broadcast` sends to an audience."
+          },
+          "audience_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "For a broadcast: its audience"
+          },
+          "send_schedule_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "A saved send schedule. Null uses the organization default."
+          },
+          "is_active": {
+            "type": "boolean",
+            "enum": [
+              false
+            ],
+            "description": "Only `false`, and `true` is a 400. A new sequence is always an inactive draft. On an update, `false` turns the sequence off and cancels every enrollment. Turn a sequence on with `sequences_activate`, and hold contacts in place with `sequences_pause`."
+          },
+          "steps": {
+            "description": "The ordered steps. On an update, replaces them all.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceStepInputDto"
+            }
+          },
+          "exit_conditions": {
+            "description": "Replaces the exit conditions. An enrollment stops when any of them is met.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceExitConditionInputDto"
+            }
+          },
+          "edges": {
+            "description": "Replaces the branch edges. Omit for a straight sequence.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceEdgeInputDto"
+            }
+          },
+          "send_window": {
+            "nullable": true,
+            "description": "Hours of the day email and SMS may send. Null removes the window.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SendWindowInputDto"
+              }
+            ]
+          }
+        }
+      },
+      "SequenceActivationBlockerDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Stable reason, e.g. `email_provider_not_configured`"
+          },
+          "channel": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "email",
+              "sms"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "What to fix, in a sentence"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "SequenceErrorDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "description": "HTTP status code, repeated in the body",
+            "example": 401
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "When the failure was answered",
+            "format": "date-time"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path the request asked for",
+            "example": "/api/v1/contacts"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable explanation",
+            "example": "Invalid API key"
+          },
+          "error": {
+            "type": "string",
+            "description": "Machine-readable error code",
+            "example": "sequence_paused",
+            "enum": [
+              "sequence_activation_blocked",
+              "sequence_inactive",
+              "sequence_paused"
+            ]
+          },
+          "required": {
+            "type": "string",
+            "description": "On a 403 only: the scope the key would need.",
+            "example": "contacts:write"
+          },
+          "blockers": {
+            "description": "On `sequence_activation_blocked` only",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceActivationBlockerDto"
+            }
+          }
+        },
+        "required": [
+          "statusCode",
+          "timestamp",
+          "path"
+        ]
+      },
+      "SequenceEnrollDto": {
+        "type": "object",
+        "properties": {
+          "contact_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The contact to enroll"
+          },
+          "email": {
+            "type": "string",
+            "description": "Or the email of the contact to enroll, matched without regard to case"
+          },
+          "start_step_key": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Start at this `step_key` instead of the first step"
+          }
+        }
+      },
+      "EnrollmentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sequence_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contact_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "completed",
+              "cancelled",
+              "failed"
+            ]
+          },
+          "current_step_index": {
+            "type": "number",
+            "description": "Zero-based index of the step the enrollment is on"
+          },
+          "loop_iteration": {
+            "type": "number"
+          },
+          "total_iterations": {
+            "type": "number"
+          },
+          "next_run_at": {
+            "type": "string",
+            "nullable": true
+          },
+          "enrolled_via": {
+            "type": "string",
+            "description": "What enrolled the contact, e.g. `manual`"
+          },
+          "cancel_reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "variant_key": {
+            "type": "string",
+            "nullable": true,
+            "description": "A/B arm"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "For a cancelled or completed enrollment, when it ended"
+          }
+        },
+        "required": [
+          "id",
+          "sequence_id",
+          "contact_id",
+          "status",
+          "current_step_index",
+          "loop_iteration",
+          "total_iterations",
+          "enrolled_via",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "SequenceEnrollResultDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "enrolled",
+              "skipped"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "already_enrolled"
+            ],
+            "description": "Why nothing changed: the contact is already active or paused in this sequence"
+          },
+          "enrollment": {
+            "description": "The new enrollment, or the one the contact already has",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EnrollmentDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "enrollment"
+        ]
+      },
+      "EnrollmentStepRunDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "step_index": {
+            "type": "number"
+          },
+          "loop_iteration": {
+            "type": "number"
+          },
+          "channel": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processing",
+              "sending",
+              "sent",
+              "failed",
+              "skipped",
+              "cancelled"
+            ]
+          },
+          "scheduled_at": {
+            "type": "string"
+          },
+          "sent_at": {
+            "type": "string",
+            "nullable": true
+          },
+          "resolved_subject": {
+            "type": "string",
+            "nullable": true,
+            "description": "The subject as sent"
+          },
+          "resolved_body": {
+            "type": "string",
+            "nullable": true,
+            "description": "The body as sent"
+          },
+          "attempt_count": {
+            "type": "number"
+          },
+          "last_error": {
+            "type": "string",
+            "nullable": true
+          },
+          "variant_key": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "step_index",
+          "loop_iteration",
+          "channel",
+          "status",
+          "scheduled_at",
+          "attempt_count"
+        ]
+      },
+      "EnrollmentEventDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "event_type": {
+            "type": "string",
+            "description": "sent, delivered, opened, clicked, replied, bounced and so on"
+          },
+          "occurred_at": {
+            "type": "string"
+          },
+          "step_run_id": {
+            "type": "string",
+            "description": "The step run the event belongs to"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "event_type",
+          "occurred_at",
+          "step_run_id",
+          "metadata"
+        ]
+      },
+      "EnrollmentDetailDto": {
+        "type": "object",
+        "properties": {
+          "enrollment": {
+            "$ref": "#/components/schemas/EnrollmentDto"
+          },
+          "step_runs": {
+            "description": "In the order the steps ran",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EnrollmentStepRunDto"
+            }
+          },
+          "events": {
+            "description": "Oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EnrollmentEventDto"
+            }
+          }
+        },
+        "required": [
+          "enrollment",
+          "step_runs",
+          "events"
+        ]
+      },
+      "SequenceAnalyticsIterationDto": {
+        "type": "object",
+        "properties": {
+          "loop_iteration": {
+            "type": "number"
+          },
+          "counts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "delivery_channels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "loop_iteration",
+          "counts",
+          "delivery_channels"
+        ]
+      },
+      "SequenceAnalyticsStepDto": {
+        "type": "object",
+        "properties": {
+          "step_index": {
+            "type": "number"
+          },
+          "counts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Event counts: sent, delivered, opened, clicked, replied, bounced"
+          },
+          "delivery_channels": {
+            "description": "The channels the counted sends went out on",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "iterations": {
+            "description": "Per loop pass, when the step looped",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceAnalyticsIterationDto"
+            }
+          }
+        },
+        "required": [
+          "step_index",
+          "counts",
+          "delivery_channels"
+        ]
+      },
+      "SequenceAnalyticsDto": {
+        "type": "object",
+        "properties": {
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceAnalyticsStepDto"
+            }
+          },
+          "rollup": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Event counts for the whole sequence"
+          },
+          "delivery_channels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "variant_assignments": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Contacts per A/B arm. Empty without a split."
+          },
+          "email_delivery_reporting": {
+            "type": "string",
+            "enum": [
+              "supported",
+              "unsupported",
+              "not_applicable"
+            ],
+            "description": "`unsupported`: the email provider reports no delivery, so delivered and bounced read 0 whatever happened. `not_applicable`: no email sends."
+          },
+          "email_provider": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "steps",
+          "rollup",
+          "delivery_channels",
+          "variant_assignments",
+          "email_delivery_reporting"
         ]
       }
     }

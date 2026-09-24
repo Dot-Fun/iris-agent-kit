@@ -32,16 +32,6 @@ operationId. The same name is the REST operation and the MCP tool, so a recipe s
 The API is growing. If `references/endpoints.md` does not list an operation this skill names,
 that operation is not live yet. Tell the user and stop. Do not guess a path.
 
-Four operations may still carry older names in `references/endpoints.md`. Treat them as the
-same operation:
-
-| Name in this skill | Older name |
-|---|---|
-| `contacts_upsert` | `ContactsController_upsert` |
-| `sequences_list` | `PublicSequencesController_listSequences` |
-| `sequences_list_enrollments` | `PublicSequencesController_listEnrollments` |
-| `contacts_list_enrollments` | `PublicSequencesController_listContactEnrollments` |
-
 ## Authenticate
 
 Send the key as a bearer token on every request:
@@ -54,13 +44,28 @@ Read the key from the `IRIS_API_KEY` environment variable. Never print it, never
 file, and never put it in a URL. A key belongs to one organization. The organization always
 comes from the key, never from a request body, so you cannot reach another organization.
 
+## Connect over MCP
+
+The MCP server is one operation, `mcp_request` (`POST /api/v1/mcp`). Add it to your client as
+a Streamable HTTP server with the header `Authorization: Bearer $IRIS_API_KEY`. The config for
+each client is in `references/auth.md`. Every other operation is a tool with the same name.
+Read tools carry `readOnlyHint: true`. A 404 from the MCP URL means MCP is not turned on for
+this organization yet. Use REST instead.
+
+Claude Desktop, claude.ai, Cowork and ChatGPT cannot send that header. Add the MCP URL as a
+custom connector with no header and no client id: the client finds the Iris authorization
+server from the 401, registers itself, and opens the Iris consent page, where an owner or admin
+approves the scopes. The steps for each client are in `references/auth.md`. With OAuth, the
+client holds the token and you do not need `IRIS_API_KEY`.
+
 ## Start with whoami
 
-Call `me_get` (`GET /api/v1/me`) before anything else. If `references/endpoints.md` does not
-list `me_get` yet, skip this step and go on. It needs no scope beyond a live key. It returns:
+Call `me_get` (`GET /api/v1/me`) before anything else. It needs no scope beyond a live key.
+It returns:
 
 - `organization`: the `id` and `name` you act on. Tell the user which organization it is.
 - `api_key.scopes`: what this key may do. Do not call an operation whose scope is missing.
+  Over OAuth, `api_key` is null and `oauth_client.scopes` holds what the owner granted.
 - `scopes_available`: every scope, with a label, so you can tell the user what to add.
 - `rate_limit`: the request budget.
 
@@ -113,7 +118,7 @@ Branch on `statusCode` and `error`. Never branch on the text of `message`.
 | 400 | `sequence_activation_blocked` | Show the user `blockers`. Fix them or stop. |
 | 401 | | The key is missing, wrong or revoked. Stop and ask for a new key. |
 | 403 | `insufficient_scope` | The key lacks the scope in `required`. Tell the user to add it under Organization > API keys. |
-| 404 | | The id does not exist in this organization. Search again. Do not guess ids. |
+| 404 | `not_found` | The id does not exist in this organization. Search again. Do not guess ids. |
 | 409 | `sequence_inactive` | The sequence is off. Do not enroll. Ask the user. |
 | 409 | `sequence_paused` | The sequence is paused. Resume it first, or wait. |
 | 409 | `sms_not_permitted` | The contact has not consented or is suppressed. Do not send. |
@@ -126,7 +131,8 @@ Over MCP, a failing tool call returns `isError: true` with the same envelope as 
 
 Most list operations take `page` (starts at 1) and `limit` (default 25, at most 100). Every
 page echoes `total`, `page` and `limit`. Fetch the next page while `page * limit < total`.
-`conversations_list` pages with a `cursor` instead: pass back the cursor from the last page.
+`conversations_list` and `calls_list` page with a `cursor` instead: pass back `next_cursor` from
+the last page until it is null.
 Stop when you have what you need: do not read every page of a large list to answer one question.
 
 ## Scopes
@@ -166,7 +172,9 @@ only when the user wants a contact created or changed.
 1. Find the contact (recipe 1).
 2. Call `contacts_list_enrollments` with the `contactId`.
 3. Report each enrollment: sequence, `status`, current step, and the next send time.
-   The next send time is `next_step_due_at`, or `next_run_at` when that is empty.
+   The next send time is `next_run_at`. On `sequences_list_enrollments` it is
+   `next_step_due_at`, or `next_run_at` when that is empty.
+   A sequence `status` is `active`, `paused` (every enrollment held, shown as `paused`) or `inactive` (off).
 
 To go the other way (who is in one sequence), call `sequences_list` to find the sequence, then
 `sequences_list_enrollments` with its `sequenceId`. Filter with `status`, `contact_id` or
@@ -232,7 +240,9 @@ enrollment, and resume cannot bring them back.
 2. Call `sequences_create` with the name, trigger, steps and delays. It always creates an
    inactive draft. Do not send `is_active: true`: it returns 400.
 3. To start from a sequence that works, call `sequences_duplicate` instead and change the copy.
-4. Call `sequences_update` to change steps, delays or copy. Read it back with `sequences_get`.
+4. Call `sequences_update` to change steps, delays or copy. `steps`, `edges` and
+   `exit_conditions` each replace the whole list, so start from `sequences_get`, edit, and send
+   the full list back with every `step_key` kept. Read it back with `sequences_get`.
 5. Show the user the draft and ask before you activate it.
 6. Call `sequences_activate`. On 400 `sequence_activation_blocked`, show the `blockers` (for
    example a missing sending domain) and stop.
@@ -252,8 +262,19 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
 
 - Appointments: `appointments_list`, `appointments_get`, `appointments_create`,
   `appointments_reschedule`, `appointments_cancel`. Call `calendars_list` to pick a calendar.
+  To answer "when is Jane booked", find the contact (recipe 1) and call `appointments_list` with
+  `contact_id`. To book, call `calendars_list`, then `appointments_create` with the calendar's
+  `id` as `calendar_id` and an `idempotency_key` of your own. A retry with the same key returns
+  the first booking. A 409 means the slot is taken: offer the user another time. A 409 with
+  `offering_required` means the location sells services, which v1 cannot book yet: tell the
+  user to book it in the Iris dashboard.
+  Cancel and reschedule answer 409 `recurring_series_not_supported` for a row with
+  `recurring: true`. Nothing changes: tell the user to change it in the Iris dashboard.
 - Conversations: `conversations_list`, `conversations_get` (with messages),
-  `conversations_send_sms`. Record SMS consent with `contacts_record_sms_consent`.
-- Calls: `calls_list`, `calls_get` (with transcript).
+  `conversations_send_sms`. Read the conversation before you text the contact. Record SMS consent
+  with `contacts_record_sms_consent` only when the contact gave it to the user. On 409
+  `sms_not_permitted`, do not send, and do not record consent to get past it.
+- Calls: `calls_list`, `calls_get` (with transcript). Filter `calls_list` with `contact_id` to
+  see one contact's calls.
 - Audiences: `audiences_list`, `audiences_add_member`, `audiences_remove_member`. Both writes
-  are safe to repeat.
+  are safe to repeat. Only a `static` audience takes members.

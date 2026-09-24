@@ -81,5 +81,18 @@ Clients that can send a header use the key today:
 - OpenClaw: `openclaw mcp add iris --url https://api.iris.dotfun.co/api/v1/mcp --transport streamable-http`,
   then set the `Authorization` header in the Settings config editor.
 
-claude.ai, Claude Desktop chat, Claude Cowork connectors and ChatGPT cannot send a custom header.
-They need OAuth on the Iris server, which is not live yet.
+claude.ai, Claude Desktop, Claude Cowork and ChatGPT cannot send a custom header. They connect
+with OAuth instead (IRIS-3783):
+
+1. Add `https://api.iris.dotfun.co/api/v1/mcp` as a custom connector. In Claude, open
+   Customize > Connectors. In ChatGPT, turn on Developer mode, then add a connector. Leave the
+   client id and secret empty: the client registers itself.
+2. The client opens the Iris consent page. An owner or admin signs in and approves the scopes it
+   lists.
+3. The client holds the tokens and refreshes them itself. Nothing goes in an environment
+   variable.
+
+An owner or admin sees every connected client under Organization > API keys, and Revoke there
+ends its access at once. Claude Code and Codex can use OAuth too: add the server with no header
+and they start the same flow. An OAuth token answers `me_get` with `api_key: null` and an
+`oauth_client` that names the client and its scopes.
