@@ -1438,7 +1438,7 @@
             "description": "The slot is not available, the idempotency key was used with other details, or the location sells services and needs one chosen (`offering_required`)"
           },
           "422": {
-            "description": "The calendar is not active, or the key has no creator to book in the name of"
+            "description": "The calendar is not active, or the key has no creator to book in the name of, or that user is no longer an active member of the organization"
           },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
@@ -1544,7 +1544,7 @@
     },
     "/api/v1/appointments/{appointmentId}/reschedule": {
       "post": {
-        "description": "Sets the new start and end, moves the Google Calendar copy, and re-times the appointment reminders.\nA repeating appointment answers 409 `recurring_series_not_supported` and nothing changes:\none occurrence carries the series id, so a change would move every occurrence. Change it in the Iris dashboard.",
+        "description": "Sets the new start and end, moves the Google Calendar copy, and re-times the appointment reminders.\nA repeating appointment answers 409 `recurring_series_not_supported` and nothing changes:\none occurrence carries the series id, so a change would move every occurrence. Change it in the Iris dashboard.\nA cancelled appointment answers 409 `appointment_cancelled` and nothing changes: book a new one.",
         "operationId": "appointments_reschedule",
         "parameters": [
           {
@@ -1612,7 +1612,7 @@
             }
           },
           "409": {
-            "description": "`recurring_series_not_supported`: the appointment repeats. Change it in the Iris dashboard."
+            "description": "`recurring_series_not_supported`: the appointment repeats. Change it in the Iris dashboard.\n\n`appointment_cancelled`: the appointment is cancelled. Book a new one."
           },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",

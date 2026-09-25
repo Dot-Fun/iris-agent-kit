@@ -270,6 +270,9 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
   user to book it in the Iris dashboard.
   Cancel and reschedule answer 409 `recurring_series_not_supported` for a row with
   `recurring: true`. Nothing changes: tell the user to change it in the Iris dashboard.
+  Reschedule answers 409 `appointment_cancelled` for a cancelled appointment. Nothing changes:
+  book a new appointment instead. A 422 from `appointments_create` can mean the user who created
+  the API key left the organization: tell the user to create a new key.
 - Conversations: `conversations_list`, `conversations_get` (with messages),
   `conversations_send_sms`. Read the conversation before you text the contact. Record SMS consent
   with `contacts_record_sms_consent` only when the contact gave it to the user. On 409
