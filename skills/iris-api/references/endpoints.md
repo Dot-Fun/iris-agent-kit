@@ -7,6 +7,20 @@ Base URL: `https://api.iris.dotfun.co`. Send `Authorization: Bearer $IRIS_API_KE
 
 ## Appointments
 
+### appointments_availability
+
+`GET /api/v1/appointments/availability`. Scope: `appointments:read`.
+
+Find open slots at a location on one day
+
+- `location_id` (query, string uuid, required): A location from `locations_list`
+- `date` (query, string, required): The day, in the location’s time zone
+- `offering_id` (query, string uuid): Only slots for this service, at its length
+- `team_member_id` (query, string uuid): Only slots this team member is free for
+- `postal_code` (query, string): The customer’s postal code for a home visit. Only people who cover it.
+- `country_code` (query, string): ISO 3166-1 alpha-2 country of `postal_code`
+- `duration_minutes` (query, number): Ignored when `offering_id` is sent
+
 ### appointments_cancel
 
 `POST /api/v1/appointments/{appointmentId}/cancel`. Scope: `appointments:write`.
@@ -21,7 +35,17 @@ Cancel an appointment
 
 Book an appointment for a contact
 
-- `calendar_id` (body, string uuid, required): A calendar from `calendars_list`. It sets the location.
+- `calendar_id` (body, string uuid): A calendar from `calendars_list`. It sets the location. Send this or `location_id`, not both. Use it at a location that is not staffed.
+- `location_id` (body, string uuid): A location from `locations_list`. Send this or `calendar_id`, not both. A staffed location needs this shape.
+- `offering_id` (body, string uuid): With `location_id`: a service from `locations_booking_options`. The end time must match its `duration_minutes`.
+- `team_member_id` (body, string uuid): With `location_id`: the team member to book. Leave it out to book the first team member who is free.
+- `service_address` (body, ServiceAddressDto): With `location_id`: where a home visit happens. Its postal code must be in a territory.
+  - `line1` (body, string)
+  - `line2` (body, string)
+  - `city` (body, string)
+  - `region` (body, string): State, province or region
+  - `postal_code` (body, string): Decides the territory, and so who can come
+  - `country_code` (body, string): ISO 3166-1 alpha-2
 - `contact_id` (body, string uuid, required): The contact the appointment is for
 - `start_time` (body, string date-time, required)
 - `end_time` (body, string date-time, required)
@@ -247,6 +271,22 @@ Send an SMS to a contact who has consented
 - `contact_id` (body, string uuid): Send to this contact’s phone number
 - `phone` (body, string): Send to this number, with its country code
 - `body` (body, string, required)
+
+## Locations
+
+### locations_booking_options
+
+`GET /api/v1/locations/{locationId}/booking-options`. Scope: `appointments:read`.
+
+List the services and team members a location books
+
+- `locationId` (path, string uuid, required)
+
+### locations_list
+
+`GET /api/v1/locations`. Scope: `appointments:read`.
+
+List the locations appointments can be booked at
 
 ## MCP
 
@@ -480,3 +520,11 @@ Change a sequence
 - `send_window` (body, SendWindowInputDto): Hours of the day email and SMS may send. Null removes the window.
   - `start_minute` (body, number, required): Opens at this minute of the day, organization time. 540 is 09:00.
   - `end_minute` (body, number, required): Closes at this minute (exclusive). 1080 is 18:00.
+
+## Territories
+
+### territories_list
+
+`GET /api/v1/territories`. Scope: `appointments:read`.
+
+List the service territories and their postal codes

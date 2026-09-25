@@ -1377,7 +1377,7 @@
         ]
       },
       "post": {
-        "description": "Books the slot on a calendar from `calendars_list`, at that calendar’s location, and\nqueues it for Google Calendar. The booking is made in the name of the user who created\nthe API key. A slot that is not available is a 409.\nA location that sells services needs a service chosen, which v1 cannot do yet: booking\nthere answers 409 `offering_required`. Book at that location from the Iris dashboard.\nRetry with the same `idempotency_key` to get the first booking back rather than a second one.",
+        "description": "Two shapes. Send exactly one of `location_id` and `calendar_id`.\n\n- `location_id` (from `locations_list`), with `offering_id`, `team_member_id` and\n  `service_address` as the location needs. A staffed location books this way. Leave out\n  `team_member_id` to book the first team member who is free. Find times with\n  `appointments_availability` first.\n- `calendar_id` (from `calendars_list`) books a location that is not staffed on its Google calendar.\n\nWith either shape, the contact’s name, phone and email become the attendee, so reminders reach\nthem. The booking is made in the name of the user who created the API key.\nRetry with the same `idempotency_key` to get the first booking back rather than a second one.\n\nA refused `location_id` booking answers 409 with `error` set to one of these codes and a `message`:\n\n- `offering_required`: the location sells services. Choose one. The body carries `booking_options`.\n- `offering_not_offered_here`: the service is not offered here, or nobody here does it.\n- `team_member_not_eligible`: the team member does not work here, does not do this service, or does not cover the address.\n- `no_team_member_available`: nobody who can do it is free then.\n- `slot_taken`: the time is booked.\n- `outside_hours`: the time is outside booking hours, or outside the team member’s schedule.\n- `duration_mismatch`: the end time does not match the service’s `duration_minutes`.\n- `address_out_of_area`: no territory of this location covers the postal code.\n- `location_changed`: the location changed while booking. Check availability again.\n\nA `calendar_id` slot that is not available is a 409 with no code.\nThe same `idempotency_key` with other details is a 409 too, with no code.",
         "operationId": "appointments_create",
         "parameters": [],
         "requestBody": {
@@ -1402,7 +1402,7 @@
             }
           },
           "400": {
-            "description": "Invalid body, or an end time that is not after the start"
+            "description": "Invalid body, both or neither of `location_id` and `calendar_id`, staffed fields with `calendar_id`, or an end time that is not after the start"
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
@@ -1425,7 +1425,7 @@
             }
           },
           "404": {
-            "description": "No such calendar or contact in this organization",
+            "description": "No such location, calendar or contact in this organization",
             "content": {
               "application/json": {
                 "schema": {
@@ -1435,7 +1435,7 @@
             }
           },
           "409": {
-            "description": "The slot is not available, the idempotency key was used with other details, or the location sells services and needs one chosen (`offering_required`)"
+            "description": "A refused `location_id` booking answers 409 with `error` set to one of these codes and a `message`:\n\n- `offering_required`: the location sells services. Choose one. The body carries `booking_options`.\n- `offering_not_offered_here`: the service is not offered here, or nobody here does it.\n- `team_member_not_eligible`: the team member does not work here, does not do this service, or does not cover the address.\n- `no_team_member_available`: nobody who can do it is free then.\n- `slot_taken`: the time is booked.\n- `outside_hours`: the time is outside booking hours, or outside the team member’s schedule.\n- `duration_mismatch`: the end time does not match the service’s `duration_minutes`.\n- `address_out_of_area`: no territory of this location covers the postal code.\n- `location_changed`: the location changed while booking. Check availability again.\n\nA `calendar_id` slot that is not available is a 409 with no code.\nThe same `idempotency_key` with other details is a 409 too, with no code."
           },
           "422": {
             "description": "The calendar is not active, or the key has no creator to book in the name of, or that user is no longer an active member of the organization"
@@ -1457,6 +1457,153 @@
           }
         ],
         "summary": "Book an appointment for a contact",
+        "tags": [
+          "Appointments",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/appointments/availability": {
+      "get": {
+        "description": "The open slots the booking check would accept, the same ones the Iris voice agent offers.\nSend `offering_id` for a staffed location that sells services: the slots are that service’s\nlength, and each names the team members free for it. Send `team_member_id` for one person.\nSend `postal_code` for a home visit: only team members who cover it.\nBook a slot with `appointments_create`, its `start` as `start_time` and its `end` as `end_time`.\n\nA request that cannot be served answers 409 with `error` set to one of these codes and a `message`:\n\n- `offering_not_offered_here` or `unknown_offering`: the service is not bookable here.\n- `team_member_not_eligible` or `unknown_team_member`: the team member cannot take this request here.\n- `offering_required`: the location sells services. Send `offering_id`.\n- `address_out_of_area`: no territory of this location covers the postal code.",
+        "operationId": "appointments_availability",
+        "parameters": [
+          {
+            "name": "location_id",
+            "required": true,
+            "in": "query",
+            "description": "A location from `locations_list`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "query",
+            "description": "The day, in the location’s time zone",
+            "schema": {
+              "example": "2026-09-24",
+              "type": "string"
+            }
+          },
+          {
+            "name": "offering_id",
+            "required": false,
+            "in": "query",
+            "description": "Only slots for this service, at its length",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "team_member_id",
+            "required": false,
+            "in": "query",
+            "description": "Only slots this team member is free for",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "postal_code",
+            "required": false,
+            "in": "query",
+            "description": "The customer’s postal code for a home visit. Only people who cover it.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "country_code",
+            "required": false,
+            "in": "query",
+            "description": "ISO 3166-1 alpha-2 country of `postal_code`",
+            "schema": {
+              "example": "US",
+              "type": "string"
+            }
+          },
+          {
+            "name": "duration_minutes",
+            "required": false,
+            "in": "query",
+            "description": "Ignored when `offering_id` is sent",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1440,
+              "default": 30,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `appointments:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such location in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A request that cannot be served answers 409 with `error` set to one of these codes and a `message`:\n\n- `offering_not_offered_here` or `unknown_offering`: the service is not bookable here.\n- `team_member_not_eligible` or `unknown_team_member`: the team member cannot take this request here.\n- `offering_required`: the location sells services. Send `offering_id`.\n- `address_out_of_area`: no territory of this location covers the postal code."
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Find open slots at a location on one day",
         "tags": [
           "Appointments",
           "Public API"
@@ -1777,6 +1924,209 @@
         "summary": "List the calendars appointments can be booked on",
         "tags": [
           "Calendars",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/locations": {
+      "get": {
+        "description": "Every active location with its time zone.\n`staffed: true` means the location books by team member: call `locations_booking_options`,\nthen book with `location_id`. A location that is not staffed can also be booked on its calendar\nfrom `calendars_list`.",
+        "operationId": "locations_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LocationDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `appointments:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the locations appointments can be booked at",
+        "tags": [
+          "Locations",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/locations/{locationId}/booking-options": {
+      "get": {
+        "description": "The active services offered at the location, with their length and buffers and the team\nmembers who do each one, and every team member bookable there, in booking priority order.\nSend a service `id` as `offering_id` and a team member `id` as `team_member_id` to\n`appointments_availability` and `appointments_create`.\nA location that is not staffed and sells no services answers with empty lists.",
+        "operationId": "locations_booking_options",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingOptionsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `appointments:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such location in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the services and team members a location books",
+        "tags": [
+          "Locations",
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/territories": {
+      "get": {
+        "description": "The areas the business travels to, each served from one location, with its postal codes and\nthe team members who cover it. A customer whose postal code is in no active territory cannot\nbook a home visit: `appointments_create` answers 409 `address_out_of_area`.\nAn organization that does not book by territory answers an empty list. Inactive territories\nare listed too, and book nothing.",
+        "operationId": "territories_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TerritoryDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `appointments:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the service territories and their postal codes",
+        "tags": [
+          "Territories",
           "Public API"
         ]
       }
@@ -4677,6 +5027,38 @@
           "rate_limit"
         ]
       },
+      "ServiceAddressDto": {
+        "type": "object",
+        "properties": {
+          "line1": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "line2": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "region": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "State, province or region"
+          },
+          "postal_code": {
+            "type": "string",
+            "maxLength": 32,
+            "description": "Decides the territory, and so who can come"
+          },
+          "country_code": {
+            "type": "string",
+            "example": "US",
+            "description": "ISO 3166-1 alpha-2"
+          }
+        }
+      },
       "AppointmentDto": {
         "type": "object",
         "properties": {
@@ -4720,6 +5102,28 @@
             "format": "uuid",
             "nullable": true,
             "description": "The contact the booking was made for, when it names one"
+          },
+          "offering_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The service booked, from `locations_booking_options`, or null"
+          },
+          "team_member_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The team member the appointment is with, or null"
+          },
+          "service_address": {
+            "nullable": true,
+            "description": "Where a home visit happens, or null",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceAddressDto"
+              }
+            ]
           },
           "attendee_name": {
             "type": "string",
@@ -4768,6 +5172,9 @@
           "status",
           "location_id",
           "contact_id",
+          "offering_id",
+          "team_member_id",
+          "service_address",
           "attendee_name",
           "attendee_phone",
           "attendee_email",
@@ -4804,13 +5211,157 @@
           "limit"
         ]
       },
+      "AvailabilityOfferingDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "duration_minutes": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "duration_minutes"
+        ]
+      },
+      "AvailabilityTerritoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "BookingTeamMemberDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Send it as `team_member_id`"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "AvailabilitySlotDto": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Send it as `start_time`"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Send it as `end_time`"
+          },
+          "team_members": {
+            "description": "Who is free for this slot, in booking priority order. Empty at a location that is not staffed.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingTeamMemberDto"
+            }
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "team_members"
+        ]
+      },
+      "AvailabilityDto": {
+        "type": "object",
+        "properties": {
+          "timezone": {
+            "type": "string",
+            "description": "IANA time zone of the location"
+          },
+          "offering": {
+            "nullable": true,
+            "description": "The service the slots are for",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvailabilityOfferingDto"
+              }
+            ]
+          },
+          "territory": {
+            "nullable": true,
+            "description": "The territory `postal_code` is in, or null",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvailabilityTerritoryDto"
+              }
+            ]
+          },
+          "slots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AvailabilitySlotDto"
+            }
+          }
+        },
+        "required": [
+          "timezone",
+          "offering",
+          "territory",
+          "slots"
+        ]
+      },
       "AppointmentCreateDto": {
         "type": "object",
         "properties": {
           "calendar_id": {
             "type": "string",
             "format": "uuid",
-            "description": "A calendar from `calendars_list`. It sets the location."
+            "description": "A calendar from `calendars_list`. It sets the location. Send this or `location_id`, not both. Use it at a location that is not staffed."
+          },
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "A location from `locations_list`. Send this or `calendar_id`, not both. A staffed location needs this shape."
+          },
+          "offering_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "With `location_id`: a service from `locations_booking_options`. The end time must match its `duration_minutes`."
+          },
+          "team_member_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "With `location_id`: the team member to book. Leave it out to book the first team member who is free."
+          },
+          "service_address": {
+            "description": "With `location_id`: where a home visit happens. Its postal code must be in a territory.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceAddressDto"
+              }
+            ]
           },
           "contact_id": {
             "type": "string",
@@ -4839,7 +5390,6 @@
           }
         },
         "required": [
-          "calendar_id",
           "contact_id",
           "start_time",
           "end_time",
@@ -4885,6 +5435,154 @@
           "id",
           "location_id",
           "name"
+        ]
+      },
+      "LocationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Send it as `location_id`"
+          },
+          "name": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "IANA time zone of the location"
+          },
+          "staffed": {
+            "type": "boolean",
+            "description": "True when the location books by team member. Book it with `location_id`, never with a `calendar_id`."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "timezone",
+          "staffed"
+        ]
+      },
+      "BookingOfferingDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Send it as `offering_id`"
+          },
+          "name": {
+            "type": "string"
+          },
+          "duration_minutes": {
+            "type": "number",
+            "description": "The length of the appointment. `end_time` minus `start_time` must equal it."
+          },
+          "buffer_before_minutes": {
+            "type": "number",
+            "description": "Time kept free before the appointment"
+          },
+          "buffer_after_minutes": {
+            "type": "number",
+            "description": "Time kept free after the appointment"
+          },
+          "team_member_ids": {
+            "description": "The team members who do this service here, in booking priority order",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "duration_minutes",
+          "buffer_before_minutes",
+          "buffer_after_minutes",
+          "team_member_ids"
+        ]
+      },
+      "BookingOptionsDto": {
+        "type": "object",
+        "properties": {
+          "staffed": {
+            "type": "boolean",
+            "description": "True when the location books by team member"
+          },
+          "offerings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingOfferingDto"
+            }
+          },
+          "team_members": {
+            "description": "Everyone bookable here, in booking priority order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingTeamMemberDto"
+            }
+          }
+        },
+        "required": [
+          "staffed",
+          "offerings",
+          "team_members"
+        ]
+      },
+      "TerritoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The location that serves the territory"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive"
+            ]
+          },
+          "country_code": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO 3166-1 alpha-2 country of the postal codes"
+          },
+          "postal_codes": {
+            "description": "Normalized postal codes, sorted",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "team_member_ids": {
+            "description": "The team members who cover the territory",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "location_id",
+          "status",
+          "country_code",
+          "postal_codes",
+          "team_member_ids"
         ]
       },
       "ConversationSummaryDto": {

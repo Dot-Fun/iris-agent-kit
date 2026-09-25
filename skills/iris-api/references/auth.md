@@ -92,7 +92,9 @@ with OAuth instead (IRIS-3783):
 3. The client holds the tokens and refreshes them itself. Nothing goes in an environment
    variable.
 
-An owner or admin sees every connected client under Organization > API keys, and Revoke there
-ends its access at once. Claude Code and Codex can use OAuth too: add the server with no header
+An owner or admin sees every connected client under Organization > API keys, with who granted
+it, and Revoke there ends its access at once. Each admin who approves a client gets their own
+connection. It stops working when that admin is demoted to member or leaves the organization, and
+the client must then connect again through another owner or admin (IRIS-4005). Claude Code and Codex can use OAuth too: add the server with no header
 and they start the same flow. An OAuth token answers `me_get` with `api_key: null` and an
 `oauth_client` that names the client and its scopes.

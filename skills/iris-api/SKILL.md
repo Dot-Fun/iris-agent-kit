@@ -145,7 +145,7 @@ A key carries scopes, one read and one write per noun:
 | `contacts:write` | create and update contacts, notes, tags, suppression and SMS consent |
 | `sequences:read` | read sequences, enrollments, send logs and totals |
 | `sequences:write` | create, change, activate, pause, resume and duplicate sequences, enroll and cancel |
-| `appointments:read` | read appointments and calendars |
+| `appointments:read` | read appointments, calendars, locations, booking options, open slots and territories |
 | `appointments:write` | book, reschedule and cancel appointments |
 | `conversations:read` | read conversations and their messages |
 | `conversations:write` | send an SMS |
@@ -247,7 +247,31 @@ enrollment, and resume cannot bring them back.
 6. Call `sequences_activate`. On 400 `sequence_activation_blocked`, show the `blockers` (for
    example a missing sending domain) and stop.
 
-### 9. Keep the CRM current after a call
+### 9. Book an appointment
+
+1. Find the contact (recipe 1).
+2. Call `locations_list` and pick the location. Note its `timezone` and `staffed`.
+3. Call `locations_booking_options` with the location id. Pick a service from `offerings`, and a
+   team member from its `team_member_ids` if the user names one.
+4. For a home visit, call `territories_list` to check that the customer's postal code is covered.
+5. Call `appointments_availability` with `location_id`, `date`, and `offering_id`,
+   `team_member_id` and `postal_code` as needed. Offer the user the slots it returns.
+6. Call `appointments_create` with `location_id`, `contact_id`, the slot's `start` and `end` as
+   `start_time` and `end_time`, `offering_id`, `team_member_id` if chosen, `service_address` for
+   a home visit, and an `idempotency_key` of your own. Leave out `team_member_id` to book the
+   first team member who is free.
+7. On 409, read `error`. `offering_required`: choose from the `booking_options` in the body.
+   `slot_taken`, `no_team_member_available` or `outside_hours`: check availability again and
+   offer another time. `team_member_not_eligible`: offer another team member.
+   `address_out_of_area`: tell the user the address is not covered. `duration_mismatch`: make
+   the end time match the service's `duration_minutes`. Another 409 with no code means the key
+   was used with other details: use a new key.
+8. Tell the user the appointment's time, service and team member.
+
+A location that is not staffed can also be booked with `calendar_id` from `calendars_list`
+instead of `location_id`. Send one of the two, never both.
+
+### 10. Keep the CRM current after a call
 
 1. Find the contact (recipe 1).
 2. Call `contacts_update` to change the name, phone, email, stage or custom fields. An unknown
@@ -261,13 +285,10 @@ enrollment, and resume cannot bring them back.
 These follow the same rules. Their parameters are in `references/endpoints.md`.
 
 - Appointments: `appointments_list`, `appointments_get`, `appointments_create`,
-  `appointments_reschedule`, `appointments_cancel`. Call `calendars_list` to pick a calendar.
+  `appointments_reschedule`, `appointments_cancel`, `appointments_availability`, `locations_list`,
+  `locations_booking_options`, `territories_list`, `calendars_list`. To book, follow recipe 9.
   To answer "when is Jane booked", find the contact (recipe 1) and call `appointments_list` with
-  `contact_id`. To book, call `calendars_list`, then `appointments_create` with the calendar's
-  `id` as `calendar_id` and an `idempotency_key` of your own. A retry with the same key returns
-  the first booking. A 409 means the slot is taken: offer the user another time. A 409 with
-  `offering_required` means the location sells services, which v1 cannot book yet: tell the
-  user to book it in the Iris dashboard.
+  `contact_id`.
   Cancel and reschedule answer 409 `recurring_series_not_supported` for a row with
   `recurring: true`. Nothing changes: tell the user to change it in the Iris dashboard.
   Reschedule answers 409 `appointment_cancelled` for a cancelled appointment. Nothing changes:
