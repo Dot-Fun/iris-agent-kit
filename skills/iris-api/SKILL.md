@@ -66,6 +66,8 @@ It returns:
 - `organization`: the `id` and `name` you act on. Tell the user which organization it is.
 - `api_key.scopes`: what this key may do. Do not call an operation whose scope is missing.
   Over OAuth, `api_key` is null and `oauth_client.scopes` holds what the owner granted.
+- `principal`: over OAuth, the person who granted the token, their `role` now and the
+  `location_ids` they reach. A key made for the organization has no `principal`.
 - `scopes_available`: every scope, with a label, so you can tell the user what to add.
 - `rate_limit`: the request budget.
 
@@ -118,6 +120,7 @@ Branch on `statusCode` and `error`. Never branch on the text of `message`.
 | 400 | `sequence_activation_blocked` | Show the user `blockers`. Fix them or stop. |
 | 401 | | The key is missing, wrong or revoked. Stop and ask for a new key. |
 | 403 | `insufficient_scope` | The key lacks the scope in `required`. Tell the user to add it under Organization > API keys. |
+| 403 | `insufficient_role` | The person behind the credential is a MEMBER, and members cannot call this operation. Do not retry. Ask an owner or admin. |
 | 404 | `not_found` | The id does not exist in this organization. Search again. Do not guess ids. |
 | 409 | `sequence_inactive` | The sequence is off. Do not enroll. Ask the user. |
 | 409 | `sequence_paused` | The sequence is paused. Resume it first, or wait. |
@@ -154,6 +157,12 @@ A key carries scopes, one read and one write per noun:
 | `audiences:write` | add and remove audience members |
 
 Over MCP, the tool list shows only the tools your key's scopes allow.
+
+A credential acts with the role of the person behind it. An organization key and an owner's or
+admin's credential reach the whole organization. For a MEMBER, each operation in
+`references/endpoints.md` names its member access: `open` (allowed), `scoped` (allowed, limited
+to the member's locations) or `deny` (403 `insufficient_role`). Over MCP, a MEMBER does not see
+the `deny` tools.
 
 ## Operator recipes
 

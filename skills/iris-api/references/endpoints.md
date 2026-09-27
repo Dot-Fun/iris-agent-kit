@@ -9,7 +9,7 @@ Base URL: `https://api.iris.dotfun.co`. Send `Authorization: Bearer $IRIS_API_KE
 
 ### appointments_availability
 
-`GET /api/v1/appointments/availability`. Scope: `appointments:read`.
+`GET /api/v1/appointments/availability`. Scope: `appointments:read`. Member: `scoped`.
 
 Find open slots at a location on one day
 
@@ -23,7 +23,7 @@ Find open slots at a location on one day
 
 ### appointments_cancel
 
-`POST /api/v1/appointments/{appointmentId}/cancel`. Scope: `appointments:write`.
+`POST /api/v1/appointments/{appointmentId}/cancel`. Scope: `appointments:write`. Member: `scoped`.
 
 Cancel an appointment
 
@@ -31,7 +31,7 @@ Cancel an appointment
 
 ### appointments_create
 
-`POST /api/v1/appointments`. Scope: `appointments:write`.
+`POST /api/v1/appointments`. Scope: `appointments:write`. Member: `scoped`.
 
 Book an appointment for a contact
 
@@ -54,7 +54,7 @@ Book an appointment for a contact
 
 ### appointments_get
 
-`GET /api/v1/appointments/{appointmentId}`. Scope: `appointments:read`.
+`GET /api/v1/appointments/{appointmentId}`. Scope: `appointments:read`. Member: `scoped`.
 
 Get one appointment
 
@@ -62,7 +62,7 @@ Get one appointment
 
 ### appointments_list
 
-`GET /api/v1/appointments`. Scope: `appointments:read`.
+`GET /api/v1/appointments`. Scope: `appointments:read`. Member: `scoped`.
 
 List appointments in a time window
 
@@ -74,7 +74,7 @@ List appointments in a time window
 
 ### appointments_reschedule
 
-`POST /api/v1/appointments/{appointmentId}/reschedule`. Scope: `appointments:write`.
+`POST /api/v1/appointments/{appointmentId}/reschedule`. Scope: `appointments:write`. Member: `scoped`.
 
 Move an appointment to a new time
 
@@ -86,7 +86,7 @@ Move an appointment to a new time
 
 ### audiences_add_member
 
-`POST /api/v1/audiences/{audienceId}/members`. Scope: `audiences:write`.
+`POST /api/v1/audiences/{audienceId}/members`. Scope: `audiences:write`. Member: `deny`.
 
 Add a contact to a static audience
 
@@ -95,13 +95,13 @@ Add a contact to a static audience
 
 ### audiences_list
 
-`GET /api/v1/audiences`. Scope: `audiences:read`.
+`GET /api/v1/audiences`. Scope: `audiences:read`. Member: `open`.
 
 List the organization’s audiences
 
 ### audiences_remove_member
 
-`DELETE /api/v1/audiences/{audienceId}/members/{contactId}`. Scope: `audiences:write`.
+`DELETE /api/v1/audiences/{audienceId}/members/{contactId}`. Scope: `audiences:write`. Member: `deny`.
 
 Remove a contact from a static audience
 
@@ -112,7 +112,7 @@ Remove a contact from a static audience
 
 ### calendars_list
 
-`GET /api/v1/calendars`. Scope: `appointments:read`.
+`GET /api/v1/calendars`. Scope: `appointments:read`. Member: `scoped`.
 
 List the calendars appointments can be booked on
 
@@ -120,7 +120,7 @@ List the calendars appointments can be booked on
 
 ### calls_get
 
-`GET /api/v1/calls/{callId}`. Scope: `calls:read`.
+`GET /api/v1/calls/{callId}`. Scope: `calls:read`. Member: `scoped`.
 
 Get one call with its transcript
 
@@ -128,7 +128,7 @@ Get one call with its transcript
 
 ### calls_list
 
-`GET /api/v1/calls`. Scope: `calls:read`.
+`GET /api/v1/calls`. Scope: `calls:read`. Member: `scoped`.
 
 List calls
 
@@ -142,7 +142,7 @@ List calls
 
 ### contacts_add_note
 
-`POST /api/v1/contacts/{contactId}/notes`. Scope: `contacts:write`.
+`POST /api/v1/contacts/{contactId}/notes`. Scope: `contacts:write`. Member: `deny`.
 
 Add a note to a contact
 
@@ -151,7 +151,7 @@ Add a note to a contact
 
 ### contacts_add_tag
 
-`POST /api/v1/contacts/{contactId}/tags`. Scope: `contacts:write`.
+`POST /api/v1/contacts/{contactId}/tags`. Scope: `contacts:write`. Member: `deny`.
 
 Add a tag to a contact
 
@@ -160,7 +160,7 @@ Add a tag to a contact
 
 ### contacts_get
 
-`GET /api/v1/contacts/{contactId}`. Scope: `contacts:read`.
+`GET /api/v1/contacts/{contactId}`. Scope: `contacts:read`. Member: `scoped`.
 
 Get one contact
 
@@ -168,7 +168,7 @@ Get one contact
 
 ### contacts_remove_tag
 
-`DELETE /api/v1/contacts/{contactId}/tags/{tag}`. Scope: `contacts:write`.
+`DELETE /api/v1/contacts/{contactId}/tags/{tag}`. Scope: `contacts:write`. Member: `deny`.
 
 Remove a tag from a contact
 
@@ -177,7 +177,7 @@ Remove a tag from a contact
 
 ### contacts_search
 
-`GET /api/v1/contacts`. Scope: `contacts:read`.
+`GET /api/v1/contacts`. Scope: `contacts:read`. Member: `scoped`.
 
 Search contacts
 
@@ -189,7 +189,7 @@ Search contacts
 
 ### contacts_suppress
 
-`POST /api/v1/contacts/{contactId}/suppress`. Scope: `contacts:write`.
+`POST /api/v1/contacts/{contactId}/suppress`. Scope: `contacts:write`. Member: `deny`.
 
 Suppress a contact on email or SMS
 
@@ -199,7 +199,7 @@ Suppress a contact on email or SMS
 
 ### contacts_update
 
-`PATCH /api/v1/contacts/{contactId}`. Scope: `contacts:write`.
+`PATCH /api/v1/contacts/{contactId}`. Scope: `contacts:write`. Member: `deny`.
 
 Update a contact
 
@@ -212,7 +212,7 @@ Update a contact
 
 ### contacts_upsert
 
-`POST /api/v1/contacts`. Scope: `contacts:write`.
+`POST /api/v1/contacts`. Scope: `contacts:write`. Member: `deny`.
 
 Create or update a contact by email
 
@@ -235,7 +235,7 @@ Create or update a contact by email
 
 ### contacts_record_sms_consent
 
-`POST /api/v1/contacts/{contactId}/sms-consent`. Scope: `contacts:write`.
+`POST /api/v1/contacts/{contactId}/sms-consent`. Scope: `contacts:write`. Member: `deny`.
 
 Record a contact’s SMS opt-in or opt-out
 
@@ -245,7 +245,7 @@ Record a contact’s SMS opt-in or opt-out
 
 ### conversations_get
 
-`GET /api/v1/conversations/{conversationId}`. Scope: `conversations:read`.
+`GET /api/v1/conversations/{conversationId}`. Scope: `conversations:read`. Member: `scoped`.
 
 Get one conversation with its messages
 
@@ -253,7 +253,7 @@ Get one conversation with its messages
 
 ### conversations_list
 
-`GET /api/v1/conversations`. Scope: `conversations:read`.
+`GET /api/v1/conversations`. Scope: `conversations:read`. Member: `scoped`.
 
 List email and SMS conversations
 
@@ -264,7 +264,7 @@ List email and SMS conversations
 
 ### conversations_send_sms
 
-`POST /api/v1/conversations/sms`. Scope: `conversations:write`.
+`POST /api/v1/conversations/sms`. Scope: `conversations:write`. Member: `deny`.
 
 Send an SMS to a contact who has consented
 
@@ -276,7 +276,7 @@ Send an SMS to a contact who has consented
 
 ### locations_booking_options
 
-`GET /api/v1/locations/{locationId}/booking-options`. Scope: `appointments:read`.
+`GET /api/v1/locations/{locationId}/booking-options`. Scope: `appointments:read`. Member: `scoped`.
 
 List the services and team members a location books
 
@@ -284,7 +284,7 @@ List the services and team members a location books
 
 ### locations_list
 
-`GET /api/v1/locations`. Scope: `appointments:read`.
+`GET /api/v1/locations`. Scope: `appointments:read`. Member: `scoped`.
 
 List the locations appointments can be booked at
 
@@ -292,7 +292,7 @@ List the locations appointments can be booked at
 
 ### mcp_request
 
-`POST /api/v1/mcp`. Scope: any live key.
+`POST /api/v1/mcp`. Scope: any live key. Member: `open`.
 
 Send one MCP JSON-RPC message
 
@@ -300,7 +300,7 @@ Send one MCP JSON-RPC message
 
 ### me_get
 
-`GET /api/v1/me`. Scope: any live key.
+`GET /api/v1/me`. Scope: any live key. Member: `open`.
 
 Describe the calling API key or connected client
 
@@ -308,7 +308,7 @@ Describe the calling API key or connected client
 
 ### contacts_list_enrollments
 
-`GET /api/v1/contacts/{contactId}/enrollments`. Scope: `sequences:read`.
+`GET /api/v1/contacts/{contactId}/enrollments`. Scope: `sequences:read`. Member: `deny`.
 
 List one contact’s enrollments across every sequence
 
@@ -318,7 +318,7 @@ List one contact’s enrollments across every sequence
 
 ### sequences_activate
 
-`POST /api/v1/sequences/{sequenceId}/activate`. Scope: `sequences:write`.
+`POST /api/v1/sequences/{sequenceId}/activate`. Scope: `sequences:write`. Member: `deny`.
 
 Turn a sequence on
 
@@ -326,7 +326,7 @@ Turn a sequence on
 
 ### sequences_analytics
 
-`GET /api/v1/sequences/{sequenceId}/analytics`. Scope: `sequences:read`.
+`GET /api/v1/sequences/{sequenceId}/analytics`. Scope: `sequences:read`. Member: `deny`.
 
 Get the send totals of a sequence
 
@@ -334,7 +334,7 @@ Get the send totals of a sequence
 
 ### sequences_cancel_enrollment
 
-`POST /api/v1/sequences/{sequenceId}/enrollments/{enrollmentId}/cancel`. Scope: `sequences:write`.
+`POST /api/v1/sequences/{sequenceId}/enrollments/{enrollmentId}/cancel`. Scope: `sequences:write`. Member: `deny`.
 
 Remove a contact from a sequence
 
@@ -343,13 +343,13 @@ Remove a contact from a sequence
 
 ### sequences_capabilities
 
-`GET /api/v1/sequences/capabilities`. Scope: `sequences:read`.
+`GET /api/v1/sequences/capabilities`. Scope: `sequences:read`. Member: `open`.
 
 What sequence authoring this server allows
 
 ### sequences_create
 
-`POST /api/v1/sequences`. Scope: `sequences:write`.
+`POST /api/v1/sequences`. Scope: `sequences:write`. Member: `deny`.
 
 Create a draft sequence
 
@@ -391,7 +391,7 @@ Create a draft sequence
 
 ### sequences_duplicate
 
-`POST /api/v1/sequences/{sequenceId}/duplicate`. Scope: `sequences:write`.
+`POST /api/v1/sequences/{sequenceId}/duplicate`. Scope: `sequences:write`. Member: `deny`.
 
 Copy a sequence into a new draft
 
@@ -399,7 +399,7 @@ Copy a sequence into a new draft
 
 ### sequences_enroll
 
-`POST /api/v1/sequences/{sequenceId}/enrollments`. Scope: `sequences:write`.
+`POST /api/v1/sequences/{sequenceId}/enrollments`. Scope: `sequences:write`. Member: `deny`.
 
 Enroll a contact in a sequence
 
@@ -410,7 +410,7 @@ Enroll a contact in a sequence
 
 ### sequences_get
 
-`GET /api/v1/sequences/{sequenceId}`. Scope: `sequences:read`.
+`GET /api/v1/sequences/{sequenceId}`. Scope: `sequences:read`. Member: `open`.
 
 Get one sequence with its steps
 
@@ -418,13 +418,13 @@ Get one sequence with its steps
 
 ### sequences_get_condition_vocabulary
 
-`GET /api/v1/sequences/condition-vocabulary`. Scope: `sequences:read`.
+`GET /api/v1/sequences/condition-vocabulary`. Scope: `sequences:read`. Member: `open`.
 
 List the signals a condition can test
 
 ### sequences_get_enrollment
 
-`GET /api/v1/sequences/{sequenceId}/enrollments/{enrollmentId}`. Scope: `sequences:read`.
+`GET /api/v1/sequences/{sequenceId}/enrollments/{enrollmentId}`. Scope: `sequences:read`. Member: `deny`.
 
 Get the send log of one enrollment
 
@@ -433,13 +433,13 @@ Get the send log of one enrollment
 
 ### sequences_list
 
-`GET /api/v1/sequences`. Scope: `sequences:read`.
+`GET /api/v1/sequences`. Scope: `sequences:read`. Member: `open`.
 
 List the organization’s sequences
 
 ### sequences_list_enrollments
 
-`GET /api/v1/sequences/{sequenceId}/enrollments`. Scope: `sequences:read`.
+`GET /api/v1/sequences/{sequenceId}/enrollments`. Scope: `sequences:read`. Member: `deny`.
 
 List the contacts enrolled in one sequence
 
@@ -452,19 +452,19 @@ List the contacts enrolled in one sequence
 
 ### sequences_list_triggers
 
-`GET /api/v1/sequences/triggers`. Scope: `sequences:read`.
+`GET /api/v1/sequences/triggers`. Scope: `sequences:read`. Member: `open`.
 
 List the triggers a sequence can start on
 
 ### sequences_list_variables
 
-`GET /api/v1/sequences/variables`. Scope: `sequences:read`.
+`GET /api/v1/sequences/variables`. Scope: `sequences:read`. Member: `open`.
 
 List the variables step copy may use
 
 ### sequences_pause
 
-`POST /api/v1/sequences/{sequenceId}/pause`. Scope: `sequences:write`.
+`POST /api/v1/sequences/{sequenceId}/pause`. Scope: `sequences:write`. Member: `deny`.
 
 Pause a sequence
 
@@ -472,7 +472,7 @@ Pause a sequence
 
 ### sequences_resume
 
-`POST /api/v1/sequences/{sequenceId}/resume`. Scope: `sequences:write`.
+`POST /api/v1/sequences/{sequenceId}/resume`. Scope: `sequences:write`. Member: `deny`.
 
 Resume a paused sequence
 
@@ -480,7 +480,7 @@ Resume a paused sequence
 
 ### sequences_update
 
-`PATCH /api/v1/sequences/{sequenceId}`. Scope: `sequences:write`.
+`PATCH /api/v1/sequences/{sequenceId}`. Scope: `sequences:write`. Member: `deny`.
 
 Change a sequence
 
@@ -525,6 +525,6 @@ Change a sequence
 
 ### territories_list
 
-`GET /api/v1/territories`. Scope: `appointments:read`.
+`GET /api/v1/territories`. Scope: `appointments:read`. Member: `deny`.
 
 List the service territories and their postal codes

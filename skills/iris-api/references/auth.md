@@ -31,6 +31,8 @@ parameter, no cookie, no body field.
   unknown or revoked. All five cases give the same answer on purpose. Ask the user for a new key.
 - **403** `insufficient_scope`: the key is live but lacks the scope named in `required`. The
   user adds the scope to a new key under Organization > API keys.
+- **403** `insufficient_role`: the person behind the credential is a MEMBER, and members cannot
+  call this operation. A new scope does not help. An owner or admin must do it.
 
 Call `me_get` to see the organization, the key's scopes and the full scope catalog.
 
@@ -103,3 +105,8 @@ connection. It stops working when that admin is demoted to member or leaves the 
 the client must then connect again through another owner or admin (IRIS-4005). Claude Code and Codex can use OAuth too: add the server with no header
 and they start the same flow. An OAuth token answers `me_get` with `api_key: null` and an
 `oauth_client` that names the client and its scopes.
+
+An OAuth token acts for the person who approved it, with that person's current role. `me_get`
+shows them as `principal`: `user_id`, `role` and `location_ids`. Iris reads the role on every
+request. A MEMBER cannot call an operation whose member access is `deny` in
+`references/endpoints.md`, and the MCP tool list hides those tools from a MEMBER.

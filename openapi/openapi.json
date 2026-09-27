@@ -41,7 +41,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `contacts:write` scope; `required` names it",
+            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -70,7 +70,8 @@
         "tags": [
           "Contacts",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       },
       "get": {
         "description": "Finds contacts in the key’s organization. Send at most one filter:\n\n- `q`: free text, matched against name, email and phone, without regard to case.\n- `email`: the exact email, without regard to case. Returns at most one contact.\n- `phone`: the exact phone number. Returns at most one contact.\n\nWith no filter, lists every contact, most recently seen first.",
@@ -184,7 +185,8 @@
         "tags": [
           "Contacts",
           "Public API"
-        ]
+        ],
+        "x-member-access": "scoped"
       }
     },
     "/api/v1/contacts/{contactId}": {
@@ -263,7 +265,8 @@
         "tags": [
           "Contacts",
           "Public API"
-        ]
+        ],
+        "x-member-access": "scoped"
       },
       "patch": {
         "description": "Changes only the fields sent. `stage_id` must be a stage of the organization’s pipeline,\nand every `custom_fields` key must be a custom field the organization defines: an unknown\none is a 400 that names it, and nothing is written. Returns the contact as `contacts_get` does.",
@@ -314,7 +317,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `contacts:write` scope; `required` names it",
+            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -356,7 +359,8 @@
         "tags": [
           "Contacts",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/contacts/{contactId}/notes": {
@@ -406,7 +410,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `contacts:write` scope; `required` names it",
+            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -445,7 +449,8 @@
         "tags": [
           "Contacts",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/contacts/{contactId}/tags": {
@@ -495,7 +500,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `contacts:write` scope; `required` names it",
+            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -537,7 +542,8 @@
         "tags": [
           "Contacts",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/contacts/{contactId}/tags/{tag}": {
@@ -587,7 +593,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `contacts:write` scope; `required` names it",
+            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -626,7 +632,8 @@
         "tags": [
           "Contacts",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/contacts/{contactId}/suppress": {
@@ -679,7 +686,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `contacts:write` scope; `required` names it",
+            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -718,7 +725,8 @@
         "tags": [
           "Contacts",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/sequences": {
@@ -780,7 +788,8 @@
         "tags": [
           "Sequences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "open"
       },
       "post": {
         "description": "Creates an inactive draft from a name, a trigger and ordered steps. Nothing sends until\n`sequences_activate`. Sending `is_active: true` is a 400. Take triggers, variables and\nconditions from the discovery operations.",
@@ -821,7 +830,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:write` scope; `required` names it",
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -860,7 +869,8 @@
         "tags": [
           "Sequences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/sequences/{sequenceId}/enrollments": {
@@ -958,7 +968,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:read` scope; `required` names it",
+            "description": "The key does not carry the `sequences:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -997,7 +1007,8 @@
         "tags": [
           "Sequences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       },
       "post": {
         "description": "Send `contact_id` or `email`. Safe to retry: a contact already active or paused in the\nsequence answers `status: skipped`, `reason: already_enrolled` with that enrollment, and\nnothing changes. An inactive sequence answers 409 `sequence_inactive`, a paused one 409\n`sequence_paused`. A broadcast takes contacts from its audience, not from this call.",
@@ -1048,7 +1059,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:write` scope; `required` names it",
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -1097,7 +1108,8 @@
         "tags": [
           "Sequences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/contacts/{contactId}/enrollments": {
@@ -1160,7 +1172,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:read` scope; `required` names it",
+            "description": "The key does not carry the `sequences:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -1199,12 +1211,13 @@
         "tags": [
           "Sequences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/me": {
       "get": {
-        "description": "Returns the organization the credential belongs to, the key itself (or, for an OAuth access token, the connected client and its granted scopes), every scope a credential can carry, and the rate limit. Needs no scope: any live key or token may call it.",
+        "description": "Returns the organization the credential belongs to, the key itself (or, for an OAuth access token, the connected client, its granted scopes and the person who granted it with their current role and locations), every scope a credential can carry, and the rate limit. Needs no scope: any live key or token may call it.",
         "operationId": "me_get",
         "parameters": [],
         "responses": {
@@ -1248,7 +1261,8 @@
         "tags": [
           "Me",
           "Public API"
-        ]
+        ],
+        "x-member-access": "open"
       }
     },
     "/api/v1/appointments": {
@@ -1374,7 +1388,8 @@
         "tags": [
           "Appointments",
           "Public API"
-        ]
+        ],
+        "x-member-access": "scoped"
       },
       "post": {
         "description": "Two shapes. Send exactly one of `location_id` and `calendar_id`.\n\n- `location_id` (from `locations_list`), with `offering_id`, `team_member_id` and\n  `service_address` as the location needs. A staffed location books this way. Leave out\n  `team_member_id` to book the first team member who is free. Find times with\n  `appointments_availability` first.\n- `calendar_id` (from `calendars_list`) books a location that is not staffed on its Google calendar.\n\nWith either shape, the contact’s name, phone and email become the attendee, so reminders reach\nthem. The booking is made in the name of the user who created the API key.\nRetry with the same `idempotency_key` to get the first booking back rather than a second one.\n\nA refused `location_id` booking answers 409 with `error` set to one of these codes and a `message`:\n\n- `offering_required`: the location sells services. Choose one. The body carries `booking_options`.\n- `offering_not_offered_here`: the service is not offered here, or nobody here does it.\n- `team_member_not_eligible`: the team member does not work here, does not do this service, or does not cover the address.\n- `no_team_member_available`: nobody who can do it is free then.\n- `slot_taken`: the time is booked.\n- `outside_hours`: the time is outside booking hours, or outside the team member’s schedule.\n- `duration_mismatch`: the end time does not match the service’s `duration_minutes`.\n- `address_out_of_area`: no territory of this location covers the postal code.\n- `location_changed`: the location changed while booking. Check availability again.\n\nA `calendar_id` slot that is not available is a 409 with no code.\nThe same `idempotency_key` with other details is a 409 too, with no code.",
@@ -1460,7 +1475,8 @@
         "tags": [
           "Appointments",
           "Public API"
-        ]
+        ],
+        "x-member-access": "scoped"
       }
     },
     "/api/v1/appointments/availability": {
@@ -1607,7 +1623,8 @@
         "tags": [
           "Appointments",
           "Public API"
-        ]
+        ],
+        "x-member-access": "scoped"
       }
     },
     "/api/v1/appointments/{appointmentId}": {
@@ -1686,7 +1703,8 @@
         "tags": [
           "Appointments",
           "Public API"
-        ]
+        ],
+        "x-member-access": "scoped"
       }
     },
     "/api/v1/appointments/{appointmentId}/reschedule": {
@@ -1781,7 +1799,8 @@
         "tags": [
           "Appointments",
           "Public API"
-        ]
+        ],
+        "x-member-access": "scoped"
       }
     },
     "/api/v1/appointments/{appointmentId}/cancel": {
@@ -1863,7 +1882,8 @@
         "tags": [
           "Appointments",
           "Public API"
-        ]
+        ],
+        "x-member-access": "scoped"
       }
     },
     "/api/v1/calendars": {
@@ -1925,7 +1945,8 @@
         "tags": [
           "Calendars",
           "Public API"
-        ]
+        ],
+        "x-member-access": "scoped"
       }
     },
     "/api/v1/locations": {
@@ -1987,7 +2008,8 @@
         "tags": [
           "Locations",
           "Public API"
-        ]
+        ],
+        "x-member-access": "scoped"
       }
     },
     "/api/v1/locations/{locationId}/booking-options": {
@@ -2066,7 +2088,8 @@
         "tags": [
           "Locations",
           "Public API"
-        ]
+        ],
+        "x-member-access": "scoped"
       }
     },
     "/api/v1/territories": {
@@ -2099,7 +2122,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `appointments:read` scope; `required` names it",
+            "description": "The key does not carry the `appointments:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -2128,7 +2151,8 @@
         "tags": [
           "Territories",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/conversations": {
@@ -2231,7 +2255,8 @@
         "tags": [
           "Conversations",
           "Public API"
-        ]
+        ],
+        "x-member-access": "scoped"
       }
     },
     "/api/v1/conversations/{conversationId}": {
@@ -2310,7 +2335,8 @@
         "tags": [
           "Conversations",
           "Public API"
-        ]
+        ],
+        "x-member-access": "scoped"
       }
     },
     "/api/v1/conversations/sms": {
@@ -2353,7 +2379,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `conversations:write` scope; `required` names it",
+            "description": "The key does not carry the `conversations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -2398,7 +2424,8 @@
         "tags": [
           "Conversations",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/contacts/{contactId}/sms-consent": {
@@ -2451,7 +2478,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `contacts:write` scope; `required` names it",
+            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -2493,7 +2520,8 @@
         "tags": [
           "Conversations",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/calls": {
@@ -2616,7 +2644,8 @@
         "tags": [
           "Calls",
           "Public API"
-        ]
+        ],
+        "x-member-access": "scoped"
       }
     },
     "/api/v1/calls/{callId}": {
@@ -2698,7 +2727,8 @@
         "tags": [
           "Calls",
           "Public API"
-        ]
+        ],
+        "x-member-access": "scoped"
       }
     },
     "/api/v1/audiences": {
@@ -2760,7 +2790,8 @@
         "tags": [
           "Audiences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "open"
       }
     },
     "/api/v1/audiences/{audienceId}/members": {
@@ -2813,7 +2844,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `audiences:write` scope; `required` names it",
+            "description": "The key does not carry the `audiences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -2852,7 +2883,8 @@
         "tags": [
           "Audiences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/audiences/{audienceId}/members/{contactId}": {
@@ -2904,7 +2936,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `audiences:write` scope; `required` names it",
+            "description": "The key does not carry the `audiences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -2943,7 +2975,8 @@
         "tags": [
           "Audiences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/sequences/capabilities": {
@@ -3002,7 +3035,8 @@
         "tags": [
           "Sequences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "open"
       }
     },
     "/api/v1/sequences/triggers": {
@@ -3064,7 +3098,8 @@
         "tags": [
           "Sequences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "open"
       }
     },
     "/api/v1/sequences/variables": {
@@ -3123,7 +3158,8 @@
         "tags": [
           "Sequences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "open"
       }
     },
     "/api/v1/sequences/condition-vocabulary": {
@@ -3185,7 +3221,8 @@
         "tags": [
           "Sequences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "open"
       }
     },
     "/api/v1/sequences/{sequenceId}": {
@@ -3264,7 +3301,8 @@
         "tags": [
           "Sequences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "open"
       },
       "patch": {
         "description": "Changes only the fields sent. `steps`, `edges` and `exit_conditions` each replace the whole\nlist: read the sequence with `sequences_get`, edit it, and send the full list back. Keep each\n`step_key`. `is_active: false` turns the sequence off and cancels every enrollment. To hold\ncontacts in place, use `sequences_pause` instead.",
@@ -3315,7 +3353,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:write` scope; `required` names it",
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -3354,7 +3392,8 @@
         "tags": [
           "Sequences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/sequences/{sequenceId}/activate": {
@@ -3404,7 +3443,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:write` scope; `required` names it",
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -3443,7 +3482,8 @@
         "tags": [
           "Sequences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/sequences/{sequenceId}/pause": {
@@ -3486,7 +3526,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:write` scope; `required` names it",
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -3525,7 +3565,8 @@
         "tags": [
           "Sequences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/sequences/{sequenceId}/resume": {
@@ -3565,7 +3606,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:write` scope; `required` names it",
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -3604,7 +3645,8 @@
         "tags": [
           "Sequences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/sequences/{sequenceId}/duplicate": {
@@ -3644,7 +3686,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:write` scope; `required` names it",
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -3683,7 +3725,8 @@
         "tags": [
           "Sequences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/sequences/{sequenceId}/enrollments/{enrollmentId}": {
@@ -3732,7 +3775,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:read` scope; `required` names it",
+            "description": "The key does not carry the `sequences:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -3771,7 +3814,8 @@
         "tags": [
           "Sequences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/sequences/{sequenceId}/enrollments/{enrollmentId}/cancel": {
@@ -3820,7 +3864,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:write` scope; `required` names it",
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -3859,7 +3903,8 @@
         "tags": [
           "Sequences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/sequences/{sequenceId}/analytics": {
@@ -3899,7 +3944,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:read` scope; `required` names it",
+            "description": "The key does not carry the `sequences:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -3938,12 +3983,13 @@
         "tags": [
           "Sequences",
           "Public API"
-        ]
+        ],
+        "x-member-access": "deny"
       }
     },
     "/api/v1/mcp": {
       "post": {
-        "description": "The Iris MCP server, over stateless Streamable HTTP. Point an MCP client at this URL with\nthe key as a bearer token. Every other operation in this document is a tool named by its\noperationId, and `tools/list` shows only the tools the key’s scopes allow. A tool call runs\nthe REST operation, so it answers what the REST call answers. A failing call has\n`isError: true` and the REST error body as its text. Send\n`Accept: application/json, text/event-stream`. Answers 404 while the organization does\nnot have the MCP server turned on.",
+        "description": "The Iris MCP server, over stateless Streamable HTTP. Point an MCP client at this URL with\nthe key as a bearer token. Every other operation in this document is a tool named by its\noperationId, and `tools/list` shows only the tools the key’s scopes allow (and, for a\nmember’s credential, only the tools a member may call). A tool call runs\nthe REST operation, so it answers what the REST call answers. A failing call has\n`isError: true` and the REST error body as its text. Send\n`Accept: application/json, text/event-stream`. Answers 404 while the organization does\nnot have the MCP server turned on.",
         "operationId": "mcp_request",
         "parameters": [],
         "responses": {
@@ -3990,13 +4036,14 @@
         "tags": [
           "Public API",
           "MCP"
-        ]
+        ],
+        "x-member-access": "open"
       }
     }
   },
   "info": {
     "title": "Iris Public API",
-    "description": "The public, versioned API of Iris. Authenticate with an organization API key:\n`Authorization: Bearer iris_sk_…`. Keys are minted in the dashboard under\nOrganization → API keys and carry scopes; a key without a route’s scope gets a 403\nwith `{ \"error\": \"insufficient_scope\" }`.\n\nAgent clients that cannot hold a key (Claude Desktop, claude.ai, ChatGPT) use OAuth 2.1 with\nPKCE instead. They discover the authorization server from `/.well-known/oauth-protected-resource`,\nand send the access token the same way. Its scopes are the scopes above.\n\nEvery path is versioned. `v1` only ever grows: a breaking change ships as `v2`, and the\nold version keeps serving with `Deprecation` and `Sunset` headers until it is retired.",
+    "description": "The public, versioned API of Iris. Authenticate with an organization API key:\n`Authorization: Bearer iris_sk_…`. Keys are minted in the dashboard under\nOrganization → API keys and carry scopes; a key without a route’s scope gets a 403\nwith `{ \"error\": \"insufficient_scope\" }`.\n\nAgent clients that cannot hold a key (Claude Desktop, claude.ai, ChatGPT) use OAuth 2.1 with\nPKCE instead. They discover the authorization server from `/.well-known/oauth-protected-resource`,\nand send the access token the same way. Its scopes are the scopes above.\n\nAn OAuth token acts for the person who granted it, and that person’s current role caps it.\nEach operation’s `x-member-access` says what a MEMBER’s credential may do: `open` (call it),\n`scoped` (call it, limited to the member’s locations) or `deny` (403 with\n`{ \"error\": \"insufficient_role\" }`). An OWNER, an ADMIN and an organization key are not\ncapped. `me_get` shows the person, role and locations behind the credential.\n\nEvery path is versioned. `v1` only ever grows: a breaking change ships as `v2`, and the\nold version keeps serving with `Deprecation` and `Sunset` headers until it is retired.",
     "version": "1.0.0",
     "contact": {}
   },
@@ -4206,7 +4253,7 @@
           },
           "error": {
             "type": "string",
-            "description": "Machine-readable error code. `insufficient_scope` on a 403.",
+            "description": "Machine-readable error code. `insufficient_scope` or `insufficient_role` on a 403.",
             "example": "Unauthorized"
           },
           "required": {
@@ -4926,6 +4973,38 @@
           "scopes"
         ]
       },
+      "MePrincipalDto": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The person the credential acts for"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "OWNER",
+              "ADMIN",
+              "MEMBER"
+            ],
+            "description": "Their role in the organization now. A MEMBER cannot call an operation marked `x-member-access: deny`."
+          },
+          "location_ids": {
+            "description": "The locations they reach: their own for a MEMBER, every location for an OWNER or ADMIN",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "user_id",
+          "role",
+          "location_ids"
+        ]
+      },
       "MeScopeDto": {
         "type": "object",
         "properties": {
@@ -5005,6 +5084,14 @@
             "allOf": [
               {
                 "$ref": "#/components/schemas/MeOauthClientDto"
+              }
+            ]
+          },
+          "principal": {
+            "description": "The person behind the credential: the user who granted an OAuth access token. Absent for an organization key, which acts for the organization.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MePrincipalDto"
               }
             ]
           },
