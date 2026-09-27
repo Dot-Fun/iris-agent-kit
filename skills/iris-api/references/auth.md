@@ -11,6 +11,11 @@
 A key looks like `iris_sk_` followed by 32 characters. It belongs to one organization and acts on
 the whole organization. Revoke a key in the same screen. A revoked key gets 401 at once.
 
+A key does not stop when the person who created it loses admin power. When an owner demotes that
+admin to member, deactivates them or removes them, Iris offers to revoke the keys they created, and
+revokes them unless the owner unticks the box. If the agent gets 401 after a team change, ask the
+user for a new key.
+
 ## Send the key
 
 ```
