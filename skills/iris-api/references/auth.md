@@ -32,7 +32,7 @@ parameter, no cookie, no body field.
 - **403** `insufficient_scope`: the key is live but lacks the scope named in `required`. The
   user adds the scope to a new key under Organization > API keys.
 - **403** `insufficient_role`: the person behind the credential is a MEMBER, and members cannot
-  call this operation. A new scope does not help. An owner or admin must do it.
+  call this operation or act for another team member. A new scope does not help. An owner or admin must do it.
 
 Call `me_get` to see the organization, the key's scopes and the full scope catalog.
 

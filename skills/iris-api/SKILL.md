@@ -120,7 +120,7 @@ Branch on `statusCode` and `error`. Never branch on the text of `message`.
 | 400 | `sequence_activation_blocked` | Show the user `blockers`. Fix them or stop. |
 | 401 | | The key is missing, wrong or revoked. Stop and ask for a new key. |
 | 403 | `insufficient_scope` | The key lacks the scope in `required`. Tell the user to add it under Organization > API keys. |
-| 403 | `insufficient_role` | The person behind the credential is a MEMBER, and members cannot call this operation. Do not retry. Ask an owner or admin. |
+| 403 | `insufficient_role` | The person behind the credential is a MEMBER, and members cannot call this operation or act for another team member. Do not retry. Ask an owner or admin. |
 | 404 | `not_found` | The id does not exist in this organization. Search again. Do not guess ids. |
 | 409 | `sequence_inactive` | The sequence is off. Do not enroll. Ask the user. |
 | 409 | `sequence_paused` | The sequence is paused. Resume it first, or wait. |
@@ -163,6 +163,13 @@ admin's credential reach the whole organization. For a MEMBER, each operation in
 `references/endpoints.md` names its member access: `open` (allowed), `scoped` (allowed, limited
 to the member's locations) or `deny` (403 `insufficient_role`). Over MCP, a MEMBER does not see
 the `deny` tools.
+
+On a `scoped` operation a MEMBER's lists hold only its own locations' rows, and an id at another
+location answers 404, as an id that does not exist does. Do not retry it. A MEMBER can book,
+reschedule and cancel appointments at its own locations. At a staffed location it books itself
+only and changes only its own appointments: another team member answers 403 `insufficient_role`. Leave out
+`team_member_id`. `locations_booking_options` shows a MEMBER only itself and the services it
+handles, with every buffer as 0.
 
 ## Operator recipes
 
