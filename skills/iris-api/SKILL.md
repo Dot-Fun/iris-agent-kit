@@ -4,7 +4,7 @@ description: Work an Iris organization through the Iris public API or the Iris M
 required_environment_variables:
   - name: IRIS_API_KEY
     prompt: Iris API key (starts with iris_sk_)
-    help: In the Iris dashboard, open Organization > API keys and create a key with the scopes you need. The key is shown once.
+    help: In the Iris dashboard, open Settings > My agent access and create a personal key with the scopes you need. An owner or admin can create an organization key under Organization > API keys instead. The key is shown once.
 metadata:
   {
     "openclaw": {
@@ -54,8 +54,8 @@ this organization yet. Use REST instead.
 
 Claude Desktop, claude.ai, Cowork and ChatGPT cannot send that header. Add the MCP URL as a
 custom connector with no header and no client id: the client finds the Iris authorization
-server from the 401, registers itself, and opens the Iris consent page, where an owner or admin
-approves the scopes. The steps for each client are in `references/auth.md`. With OAuth, the
+server from the 401, registers itself, and opens the Iris consent page, where the user signs in
+and approves the scopes. Any member can approve for themselves. The steps for each client are in `references/auth.md`. With OAuth, the
 client holds the token and you do not need `IRIS_API_KEY`.
 
 ## Start with whoami
@@ -66,8 +66,9 @@ It returns:
 - `organization`: the `id` and `name` you act on. Tell the user which organization it is.
 - `api_key.scopes`: what this key may do. Do not call an operation whose scope is missing.
   Over OAuth, `api_key` is null and `oauth_client.scopes` holds what the owner granted.
-- `principal`: over OAuth, the person who granted the token, their `role` now and the
-  `location_ids` they reach. A key made for the organization has no `principal`.
+- `principal`: the person behind the credential, their `role` now and the `location_ids` they
+  reach. Over OAuth it is the person who granted the token, and for a personal key its owner. An
+  organization key has no `principal`.
 - `scopes_available`: every scope, with a label, so you can tell the user what to add.
 - `rate_limit`: the request budget.
 
@@ -119,7 +120,7 @@ Branch on `statusCode` and `error`. Never branch on the text of `message`.
 | 400 | (validation) | Read `message`, fix the request, try once more. |
 | 400 | `sequence_activation_blocked` | Show the user `blockers`. Fix them or stop. |
 | 401 | | The key is missing, wrong or revoked. Stop and ask for a new key. |
-| 403 | `insufficient_scope` | The key lacks the scope in `required`. Tell the user to add it under Organization > API keys. |
+| 403 | `insufficient_scope` | The key lacks the scope in `required`. Tell the user to create a key with it under My agent access, or under Organization > API keys for an organization key. |
 | 403 | `insufficient_role` | The person behind the credential is a MEMBER, and members cannot call this operation or act for another team member. Do not retry. Ask an owner or admin. |
 | 404 | `not_found` | The id does not exist in this organization. Search again. Do not guess ids. |
 | 409 | `sequence_inactive` | The sequence is off. Do not enroll. Ask the user. |

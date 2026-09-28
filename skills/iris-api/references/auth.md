@@ -3,18 +3,29 @@
 ## Get a key
 
 1. Sign in to the Iris dashboard at https://iris.dotfun.co.
-2. Open Organization > API keys.
+2. Open Settings > My agent access.
 3. Create a key. Pick only the scopes the agent needs.
 4. Copy the key. Iris shows it once and stores only a hash.
 5. Put it in the `IRIS_API_KEY` environment variable of the agent.
 
-A key looks like `iris_sk_` followed by 32 characters. It belongs to one organization and acts on
-the whole organization. Revoke a key in the same screen. A revoked key gets 401 at once.
+A key looks like `iris_sk_` followed by 32 characters and belongs to one organization. There are
+two kinds:
 
-A key does not stop when the person who created it loses admin power. When an owner demotes that
-admin to member, deactivates them or removes them, Iris offers to revoke the keys they created, and
-revokes them unless the owner unticks the box. If the agent gets 401 after a team change, ask the
-user for a new key.
+- A **personal key** acts for the member who created it, with that member's role and locations
+  now. Any active member creates one under My agent access, and there is no limit on how many.
+  An owner or admin sees every personal key under Organization > API keys and can revoke it
+  there.
+- An **organization key** acts on the whole organization. Only an owner or admin creates one,
+  under Organization > API keys.
+
+Revoke a key in the screen where it was made. A revoked key gets 401 at once.
+
+A personal key follows its owner. After a demotion from admin to member it keeps working with a
+member's access. When the owner is deactivated or removed, it is revoked. An organization key does
+not stop when the person who created it loses admin power. When an owner demotes that admin to
+member, deactivates them or removes them, Iris offers to revoke the organization keys they created,
+and revokes them unless the owner unticks the box. If the agent gets 401 after a team change, ask
+the user for a new key.
 
 ## Send the key
 
@@ -30,7 +41,7 @@ parameter, no cookie, no body field.
 - **401** `Invalid API key`: the header is missing, uses another scheme, or the key is malformed,
   unknown or revoked. All five cases give the same answer on purpose. Ask the user for a new key.
 - **403** `insufficient_scope`: the key is live but lacks the scope named in `required`. The
-  user adds the scope to a new key under Organization > API keys.
+  user creates a new key with the scope under My agent access, or under Organization > API keys.
 - **403** `insufficient_role`: the person behind the credential is a MEMBER, and members cannot
   call this operation or act for another team member. A new scope does not help. An owner or admin must do it.
 
@@ -94,19 +105,21 @@ with OAuth instead (IRIS-3783):
 1. Add `https://api.iris.dotfun.co/api/v1/mcp` as a custom connector. In Claude, open
    Customize > Connectors. In ChatGPT, turn on Developer mode, then add a connector. Leave the
    client id and secret empty: the client registers itself.
-2. The client opens the Iris consent page. An owner or admin signs in and approves the scopes it
-   lists.
+2. The client opens the Iris consent page. The user signs in and approves the scopes it lists.
+   Any active member can approve. A member's client reaches only what that member can do: their
+   locations, and no operation marked `deny`.
 3. The client holds the tokens and refreshes them itself. Nothing goes in an environment
    variable.
 
-An owner or admin sees every connected client under Organization > API keys, with who granted
-it, and Revoke there ends its access at once. Each admin who approves a client gets their own
-connection. It stops working when that admin is demoted to member or leaves the organization, and
-the client must then connect again through another owner or admin (IRIS-4005). Claude Code and Codex can use OAuth too: add the server with no header
+Each person sees the clients they connected under My agent access, and an owner or admin sees
+every connected client under Organization > API keys, with who granted it. Revoke in either place
+ends its access at once. Each person who approves a client gets their own connection. It keeps
+working after a demotion, with the new role's access, and stops when that person is deactivated
+or leaves the organization (IRIS-4138). Claude Code and Codex can use OAuth too: add the server with no header
 and they start the same flow. An OAuth token answers `me_get` with `api_key: null` and an
 `oauth_client` that names the client and its scopes.
 
-An OAuth token acts for the person who approved it, with that person's current role. `me_get`
-shows them as `principal`: `user_id`, `role` and `location_ids`. Iris reads the role on every
-request. A MEMBER cannot call an operation whose member access is `deny` in
+An OAuth token acts for the person who approved it, and a personal key for its owner, with that
+person's current role. `me_get` shows them as `principal`: `user_id`, `role` and
+`location_ids`. Iris reads the role on every request. A MEMBER cannot call an operation whose member access is `deny` in
 `references/endpoints.md`, and the MCP tool list hides those tools from a MEMBER.
