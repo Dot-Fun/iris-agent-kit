@@ -27,6 +27,12 @@ member, deactivates them or removes them, Iris offers to revoke the organization
 and revokes them unless the owner unticks the box. If the agent gets 401 after a team change, ask
 the user for a new key.
 
+An owner or admin can also turn agent access off, for one person or for everyone in a role. An
+owner's access is always on. While it is off, that person's personal keys and OAuth tokens get
+401, and My agent access says so. Nothing is revoked: the same key works again once an owner or
+admin turns access back on. Do not create a new key in that case. Organization keys are not
+affected.
+
 ## Send the key
 
 ```
@@ -39,7 +45,9 @@ parameter, no cookie, no body field.
 ## What the answers mean
 
 - **401** `Invalid API key`: the header is missing, uses another scheme, or the key is malformed,
-  unknown or revoked. All five cases give the same answer on purpose. Ask the user for a new key.
+  unknown or revoked. All five cases give the same answer on purpose. A personal key or OAuth
+  token also gets it while the person's agent access is off. Ask the user to check My agent
+  access, and for a new key only if the page does not say access is off.
 - **403** `insufficient_scope`: the key is live but lacks the scope named in `required`. The
   user creates a new key with the scope under My agent access, or under Organization > API keys.
 - **403** `insufficient_role`: the person behind the credential is a MEMBER, and members cannot

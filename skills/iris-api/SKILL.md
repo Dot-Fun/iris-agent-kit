@@ -72,8 +72,9 @@ It returns:
 - `scopes_available`: every scope, with a label, so you can tell the user what to add.
 - `rate_limit`: the request budget.
 
-If `me_get` returns 401, the key is missing, wrong or revoked. Stop and ask the user for a new
-key. Do not retry.
+If `me_get` returns 401, the key is missing, wrong or revoked, or an owner or admin turned the
+person's agent access off. Stop and ask the user: My agent access says when access is off, and
+then the same key works again once it is back on. Do not retry.
 
 ## The never-write rule
 
@@ -119,7 +120,7 @@ Branch on `statusCode` and `error`. Never branch on the text of `message`.
 |---|---|---|
 | 400 | (validation) | Read `message`, fix the request, try once more. |
 | 400 | `sequence_activation_blocked` | Show the user `blockers`. Fix them or stop. |
-| 401 | | The key is missing, wrong or revoked. Stop and ask for a new key. |
+| 401 | | The key is missing, wrong or revoked, or an owner turned the person's agent access off. Stop and ask the user. |
 | 403 | `insufficient_scope` | The key lacks the scope in `required`. Tell the user to create a key with it under My agent access, or under Organization > API keys for an organization key. |
 | 403 | `insufficient_role` | The person behind the credential is a MEMBER, and members cannot call this operation or act for another team member. Do not retry. Ask an owner or admin. |
 | 404 | `not_found` | The id does not exist in this organization. Search again. Do not guess ids. |
