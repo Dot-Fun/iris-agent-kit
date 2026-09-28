@@ -4443,7 +4443,7 @@
           "phone": {
             "type": "string",
             "description": "E.164, e.g. +14155550100",
-            "pattern": "^\\+\\d{7,15}$"
+            "pattern": "^\\+[1-9]\\d{6,14}$"
           },
           "email": {
             "type": "string",
