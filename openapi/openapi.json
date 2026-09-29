@@ -4986,9 +4986,10 @@
             "enum": [
               "OWNER",
               "ADMIN",
+              "MANAGER",
               "MEMBER"
             ],
-            "description": "Their role in the organization now. A MEMBER cannot call an operation marked `x-member-access: deny`."
+            "description": "Their role in the organization now. A MANAGER or MEMBER cannot call an operation marked `x-member-access: deny`."
           },
           "location_ids": {
             "description": "The locations they reach: their own for a MEMBER, every location for an OWNER or ADMIN",
