@@ -130,5 +130,6 @@ and they start the same flow. An OAuth token answers `me_get` with `api_key: nul
 An OAuth token acts for the person who approved it, and a personal key for its owner, with that
 person's current role. `me_get` shows them as `principal`: `user_id`, `role` and
 `location_ids`. Iris reads the role on every request. A MEMBER cannot call an operation whose member access is `deny` in
-`references/endpoints.md`, and the MCP tool list hides those tools from a MEMBER. A MANAGER has
-no powers yet and gets exactly a MEMBER's access.
+`references/endpoints.md`, and the MCP tool list hides those tools from a MEMBER. A MANAGER gets
+a MEMBER's access, plus the `deny` operations marked `x-manager-power` for a power the manager
+holds, at their locations.

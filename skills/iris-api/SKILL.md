@@ -164,8 +164,10 @@ A credential acts with the role of the person behind it. An organization key and
 admin's credential reach the whole organization. For a MEMBER, each operation in
 `references/endpoints.md` names its member access: `open` (allowed), `scoped` (allowed, limited
 to the member's locations) or `deny` (403 `insufficient_role`). Over MCP, a MEMBER does not see
-the `deny` tools. A MANAGER has no powers yet and gets exactly a MEMBER's access, so every MEMBER
-rule here applies to a MANAGER too.
+the `deny` tools. A MANAGER gets a MEMBER's access, so every MEMBER rule here applies to a MANAGER
+too. An owner or admin may also give a MANAGER powers. A `deny` tool marked `x-manager-power:
+contacts` is open to a MANAGER with the contacts power, at their locations only: a contact
+elsewhere answers 404.
 
 On a `scoped` operation a MEMBER's lists hold only its own locations' rows, and an id at another
 location answers 404, as an id that does not exist does. Do not retry it. A MEMBER can book,

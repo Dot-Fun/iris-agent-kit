@@ -142,7 +142,7 @@ List calls
 
 ### contacts_add_note
 
-`POST /api/v1/contacts/{contactId}/notes`. Scope: `contacts:write`. Member: `deny`.
+`POST /api/v1/contacts/{contactId}/notes`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`.
 
 Add a note to a contact
 
@@ -151,7 +151,7 @@ Add a note to a contact
 
 ### contacts_add_tag
 
-`POST /api/v1/contacts/{contactId}/tags`. Scope: `contacts:write`. Member: `deny`.
+`POST /api/v1/contacts/{contactId}/tags`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`.
 
 Add a tag to a contact
 
@@ -168,7 +168,7 @@ Get one contact
 
 ### contacts_remove_tag
 
-`DELETE /api/v1/contacts/{contactId}/tags/{tag}`. Scope: `contacts:write`. Member: `deny`.
+`DELETE /api/v1/contacts/{contactId}/tags/{tag}`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`.
 
 Remove a tag from a contact
 
@@ -189,7 +189,7 @@ Search contacts
 
 ### contacts_suppress
 
-`POST /api/v1/contacts/{contactId}/suppress`. Scope: `contacts:write`. Member: `deny`.
+`POST /api/v1/contacts/{contactId}/suppress`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`.
 
 Suppress a contact on email or SMS
 
@@ -199,7 +199,7 @@ Suppress a contact on email or SMS
 
 ### contacts_update
 
-`PATCH /api/v1/contacts/{contactId}`. Scope: `contacts:write`. Member: `deny`.
+`PATCH /api/v1/contacts/{contactId}`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`.
 
 Update a contact
 
@@ -235,7 +235,7 @@ Create or update a contact by email
 
 ### contacts_record_sms_consent
 
-`POST /api/v1/contacts/{contactId}/sms-consent`. Scope: `contacts:write`. Member: `deny`.
+`POST /api/v1/contacts/{contactId}/sms-consent`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`.
 
 Record a contact’s SMS opt-in or opt-out
 
@@ -264,7 +264,7 @@ List email and SMS conversations
 
 ### conversations_send_sms
 
-`POST /api/v1/conversations/sms`. Scope: `conversations:write`. Member: `deny`.
+`POST /api/v1/conversations/sms`. Scope: `conversations:write`. Member: `deny`. Manager power: `contacts`.
 
 Send an SMS to a contact who has consented
 

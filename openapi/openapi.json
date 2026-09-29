@@ -317,7 +317,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `contacts` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -360,6 +360,7 @@
           "Contacts",
           "Public API"
         ],
+        "x-manager-power": "contacts",
         "x-member-access": "deny"
       }
     },
@@ -410,7 +411,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `contacts` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -450,6 +451,7 @@
           "Contacts",
           "Public API"
         ],
+        "x-manager-power": "contacts",
         "x-member-access": "deny"
       }
     },
@@ -500,7 +502,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `contacts` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -543,6 +545,7 @@
           "Contacts",
           "Public API"
         ],
+        "x-manager-power": "contacts",
         "x-member-access": "deny"
       }
     },
@@ -593,7 +596,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `contacts` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -633,6 +636,7 @@
           "Contacts",
           "Public API"
         ],
+        "x-manager-power": "contacts",
         "x-member-access": "deny"
       }
     },
@@ -686,7 +690,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `contacts` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -726,6 +730,7 @@
           "Contacts",
           "Public API"
         ],
+        "x-manager-power": "contacts",
         "x-member-access": "deny"
       }
     },
@@ -2379,7 +2384,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `conversations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `conversations:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `contacts` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -2402,7 +2407,7 @@
             "description": "`sms_not_permitted`: the recipient opted out or has not consented"
           },
           "422": {
-            "description": "No default SMS number, the daily cap is reached, or the provider refused the send"
+            "description": "No default SMS number, the daily cap is reached, the provider refused the send, or (for a manager) the default number is not at their locations"
           },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
@@ -2425,6 +2430,7 @@
           "Conversations",
           "Public API"
         ],
+        "x-manager-power": "contacts",
         "x-member-access": "deny"
       }
     },
@@ -2478,7 +2484,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `contacts` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -2521,6 +2527,7 @@
           "Conversations",
           "Public API"
         ],
+        "x-manager-power": "contacts",
         "x-member-access": "deny"
       }
     },
