@@ -132,4 +132,5 @@ person's current role. `me_get` shows them as `principal`: `user_id`, `role` and
 `location_ids`. Iris reads the role on every request. A MEMBER cannot call an operation whose member access is `deny` in
 `references/endpoints.md`, and the MCP tool list hides those tools from a MEMBER. A MANAGER gets
 a MEMBER's access, plus the `deny` operations marked `x-manager-power` for a power the manager
-holds, at their locations.
+holds, at their locations. With the `sequences` power that means the sequences bound to their
+locations only, never an organization-wide one.

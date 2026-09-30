@@ -126,6 +126,7 @@ Branch on `statusCode` and `error`. Never branch on the text of `message`.
 | 404 | `not_found` | The id does not exist in this organization. Search again. Do not guess ids. |
 | 409 | `sequence_inactive` | The sequence is off. Do not enroll. Ask the user. |
 | 409 | `sequence_paused` | The sequence is paused. Resume it first, or wait. |
+| 409 | `contact_not_at_location` | The sequence runs for one location and the contact is not there. Do not retry. Tell the user. |
 | 409 | `sms_not_permitted` | The contact has not consented or is suppressed. Do not send. |
 | 429 | | Too many requests. Wait 60 seconds, then retry. |
 | 5xx | | Retry once after a few seconds. Then stop and report. |
@@ -169,6 +170,12 @@ too. An owner or admin may also give a MANAGER powers. A `deny` tool marked `x-m
 contacts` is open to a MANAGER with the contacts power, at their locations only: a contact
 elsewhere answers 404.
 
+A sequence may run for one location (`location_id`), or for the whole organization (null). A
+`deny` tool marked `x-manager-power: sequences` is open to a MANAGER with the sequences power for
+the sequences of their locations. Such a manager must send one of their `location_id`s to
+`sequences_create`. A manager's write to an organization-wide sequence answers 403, and another
+location's sequence answers 404.
+
 On a `scoped` operation a MEMBER's lists hold only its own locations' rows, and an id at another
 location answers 404, as an id that does not exist does. Do not retry it. A MEMBER can book,
 reschedule and cancel appointments at its own locations. At a staffed location it books itself
@@ -211,7 +218,7 @@ To go the other way (who is in one sequence), call `sequences_list` to find the 
 5. Read `status` in the answer:
    - `enrolled`: done. Report the enrollment.
    - `skipped` with `reason: already_enrolled`: the contact was already in. Nothing changed.
-6. On 409 `sequence_inactive` or `sequence_paused`, stop and tell the user.
+6. On 409 `sequence_inactive`, `sequence_paused` or `contact_not_at_location`, stop and tell the user.
 
 `sequences_enroll` is safe to retry: a second call answers `skipped`, not a second enrollment.
 

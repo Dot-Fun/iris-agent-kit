@@ -736,7 +736,7 @@
     },
     "/api/v1/sequences": {
       "get": {
-        "description": "Every sequence the API key’s organization owns, newest first.",
+        "description": "Every sequence the API key’s organization owns, newest first. A manager or member sees organization-wide sequences and those of their locations.",
         "operationId": "sequences_list",
         "parameters": [],
         "responses": {
@@ -835,7 +835,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -875,6 +875,7 @@
           "Sequences",
           "Public API"
         ],
+        "x-manager-power": "sequences",
         "x-member-access": "deny"
       }
     },
@@ -973,7 +974,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `sequences:read` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -1013,10 +1014,11 @@
           "Sequences",
           "Public API"
         ],
+        "x-manager-power": "sequences",
         "x-member-access": "deny"
       },
       "post": {
-        "description": "Send `contact_id` or `email`. Safe to retry: a contact already active or paused in the\nsequence answers `status: skipped`, `reason: already_enrolled` with that enrollment, and\nnothing changes. An inactive sequence answers 409 `sequence_inactive`, a paused one 409\n`sequence_paused`. A broadcast takes contacts from its audience, not from this call.",
+        "description": "Send `contact_id` or `email`. Safe to retry: a contact already active or paused in the\nsequence answers `status: skipped`, `reason: already_enrolled` with that enrollment, and\nnothing changes. An inactive sequence answers 409 `sequence_inactive`, a paused one 409\n`sequence_paused`. A sequence bound to a location enrolls only contacts linked to that\nlocation, and answers 409 `contact_not_at_location` for any other. A broadcast takes\ncontacts from its audience, not from this call.",
         "operationId": "sequences_enroll",
         "parameters": [
           {
@@ -1064,7 +1066,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -1084,7 +1086,7 @@
             }
           },
           "409": {
-            "description": "`sequence_inactive` or `sequence_paused`",
+            "description": "`sequence_inactive`, `sequence_paused` or `contact_not_at_location`",
             "content": {
               "application/json": {
                 "schema": {
@@ -1114,6 +1116,7 @@
           "Sequences",
           "Public API"
         ],
+        "x-manager-power": "sequences",
         "x-member-access": "deny"
       }
     },
@@ -1177,7 +1180,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `sequences:read` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -1217,6 +1220,7 @@
           "Sequences",
           "Public API"
         ],
+        "x-manager-power": "sequences",
         "x-member-access": "deny"
       }
     },
@@ -3360,7 +3364,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -3400,6 +3404,7 @@
           "Sequences",
           "Public API"
         ],
+        "x-manager-power": "sequences",
         "x-member-access": "deny"
       }
     },
@@ -3450,7 +3455,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -3490,6 +3495,7 @@
           "Sequences",
           "Public API"
         ],
+        "x-manager-power": "sequences",
         "x-member-access": "deny"
       }
     },
@@ -3533,7 +3539,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -3573,6 +3579,7 @@
           "Sequences",
           "Public API"
         ],
+        "x-manager-power": "sequences",
         "x-member-access": "deny"
       }
     },
@@ -3613,7 +3620,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -3653,6 +3660,7 @@
           "Sequences",
           "Public API"
         ],
+        "x-manager-power": "sequences",
         "x-member-access": "deny"
       }
     },
@@ -3693,7 +3701,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -3733,6 +3741,7 @@
           "Sequences",
           "Public API"
         ],
+        "x-manager-power": "sequences",
         "x-member-access": "deny"
       }
     },
@@ -3782,7 +3791,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `sequences:read` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -3822,6 +3831,7 @@
           "Sequences",
           "Public API"
         ],
+        "x-manager-power": "sequences",
         "x-member-access": "deny"
       }
     },
@@ -3871,7 +3881,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -3911,6 +3921,7 @@
           "Sequences",
           "Public API"
         ],
+        "x-manager-power": "sequences",
         "x-member-access": "deny"
       }
     },
@@ -3951,7 +3962,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `sequences:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "description": "The key does not carry the `sequences:read` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -3991,6 +4002,7 @@
           "Sequences",
           "Public API"
         ],
+        "x-manager-power": "sequences",
         "x-member-access": "deny"
       }
     },
@@ -4617,6 +4629,12 @@
             ],
             "description": "'active' while the sequence enrolls and sends; 'paused' while it holds every enrollment in place; 'inactive' while it is off"
           },
+          "location_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The location the sequence runs for; null is organization-wide (IRIS-4185)"
+          },
           "created_at": {
             "type": "string",
             "description": "When the sequence was created (ISO 8601)"
@@ -4627,6 +4645,7 @@
           "name",
           "kind",
           "status",
+          "location_id",
           "created_at"
         ]
       },
@@ -6638,6 +6657,12 @@
             "type": "string",
             "nullable": true
           },
+          "location_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The location the sequence runs for; null is organization-wide"
+          },
           "send_window": {
             "nullable": true,
             "type": "object",
@@ -6699,6 +6724,7 @@
           "trigger_type",
           "trigger_config",
           "triggers",
+          "location_id",
           "is_system_managed",
           "steps",
           "edges",
@@ -6919,6 +6945,12 @@
             "format": "uuid",
             "description": "A saved send schedule. Null uses the organization default."
           },
+          "location_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The location the sequence runs for: it enrolls only contacts at that location. Null or omitted is organization-wide, which only an owner or admin may set. A manager must name one of their locations. On an update, a move is refused while any enrollment, live or finished, holds a contact who is not at the new location."
+          },
           "is_active": {
             "type": "boolean",
             "enum": [
@@ -7010,6 +7042,12 @@
             "nullable": true,
             "format": "uuid",
             "description": "A saved send schedule. Null uses the organization default."
+          },
+          "location_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The location the sequence runs for: it enrolls only contacts at that location. Null or omitted is organization-wide, which only an owner or admin may set. A manager must name one of their locations. On an update, a move is refused while any enrollment, live or finished, holds a contact who is not at the new location."
           },
           "is_active": {
             "type": "boolean",

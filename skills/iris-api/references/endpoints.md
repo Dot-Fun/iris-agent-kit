@@ -308,7 +308,7 @@ Describe the calling API key or connected client
 
 ### contacts_list_enrollments
 
-`GET /api/v1/contacts/{contactId}/enrollments`. Scope: `sequences:read`. Member: `deny`.
+`GET /api/v1/contacts/{contactId}/enrollments`. Scope: `sequences:read`. Member: `deny`. Manager power: `sequences`.
 
 List one contact’s enrollments across every sequence
 
@@ -318,7 +318,7 @@ List one contact’s enrollments across every sequence
 
 ### sequences_activate
 
-`POST /api/v1/sequences/{sequenceId}/activate`. Scope: `sequences:write`. Member: `deny`.
+`POST /api/v1/sequences/{sequenceId}/activate`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
 
 Turn a sequence on
 
@@ -326,7 +326,7 @@ Turn a sequence on
 
 ### sequences_analytics
 
-`GET /api/v1/sequences/{sequenceId}/analytics`. Scope: `sequences:read`. Member: `deny`.
+`GET /api/v1/sequences/{sequenceId}/analytics`. Scope: `sequences:read`. Member: `deny`. Manager power: `sequences`.
 
 Get the send totals of a sequence
 
@@ -334,7 +334,7 @@ Get the send totals of a sequence
 
 ### sequences_cancel_enrollment
 
-`POST /api/v1/sequences/{sequenceId}/enrollments/{enrollmentId}/cancel`. Scope: `sequences:write`. Member: `deny`.
+`POST /api/v1/sequences/{sequenceId}/enrollments/{enrollmentId}/cancel`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
 
 Remove a contact from a sequence
 
@@ -349,7 +349,7 @@ What sequence authoring this server allows
 
 ### sequences_create
 
-`POST /api/v1/sequences`. Scope: `sequences:write`. Member: `deny`.
+`POST /api/v1/sequences`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
 
 Create a draft sequence
 
@@ -363,6 +363,7 @@ Create a draft sequence
 - `kind` (body, string, one of `automation`, `broadcast`): `automation` runs off a trigger. `broadcast` sends to an audience.
 - `audience_id` (body, string uuid): For a broadcast: its audience
 - `send_schedule_id` (body, string uuid): A saved send schedule. Null uses the organization default.
+- `location_id` (body, string uuid): The location the sequence runs for: it enrolls only contacts at that location. Null or omitted is organization-wide, which only an owner or admin may set. A manager must name one of their locations. On an update, a move is refused while any enrollment, live or finished, holds a contact who is not at the new location.
 - `is_active` (body, boolean, one of `false`): Only `false`, and `true` is a 400. A new sequence is always an inactive draft. On an update, `false` turns the sequence off and cancels every enrollment. Turn a sequence on with `sequences_activate`, and hold contacts in place with `sequences_pause`.
 - `steps` (body, array of SequenceStepInputDto, required): The ordered steps. On an update, replaces them all.
   - `step_index` (body, number, required): Zero-based position of the step
@@ -391,7 +392,7 @@ Create a draft sequence
 
 ### sequences_duplicate
 
-`POST /api/v1/sequences/{sequenceId}/duplicate`. Scope: `sequences:write`. Member: `deny`.
+`POST /api/v1/sequences/{sequenceId}/duplicate`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
 
 Copy a sequence into a new draft
 
@@ -399,7 +400,7 @@ Copy a sequence into a new draft
 
 ### sequences_enroll
 
-`POST /api/v1/sequences/{sequenceId}/enrollments`. Scope: `sequences:write`. Member: `deny`.
+`POST /api/v1/sequences/{sequenceId}/enrollments`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
 
 Enroll a contact in a sequence
 
@@ -424,7 +425,7 @@ List the signals a condition can test
 
 ### sequences_get_enrollment
 
-`GET /api/v1/sequences/{sequenceId}/enrollments/{enrollmentId}`. Scope: `sequences:read`. Member: `deny`.
+`GET /api/v1/sequences/{sequenceId}/enrollments/{enrollmentId}`. Scope: `sequences:read`. Member: `deny`. Manager power: `sequences`.
 
 Get the send log of one enrollment
 
@@ -439,7 +440,7 @@ List the organization’s sequences
 
 ### sequences_list_enrollments
 
-`GET /api/v1/sequences/{sequenceId}/enrollments`. Scope: `sequences:read`. Member: `deny`.
+`GET /api/v1/sequences/{sequenceId}/enrollments`. Scope: `sequences:read`. Member: `deny`. Manager power: `sequences`.
 
 List the contacts enrolled in one sequence
 
@@ -464,7 +465,7 @@ List the variables step copy may use
 
 ### sequences_pause
 
-`POST /api/v1/sequences/{sequenceId}/pause`. Scope: `sequences:write`. Member: `deny`.
+`POST /api/v1/sequences/{sequenceId}/pause`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
 
 Pause a sequence
 
@@ -472,7 +473,7 @@ Pause a sequence
 
 ### sequences_resume
 
-`POST /api/v1/sequences/{sequenceId}/resume`. Scope: `sequences:write`. Member: `deny`.
+`POST /api/v1/sequences/{sequenceId}/resume`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
 
 Resume a paused sequence
 
@@ -480,7 +481,7 @@ Resume a paused sequence
 
 ### sequences_update
 
-`PATCH /api/v1/sequences/{sequenceId}`. Scope: `sequences:write`. Member: `deny`.
+`PATCH /api/v1/sequences/{sequenceId}`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
 
 Change a sequence
 
@@ -495,6 +496,7 @@ Change a sequence
 - `kind` (body, string, one of `automation`, `broadcast`): `automation` runs off a trigger. `broadcast` sends to an audience.
 - `audience_id` (body, string uuid): For a broadcast: its audience
 - `send_schedule_id` (body, string uuid): A saved send schedule. Null uses the organization default.
+- `location_id` (body, string uuid): The location the sequence runs for: it enrolls only contacts at that location. Null or omitted is organization-wide, which only an owner or admin may set. A manager must name one of their locations. On an update, a move is refused while any enrollment, live or finished, holds a contact who is not at the new location.
 - `is_active` (body, boolean, one of `false`): Only `false`, and `true` is a 400. A new sequence is always an inactive draft. On an update, `false` turns the sequence off and cancels every enrollment. Turn a sequence on with `sequences_activate`, and hold contacts in place with `sequences_pause`.
 - `steps` (body, array of SequenceStepInputDto): The ordered steps. On an update, replaces them all.
   - `step_index` (body, number, required): Zero-based position of the step
