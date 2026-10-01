@@ -642,7 +642,7 @@
     },
     "/api/v1/contacts/{contactId}/suppress": {
       "post": {
-        "description": "Honours an unsubscribe at once. `email` blocks every further email to the contact’s address.\n`sms` records an SMS opt-out, revokes consent and cancels the contact’s SMS sequences.\nThe contact is not told. Suppressing an address that is already suppressed changes nothing.",
+        "description": "Honours an unsubscribe at once. `email` blocks every further email to the contact’s address\nand stops the contact’s email sequences.\n`sms` records an SMS opt-out, revokes consent and cancels the contact’s SMS sequences.\nThe contact is not told. An address that is already suppressed keeps its first record.",
         "operationId": "contacts_suppress",
         "parameters": [
           {
