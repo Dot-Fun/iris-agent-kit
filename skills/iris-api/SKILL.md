@@ -183,6 +183,10 @@ only and changes only its own appointments: another team member answers 403 `ins
 `team_member_id`. `locations_booking_options` shows a MEMBER only itself and the services it
 handles, with every buffer as 0.
 
+A MANAGER with the appointments power books any team member at its own locations, and reschedules
+and cancels anyone's appointment there. `locations_booking_options` shows it every team member, so
+book the one the user names. A location-wide block still answers 403, and another location 404.
+
 ## Operator recipes
 
 ### 1. Find a contact
