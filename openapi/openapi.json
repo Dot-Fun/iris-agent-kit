@@ -74,7 +74,7 @@
         "x-member-access": "deny"
       },
       "get": {
-        "description": "Finds contacts in the key’s organization. Send at most one filter:\n\n- `q`: free text, matched against name, email and phone, without regard to case.\n- `email`: the exact email, without regard to case. Returns at most one contact.\n- `phone`: the exact phone number. Returns at most one contact.\n\nWith no filter, lists every contact, most recently seen first.\nA member’s credential finds only contacts linked to its locations, and lists them by name.",
+        "description": "Finds contacts in the key’s organization. Send at most one filter:\n\n- `q`: free text, matched against name, email and phone, without regard to case.\n- `email`: the exact email, without regard to case. Returns at most one contact.\n- `phone`: the exact phone number. Returns at most one contact.\n\nWith no filter, lists every contact, most recently seen first.\nA member’s credential finds only contacts linked to its locations.\n\nA MEMBER, and a MANAGER without the contacts power, get each contact’s `id`, `name`, `email` and\n`phone` only, listed by name. A MANAGER with the power gets whole contacts, as an owner does.",
         "operationId": "contacts_search",
         "parameters": [
           {
@@ -191,7 +191,7 @@
     },
     "/api/v1/contacts/{contactId}": {
       "get": {
-        "description": "The contact with its pipeline stage, tags, custom fields and number of notes.",
+        "description": "The contact with its pipeline stage, tags, custom fields and number of notes.\nA MEMBER, and a MANAGER without the contacts power, get its `id`, `name`, `email` and `phone` only.",
         "operationId": "contacts_get",
         "parameters": [
           {
@@ -4326,7 +4326,7 @@
           },
           "stage": {
             "nullable": true,
-            "description": "Null when the organization has no pipeline stage field or the contact has no stage",
+            "description": "Null when the organization has no pipeline stage field or the contact has no stage. Absent when the credential reads identity only: a MEMBER, or a MANAGER without the contacts power.",
             "type": "object",
             "allOf": [
               {
@@ -4337,26 +4337,24 @@
           "custom_fields": {
             "type": "object",
             "additionalProperties": true,
-            "description": "Custom field values keyed by field name"
+            "description": "Custom field values keyed by field name. Absent when the credential reads identity only: a MEMBER, or a MANAGER without the contacts power."
           },
           "created_at": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "Absent when the credential reads identity only: a MEMBER, or a MANAGER without the contacts power."
           },
           "updated_at": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "Absent when the credential reads identity only: a MEMBER, or a MANAGER without the contacts power."
           }
         },
         "required": [
           "id",
           "name",
           "email",
-          "phone",
-          "stage",
-          "custom_fields",
-          "created_at",
-          "updated_at"
+          "phone"
         ]
       },
       "ContactPageDto": {
@@ -4407,7 +4405,7 @@
           },
           "stage": {
             "nullable": true,
-            "description": "Null when the organization has no pipeline stage field or the contact has no stage",
+            "description": "Null when the organization has no pipeline stage field or the contact has no stage. Absent when the credential reads identity only: a MEMBER, or a MANAGER without the contacts power.",
             "type": "object",
             "allOf": [
               {
@@ -4418,38 +4416,35 @@
           "custom_fields": {
             "type": "object",
             "additionalProperties": true,
-            "description": "Custom field values keyed by field name"
+            "description": "Custom field values keyed by field name. Absent when the credential reads identity only: a MEMBER, or a MANAGER without the contacts power."
           },
           "created_at": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "Absent when the credential reads identity only: a MEMBER, or a MANAGER without the contacts power."
           },
           "updated_at": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "Absent when the credential reads identity only: a MEMBER, or a MANAGER without the contacts power."
           },
           "tags": {
-            "description": "Tag names, sorted",
+            "description": "Tag names, sorted. Absent when the credential reads identity only: a MEMBER, or a MANAGER without the contacts power.",
             "type": "array",
             "items": {
               "type": "string"
             }
           },
           "notes_count": {
-            "type": "number"
+            "type": "number",
+            "description": "Absent when the credential reads identity only: a MEMBER, or a MANAGER without the contacts power."
           }
         },
         "required": [
           "id",
           "name",
           "email",
-          "phone",
-          "stage",
-          "custom_fields",
-          "created_at",
-          "updated_at",
-          "tags",
-          "notes_count"
+          "phone"
         ]
       },
       "ContactUpdateDto": {

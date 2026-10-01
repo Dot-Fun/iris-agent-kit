@@ -190,7 +190,9 @@ handles, with every buffer as 0.
 1. If you have an email, call `contacts_search` with `email`. It returns the exact match only.
 2. Otherwise call `contacts_search` with `q` (part of a name, email or phone).
 3. If more than one contact matches, show the user the candidates (name, email, phone) and ask.
-4. Call `contacts_get` with the `contactId` for the full record: stage, tags, custom fields.
+4. Call `contacts_get` with the `contactId` for the full record: stage, tags, custom fields. A
+   MEMBER, and a MANAGER without the contacts power, get only `id`, `name`, `email` and `phone`,
+   from both `contacts_search` and `contacts_get`.
 
 Never create a contact to "find" one. `contacts_upsert` creates or updates by email, so use it
 only when the user wants a contact created or changed.
