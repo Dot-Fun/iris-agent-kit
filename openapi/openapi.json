@@ -2350,7 +2350,7 @@
     },
     "/api/v1/conversations/sms": {
       "post": {
-        "description": "Sends from the organization’s default SMS number to `contact_id`’s phone or to `phone`.\nSend exactly one of them. The recipient must have active SMS consent and must not have\nopted out: otherwise the answer is 409 `sms_not_permitted` and nothing is sent. The daily\nper-contact cap applies. This call is not idempotent: a retry after a 5xx can send twice.",
+        "description": "Sends to `contact_id`’s phone or to `phone`. Send exactly one of them. The text goes from the\nnumber of the contact’s location when that number can text, else from the organization’s\ndefault SMS number, and joins the contact’s thread on that number, filed under that location.\nFor a manager, only their own locations count. The recipient must have active SMS consent and\nmust not have opted out: otherwise the answer is 409 `sms_not_permitted` and nothing is sent.\nThe daily per-contact cap applies. This call is not idempotent: a retry after a 5xx can send twice.",
         "operationId": "conversations_send_sms",
         "parameters": [],
         "requestBody": {
@@ -2411,7 +2411,7 @@
             "description": "`sms_not_permitted`: the recipient opted out or has not consented"
           },
           "422": {
-            "description": "No default SMS number, the daily cap is reached, the provider refused the send, or (for a manager) the default number is not at their locations"
+            "description": "No number can text the contact (no location number and no default), the daily cap is reached, the provider refused the send, or (for a manager) the contact’s thread on that number belongs to another location"
           },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",

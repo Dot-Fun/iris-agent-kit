@@ -345,7 +345,10 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
   book a new appointment instead. A 422 from `appointments_create` can mean the user who created
   the API key left the organization: tell the user to create a new key.
 - Conversations: `conversations_list`, `conversations_get` (with messages),
-  `conversations_send_sms`. Read the conversation before you text the contact. Record SMS consent
+  `conversations_send_sms`. Read the conversation before you text the contact. The text goes from
+  the number of the contact's location, else from the default number. A 422 can mean no number
+  can text the contact, or (for a manager) that the contact's thread on that number belongs to
+  another location: tell the user, and do not retry. Record SMS consent
   with `contacts_record_sms_consent` only when the contact gave it to the user. On 409
   `sms_not_permitted`, do not send, and do not record consent to get past it.
 - Calls: `calls_list`, `calls_get` (with transcript). Filter `calls_list` with `contact_id` to
