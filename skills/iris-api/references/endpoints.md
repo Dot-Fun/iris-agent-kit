@@ -220,7 +220,7 @@ Create or update a contact by email
 - `email` (body, string email, required): Contact email address — the upsert key, matched case-insensitively
 - `phone` (body, string): Contact phone number. Stored in field_values; the contact itself stays email-keyed with phone_number NULL.
 - `source` (body, string, required): Attribution source
-- `fields` (body, object): Arbitrary key/value data merged into the contact's CRM field values. At most 200 keys.
+- `fields` (body, object): Arbitrary key/value data merged into the contact's CRM field values. At most 200 keys. With assessment_abandoned, user_message_count must be a numeric nonnegative safe integer when present. Cohort routing uses this request's count: started requires a positive count, never_started requires zero, and missing counts match only unfiltered triggers.
 - `cancel_events` (body, array of ContactCancelEventDto): Sequence events to CANCEL for this contact, unconditionally. Processed before `events`, and idempotent because a second call cancels nothing. Use it for a goal exit, such as ending a win-back nurture once the contact converts.
   - `name` (body, string, required): Event name whose enrollments should be cancelled for this contact.
   - `reason` (body, string, one of `replied`, `booked`, `opted_out`, `manual`, `sequence_deactivated`, `converted`, `stage_reached`, `goal_met`, `schedule_cancelled`, `assessment_retake`): Why the journey ended. Defaults to `goal_met`.

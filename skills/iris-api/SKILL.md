@@ -314,6 +314,17 @@ instead of `location_id`. Send one of the two, never both.
 4. Call `contacts_add_tag` or `contacts_remove_tag` to change tags. Both are safe to repeat.
 5. When a person asks to stop email or SMS, call `contacts_suppress` with the channels at once.
 
+### 11. Report assessment abandonment
+
+1. Call `contacts_upsert` with the contact, `fields.user_message_count`, and an `assessment_abandoned` event with a stable session key.
+2. Count nonempty user answers in the current session. Send numeric zero for a session with no answers.
+3. Read `assessmentAbandonment`. `accepted` confirms a durable receipt. Keep retry eligibility for `no_subscriber` or a request failure.
+4. Record `legacy_unverified` for operator reconciliation. Do not invent a new key to bypass an existing receipt.
+
+Counts must be nonnegative safe integers. Missing counts match only triggers without an `assessmentAudience` filter.
+The `started` filter requires a positive count. `never_started` requires zero. These filters apply only to `assessment_abandoned`.
+Do not activate the never-started campaign before its copy is approved.
+
 ## Other operations
 
 These follow the same rules. Their parameters are in `references/endpoints.md`.

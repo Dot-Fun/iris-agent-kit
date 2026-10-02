@@ -4174,7 +4174,7 @@
           },
           "fields": {
             "type": "object",
-            "description": "Arbitrary key/value data merged into the contact's CRM field values. At most 200 keys.",
+            "description": "Arbitrary key/value data merged into the contact's CRM field values. At most 200 keys. With assessment_abandoned, user_message_count must be a numeric nonnegative safe integer when present. Cohort routing uses this request's count: started requires a positive count, never_started requires zero, and missing counts match only unfiltered triggers.",
             "additionalProperties": true,
             "maxProperties": 200
           },
