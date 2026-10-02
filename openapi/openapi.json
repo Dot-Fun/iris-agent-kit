@@ -74,7 +74,7 @@
         "x-member-access": "deny"
       },
       "get": {
-        "description": "Finds contacts in the key’s organization. Send at most one filter:\n\n- `q`: free text, matched against name, email and phone, without regard to case.\n- `email`: the exact email, without regard to case. Returns at most one contact.\n- `phone`: the exact phone number. Returns at most one contact.\n\nWith no filter, lists every contact, most recently seen first.\nA member’s credential finds only contacts linked to its locations.\n\nA MEMBER, and a MANAGER without the contacts power, get each contact’s `id`, `name`, `email` and\n`phone` only, listed by name. A MANAGER with the power gets whole contacts, as an owner does.",
+        "description": "Finds contacts in the key’s organization. Send at most one filter:\n\n- `q`: free text, matched against name, email and phone, without regard to case.\n- `email`: the exact email, without regard to case. Returns at most one contact.\n- `phone`: the exact phone number. Returns at most one contact.\n\nWith no filter, lists every contact, most recently seen first.\nA member’s credential finds only contacts linked to its locations. A MEMBER at the own-records level\nfinds only the clients of their own appointments.\n\nA MEMBER, and a MANAGER without the contacts power, get each contact’s `id`, `name`, `email` and\n`phone` only, listed by name. A MANAGER with the power gets whole contacts, as an owner does.",
         "operationId": "contacts_search",
         "parameters": [
           {
@@ -191,7 +191,7 @@
     },
     "/api/v1/contacts/{contactId}": {
       "get": {
-        "description": "The contact with its pipeline stage, tags, custom fields and number of notes.\nA MEMBER, and a MANAGER without the contacts power, get its `id`, `name`, `email` and `phone` only.",
+        "description": "The contact with its pipeline stage, tags, custom fields and number of notes.\nA MEMBER, and a MANAGER without the contacts power, get its `id`, `name`, `email` and `phone` only.\nA MEMBER at the own-records level gets only the clients of their own appointments (404 otherwise).",
         "operationId": "contacts_get",
         "parameters": [
           {
@@ -1276,7 +1276,7 @@
     },
     "/api/v1/appointments": {
       "get": {
-        "description": "Appointments that overlap the window, earliest first. The window defaults to the next\n30 days and can span at most 92 days.\nCancelled appointments are left out. A repeating appointment appears once per occurrence.\nEvery occurrence has the series id as its `id`, `recurring: true` and its own `occurrence_start`.\nThe API cannot cancel or reschedule a repeating appointment: change it in the Iris dashboard.\n\n`contact_id` keeps the contact’s appointments only: bookings made for the contact, and\nbookings whose attendee phone or email is the contact’s.\n\nA member’s credential sees appointments at its own locations only.",
+        "description": "Appointments that overlap the window, earliest first. The window defaults to the next\n30 days and can span at most 92 days.\nCancelled appointments are left out. A repeating appointment appears once per occurrence.\nEvery occurrence has the series id as its `id`, `recurring: true` and its own `occurrence_start`.\nThe API cannot cancel or reschedule a repeating appointment: change it in the Iris dashboard.\n\n`contact_id` keeps the contact’s appointments only: bookings made for the contact, and\nbookings whose attendee phone or email is the contact’s.\n\nA member’s credential sees appointments at its own locations only. A MEMBER at the own-records level\nsees only the appointments where they are the team member.",
         "operationId": "appointments_list",
         "parameters": [
           {
@@ -2166,7 +2166,7 @@
     },
     "/api/v1/conversations": {
       "get": {
-        "description": "Newest activity first. Pages by cursor: pass `next_cursor` back as `cursor` until it is null.\nA page can hold fewer than `limit` items and still have a next page.",
+        "description": "Newest activity first. Pages by cursor: pass `next_cursor` back as `cursor` until it is null.\nA page can hold fewer than `limit` items and still have a next page.\nA MEMBER at the own-records level gets only the conversations of the clients of their own appointments.",
         "operationId": "conversations_list",
         "parameters": [
           {
@@ -2537,7 +2537,7 @@
     },
     "/api/v1/calls": {
       "get": {
-        "description": "Newest first. Pages by cursor: pass `next_cursor` back as `cursor` until it is null.\n`contact_id` keeps the calls to or from the contact’s phone number. A contact with no phone\nnumber has no calls.",
+        "description": "Newest first. Pages by cursor: pass `next_cursor` back as `cursor` until it is null.\n`contact_id` keeps the calls to or from the contact’s phone number. A contact with no phone\nnumber has no calls. A MEMBER at the own-records level gets only the calls of the clients of their\nown appointments.",
         "operationId": "calls_list",
         "parameters": [
           {

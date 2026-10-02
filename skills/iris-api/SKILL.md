@@ -187,6 +187,11 @@ A MANAGER with the appointments power books any team member at its own locations
 and cancels anyone's appointment there. `locations_booking_options` shows it every team member, so
 book the one the user names. A location-wide block still answers 403, and another location 404.
 
+A MEMBER at the own-records level reads only its own records: its appointments, the contacts on
+them, and those contacts' conversations and calls. Any other contact, conversation, call or
+appointment answers 404, so it is out of reach, not missing. Do not retry it. It books only itself.
+It may book a new client: any contact at its locations whose id it has.
+
 ## Operator recipes
 
 ### 1. Find a contact
