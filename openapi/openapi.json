@@ -2537,7 +2537,7 @@
     },
     "/api/v1/calls": {
       "get": {
-        "description": "Newest first. Pages by cursor: pass `next_cursor` back as `cursor` until it is null.\n`contact_id` keeps the calls to or from the contact’s phone number. A contact with no phone\nnumber has no calls. A MEMBER at the own-records level gets only the calls of the clients of their\nown appointments.",
+        "description": "Newest first. Pages by cursor: pass `next_cursor` back as `cursor` until it is null.\n`contact_id` keeps the calls to or from the contact’s phone number. A contact with no phone\nnumber has no calls. A MEMBER (staff) gets only the calls of the clients of their own appointments,\nat either access level. A MEMBER with no linked staff profile gets an empty list.",
         "operationId": "calls_list",
         "parameters": [
           {
@@ -2661,7 +2661,7 @@
     },
     "/api/v1/calls/{callId}": {
       "get": {
-        "description": "The call, its full transcript in order, and whether a recording exists.",
+        "description": "The call, its full transcript in order, and whether a recording exists.\nA MEMBER (staff) reads only the calls of their own clients. Any other call answers 404.",
         "operationId": "calls_get",
         "parameters": [
           {
