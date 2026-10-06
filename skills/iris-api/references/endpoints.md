@@ -264,7 +264,7 @@ List email and SMS conversations
 
 ### conversations_send_sms
 
-`POST /api/v1/conversations/sms`. Scope: `conversations:write`. Member: `deny`. Manager power: `contacts`.
+`POST /api/v1/conversations/sms`. Scope: `conversations:write`. Member: `sms_setting`.
 
 Send an SMS to a contact who has consented
 

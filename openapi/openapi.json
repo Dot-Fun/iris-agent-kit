@@ -2376,7 +2376,7 @@
     },
     "/api/v1/conversations/sms": {
       "post": {
-        "description": "Sends to `contact_id`’s phone or to `phone`. Send exactly one of them. The text goes from the\nnumber of the contact’s location when that number can text, else from the organization’s\ndefault SMS number, and joins the contact’s thread on that number, filed under that location.\nFor a manager, only their own locations count. The recipient must have active SMS consent and\nmust not have opted out: otherwise the answer is 409 `sms_not_permitted` and nothing is sent.\nThe daily per-contact cap applies. This call is not idempotent: a retry after a 5xx can send twice.",
+        "description": "Sends to `contact_id`’s phone or to `phone`. Send exactly one of them. The text goes from the\nnumber of the contact’s location when that number can text, else from the organization’s\ndefault SMS number, and joins the contact’s thread on that number, filed under that location.\nFor a manager, only their own locations count. A staff member (MEMBER) may send only while\ntheir SMS setting is on, and only to their own clients at their locations: any other contact\nor number answers 404. The recipient must have active SMS consent and must not have opted out:\notherwise the answer is 409 `sms_not_permitted` and nothing is sent. The daily per-contact cap\napplies. This call is not idempotent: a retry after a 5xx can send twice.",
         "operationId": "conversations_send_sms",
         "parameters": [],
         "requestBody": {
@@ -2414,7 +2414,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `conversations:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `contacts` power, at their locations",
+            "description": "The key does not carry the `conversations:write` scope; `required` names it. A member’s credential gets `insufficient_role` unless the member’s SMS setting is on, and a manager’s unless they hold the `contacts` power",
             "content": {
               "application/json": {
                 "schema": {
@@ -2424,7 +2424,7 @@
             }
           },
           "404": {
-            "description": "No such contact in this organization",
+            "description": "No such contact in this organization, or (for a manager or staff member) none they reach: a manager’s are at their locations, a staff member’s are their own clients there. A staff member also gets 404 when the contact’s thread on that number belongs to another location",
             "content": {
               "application/json": {
                 "schema": {
@@ -2461,8 +2461,7 @@
           "Public API"
         ],
         "x-iris-scope": "conversations:write",
-        "x-manager-power": "contacts",
-        "x-member-access": "deny"
+        "x-member-access": "sms_setting"
       }
     },
     "/api/v1/contacts/{contactId}/sms-consent": {
@@ -4119,7 +4118,7 @@
   },
   "info": {
     "title": "Iris Public API",
-    "description": "The public, versioned API of Iris. Authenticate with an API key:\n`Authorization: Bearer iris_sk_…`. An owner or admin mints organization keys under\nOrganization → API keys, and any member mints personal keys under My agent access. Keys carry\nscopes; a key without a route’s scope gets a 403 with `{ \"error\": \"insufficient_scope\" }`.\nEach operation’s `x-iris-scope` names the scope it needs, or is null when any live key may call it.\n\nAgent clients that cannot hold a key (Claude Desktop, claude.ai, ChatGPT) use OAuth 2.1 with\nPKCE instead. They discover the authorization server from `/.well-known/oauth-protected-resource`,\nand send the access token the same way. Its scopes are the scopes above.\n\nAn OAuth token acts for the person who granted it, and a personal key for its owner. That\nperson’s current role and locations cap it. An owner or admin can turn a person’s agent access\noff, alone or by role: their personal keys and OAuth tokens then get the 401 until it is back on.\nEach operation’s `x-member-access` says what a MEMBER’s credential may do: `open` (call it),\n`scoped` (call it, limited to the member’s locations) or `deny` (403 with\n`{ \"error\": \"insufficient_role\" }`). An OWNER, an ADMIN and an organization key reach the\nwhole organization. `me_get` shows the person, role and locations behind the credential.\n\nEvery path is versioned. `v1` only ever grows: a breaking change ships as `v2`, and the\nold version keeps serving with `Deprecation` and `Sunset` headers until it is retired.",
+    "description": "The public, versioned API of Iris. Authenticate with an API key:\n`Authorization: Bearer iris_sk_…`. An owner or admin mints organization keys under\nOrganization → API keys, and any member mints personal keys under My agent access. Keys carry\nscopes; a key without a route’s scope gets a 403 with `{ \"error\": \"insufficient_scope\" }`.\nEach operation’s `x-iris-scope` names the scope it needs, or is null when any live key may call it.\n\nAgent clients that cannot hold a key (Claude Desktop, claude.ai, ChatGPT) use OAuth 2.1 with\nPKCE instead. They discover the authorization server from `/.well-known/oauth-protected-resource`,\nand send the access token the same way. Its scopes are the scopes above.\n\nAn OAuth token acts for the person who granted it, and a personal key for its owner. That\nperson’s current role and locations cap it. An owner or admin can turn a person’s agent access\noff, alone or by role: their personal keys and OAuth tokens then get the 401 until it is back on.\nEach operation’s `x-member-access` says what a MEMBER’s credential may do: `open` (call it),\n`scoped` (call it, limited to the member’s locations), `sms_setting` (call it while the\nmember’s SMS setting is on, limited to their own clients at their locations) or `deny` (403 with\n`{ \"error\": \"insufficient_role\" }`). An OWNER, an ADMIN and an organization key reach the\nwhole organization. `me_get` shows the person, role and locations behind the credential.\n\nEvery path is versioned. `v1` only ever grows: a breaking change ships as `v2`, and the\nold version keeps serving with `Deprecation` and `Sunset` headers until it is retired.",
     "version": "1.0.0",
     "contact": {}
   },

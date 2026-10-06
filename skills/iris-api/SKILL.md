@@ -158,7 +158,7 @@ A key carries scopes, one read and one write per noun:
 | `appointments:read` | read appointments, calendars, locations, booking options, open slots and territories |
 | `appointments:write` | book, reschedule and cancel appointments |
 | `conversations:read` | read conversations and their messages |
-| `conversations:write` | send an SMS |
+| `conversations:write` | send an SMS (a staff member: only to their own clients, while their SMS setting is on) |
 | `calls:read` | read calls and transcripts |
 | `audiences:read` | read audiences |
 | `audiences:write` | add and remove audience members |
@@ -170,7 +170,8 @@ call it. Over MCP, the tool list shows only the tools your key's scopes allow.
 A credential acts with the role of the person behind it. An organization key and an owner's or
 admin's credential reach the whole organization. For a MEMBER, each operation in
 `references/endpoints.md` names its member access: `open` (allowed), `scoped` (allowed, limited
-to the member's locations) or `deny` (403 `insufficient_role`). Over MCP, a MEMBER does not see
+to the member's locations), `sms_setting` (allowed while the member's SMS setting is on, limited to
+their own clients at their locations) or `deny` (403 `insufficient_role`). Over MCP, a MEMBER does not see
 the `deny` tools. A MANAGER gets a MEMBER's access, so every MEMBER rule here applies to a MANAGER
 too. An owner or admin may also give a MANAGER powers. A `deny` tool marked `x-manager-power:
 contacts` is open to a MANAGER with the contacts power, at their locations only: a contact
@@ -365,7 +366,11 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
   `conversations_send_sms`. Read the conversation before you text the contact. The text goes from
   the number of the contact's location, else from the default number. A 422 can mean no number
   can text the contact, or (for a manager) that the contact's thread on that number belongs to
-  another location: tell the user, and do not retry. Record SMS consent
+  another location: tell the user, and do not retry. A staff member (MEMBER) texts only their own
+  clients, and only while an owner, admin or manager has turned their SMS setting on. A 403
+  `insufficient_role` means the setting is off: tell the user to ask for it, and do not retry. A
+  404 means the contact is not one of their clients there, or their thread on that number is at
+  another location. Record SMS consent
   with `contacts_record_sms_consent` only when the contact gave it to the user. On 409
   `sms_not_permitted`, do not send, and do not record consent to get past it.
 - Calls: `calls_list`, `calls_get` (with transcript). Filter `calls_list` with `contact_id` to
