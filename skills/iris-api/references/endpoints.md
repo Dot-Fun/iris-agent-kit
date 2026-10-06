@@ -302,7 +302,7 @@ Send one MCP JSON-RPC message
 
 `GET /api/v1/me`. Scope: any live key. Member: `open`.
 
-Describe the calling API key or connected client
+Describe the calling API key or connected client, and the locations it reaches
 
 ## Sequences
 

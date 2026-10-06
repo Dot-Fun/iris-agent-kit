@@ -17,15 +17,20 @@ two kinds:
   there.
 - An **organization key** acts on the whole organization. Only an owner or admin creates one,
   under Organization > API keys.
+- A **location-limited key** is an organization key limited to some locations. It acts as a
+  manager at those locations, with the manager powers stored on it. An owner or admin creates
+  one for any locations, and a manager with the staff power for their own, under Organization >
+  API keys. Its locations and powers never change. It is revoked when its creator loses the
+  powers it carries.
+  `me_get` shows them as `api_key.location_ids` and `api_key.powers`.
 
 Revoke a key in the screen where it was made. A revoked key gets 401 at once.
 
 A personal key follows its owner. After a demotion from admin to member it keeps working with a
-member's access. When the owner is deactivated or removed, it is revoked. An organization key does
-not stop when the person who created it loses admin power. When an owner demotes that admin to
-member, deactivates them or removes them, Iris offers to revoke the organization keys they created,
-and revokes them unless the owner unticks the box. If the agent gets 401 after a team change, ask
-the user for a new key.
+member's access. When the owner is deactivated or removed, it is revoked. An organization key is
+revoked when the person who created it loses the powers it carries. That person is removed or
+deactivated, an admin becomes a manager or member, or a manager becomes a member. Nobody can keep
+it. If the agent gets 401 after a team change, ask the user for a new key.
 
 An owner or admin can also turn agent access off, for one person or for everyone in a role. An
 owner's access is always on. While it is off, that person's personal keys and OAuth tokens get
@@ -51,7 +56,9 @@ parameter, no cookie, no body field.
 - **403** `insufficient_scope`: the key is live but lacks the scope named in `required`. The
   user creates a new key with the scope under My agent access, or under Organization > API keys.
 - **403** `insufficient_role`: the person behind the credential is a MEMBER, and members cannot
-  call this operation or act for another team member. A new scope does not help. An owner or admin must do it.
+  call this operation or act for another team member. A location-limited key gets it on the
+  operations a manager with its powers cannot call. A new scope does not help. An owner or admin
+  must do it.
 
 Call `me_get` to see the organization, the key's scopes and the full scope catalog.
 

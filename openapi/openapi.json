@@ -1226,7 +1226,7 @@
     },
     "/api/v1/me": {
       "get": {
-        "description": "Returns the organization the credential belongs to, the key itself (or, for an OAuth access token, the connected client, its granted scopes and the person who granted it with their current role and locations), every scope a credential can carry, and the rate limit. Needs no scope: any live key or token may call it.",
+        "description": "Returns the organization the credential belongs to, the key itself (or, for an OAuth access token, the connected client, its granted scopes and the person who granted it with their current role and locations), every scope a credential can carry, and the rate limit. A location-limited key lists its locations and the manager powers it acts with there. Needs no scope: any live key or token may call it.",
         "operationId": "me_get",
         "parameters": [],
         "responses": {
@@ -1266,7 +1266,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Describe the calling API key or connected client",
+        "summary": "Describe the calling API key or connected client, and the locations it reaches",
         "tags": [
           "Me",
           "Public API"
@@ -4945,6 +4945,32 @@
             "format": "date-time",
             "nullable": true,
             "description": "Refreshed at most every five minutes, so it can lag this request"
+          },
+          "location_ids": {
+            "nullable": true,
+            "description": "The locations a location-limited key reaches. Null for an organization-wide key, which reaches every location, and for a personal key, which reaches what its owner reaches.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "powers": {
+            "type": "array",
+            "nullable": true,
+            "description": "The manager powers a location-limited key acts with at its locations, fixed when it was made. It acts as a manager with no person: an operation marked `x-member-access: deny` answers 403 `insufficient_role` unless its `x-manager-power` is listed here. Null for every other key.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "contacts",
+                "location_settings",
+                "sequences",
+                "staff",
+                "leader_schedules",
+                "appointments",
+                "access_levels"
+              ]
+            }
           }
         },
         "required": [
@@ -4953,7 +4979,9 @@
           "key_prefix",
           "scopes",
           "created_at",
-          "last_used_at"
+          "last_used_at",
+          "location_ids",
+          "powers"
         ]
       },
       "MeOauthClientDto": {

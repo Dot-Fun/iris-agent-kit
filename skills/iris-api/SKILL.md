@@ -66,6 +66,9 @@ It returns:
 - `organization`: the `id` and `name` you act on. Tell the user which organization it is.
 - `api_key.scopes`: what this key may do. Do not call an operation whose scope is missing.
   Over OAuth, `api_key` is null and `oauth_client.scopes` holds what the owner granted.
+- `api_key.location_ids` and `api_key.powers`: for a location-limited key, the locations it
+  reaches and the manager powers it acts with. Both are null for a key that reaches the whole
+  organization.
 - `principal`: the person behind the credential, their `role` now and the `location_ids` they
   reach. Over OAuth it is the person who granted the token, and for a personal key its owner. An
   organization key has no `principal`.
@@ -122,7 +125,7 @@ Branch on `statusCode` and `error`. Never branch on the text of `message`.
 | 400 | `sequence_activation_blocked` | Show the user `blockers`. Fix them or stop. |
 | 401 | | The key is missing, wrong or revoked, or an owner turned the person's agent access off. Stop and ask the user. |
 | 403 | `insufficient_scope` | The key lacks the scope in `required`. Tell the user to create a key with it under My agent access, or under Organization > API keys for an organization key. |
-| 403 | `insufficient_role` | The person behind the credential is a MEMBER, and members cannot call this operation or act for another team member. Do not retry. Ask an owner or admin. |
+| 403 | `insufficient_role` | The person behind the credential is a MEMBER, and members cannot call this operation or act for another team member. A location-limited key gets it where a manager with its powers cannot act. Do not retry. Ask an owner or admin. |
 | 404 | `not_found` | The id does not exist in this organization. Search again. Do not guess ids. |
 | 409 | `sequence_inactive` | The sequence is off. Do not enroll. Ask the user. |
 | 409 | `sequence_paused` | The sequence is paused. Resume it first, or wait. |
@@ -169,6 +172,12 @@ the `deny` tools. A MANAGER gets a MEMBER's access, so every MEMBER rule here ap
 too. An owner or admin may also give a MANAGER powers. A `deny` tool marked `x-manager-power:
 contacts` is open to a MANAGER with the contacts power, at their locations only: a contact
 elsewhere answers 404.
+
+A location-limited key acts as a MANAGER at its `api_key.location_ids`, with the powers in
+`api_key.powers`. Every MANAGER rule here applies to it. A plain `deny` tool, with no
+`x-manager-power`, answers 403 `insufficient_role`, and the MCP tool list leaves it out. Without
+the appointments power, the key cannot book or change an appointment for a team member, because
+no person stands behind it.
 
 A sequence may run for one location (`location_id`), or for the whole organization (null). A
 `deny` tool marked `x-manager-power: sequences` is open to a MANAGER with the sequences power for
