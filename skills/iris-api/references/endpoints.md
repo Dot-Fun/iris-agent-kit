@@ -361,7 +361,7 @@ Create a draft sequence
   - `type` (body, string, required): A trigger `key` from `sequences_list_triggers` whose `authorable` is true
   - `config` (body, object): Trigger settings
 - `kind` (body, string, one of `automation`, `broadcast`): `automation` runs off a trigger. `broadcast` sends to an audience.
-- `audience_id` (body, string uuid): For a broadcast: its audience
+- `audience_id` (body, string uuid): For a broadcast: its audience. An automation stores none. An audience of another organization answers 404.
 - `send_schedule_id` (body, string uuid): A saved send schedule. Null uses the organization default.
 - `location_id` (body, string uuid): The location the sequence runs for: it enrolls only contacts at that location. Null or omitted is organization-wide, which only an owner or admin may set. A manager must name one of their locations. On an update, a move is refused while any enrollment, live or finished, holds a contact who is not at the new location.
 - `is_active` (body, boolean, one of `false`): Only `false`, and `true` is a 400. A new sequence is always an inactive draft. On an update, `false` turns the sequence off and cancels every enrollment. Turn a sequence on with `sequences_activate`, and hold contacts in place with `sequences_pause`.
@@ -494,7 +494,7 @@ Change a sequence
   - `type` (body, string, required): A trigger `key` from `sequences_list_triggers` whose `authorable` is true
   - `config` (body, object): Trigger settings
 - `kind` (body, string, one of `automation`, `broadcast`): `automation` runs off a trigger. `broadcast` sends to an audience.
-- `audience_id` (body, string uuid): For a broadcast: its audience
+- `audience_id` (body, string uuid): For a broadcast: its audience. An automation stores none. An audience of another organization answers 404.
 - `send_schedule_id` (body, string uuid): A saved send schedule. Null uses the organization default.
 - `location_id` (body, string uuid): The location the sequence runs for: it enrolls only contacts at that location. Null or omitted is organization-wide, which only an owner or admin may set. A manager must name one of their locations. On an update, a move is refused while any enrollment, live or finished, holds a contact who is not at the new location.
 - `is_active` (body, boolean, one of `false`): Only `false`, and `true` is a 400. A new sequence is always an inactive draft. On an update, `false` turns the sequence off and cancels every enrollment. Turn a sequence on with `sequences_activate`, and hold contacts in place with `sequences_pause`.

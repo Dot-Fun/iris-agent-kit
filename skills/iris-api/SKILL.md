@@ -129,6 +129,7 @@ Branch on `statusCode` and `error`. Never branch on the text of `message`.
 | 404 | `not_found` | The id does not exist in this organization. Search again. Do not guess ids. |
 | 409 | `sequence_inactive` | The sequence is off. Do not enroll. Ask the user. |
 | 409 | `sequence_paused` | The sequence is paused. Resume it first, or wait. |
+| 409 | `sequence_not_paused` | `sequences_resume` on a sequence that is not paused. Nothing changed. Read its `status`. |
 | 409 | `contact_not_at_location` | The sequence runs for one location and the contact is not there. Do not retry. Tell the user. |
 | 409 | `sms_not_permitted` | The contact has not consented or is suppressed. Do not send. |
 | 429 | | Too many requests. Wait 60 seconds, then retry. |
@@ -151,7 +152,7 @@ A key carries scopes, one read and one write per noun:
 | Scope | Lets you |
 |---|---|
 | `contacts:read` | search and read contacts |
-| `contacts:write` | create and update contacts, notes, tags, suppression and SMS consent |
+| `contacts:write` | create and update contacts, notes, tags, suppression and SMS consent, and enroll contacts in sequences or cancel them through events |
 | `sequences:read` | read sequences, enrollments, send logs and totals |
 | `sequences:write` | create, change, activate, pause, resume and duplicate sequences, enroll and cancel |
 | `appointments:read` | read appointments, calendars, locations, booking options, open slots and territories |
@@ -162,7 +163,9 @@ A key carries scopes, one read and one write per noun:
 | `audiences:read` | read audiences |
 | `audiences:write` | add and remove audience members |
 
-Over MCP, the tool list shows only the tools your key's scopes allow.
+Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
+`/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
+call it. Over MCP, the tool list shows only the tools your key's scopes allow.
 
 A credential acts with the role of the person behind it. An organization key and an owner's or
 admin's credential reach the whole organization. For a MEMBER, each operation in
@@ -262,7 +265,8 @@ of a live sequence.
 1. Call `sequences_get` and check `status` is `active`.
 2. Call `sequences_pause`. The answer shows `status: paused`.
 3. Make the fix (recipe 8, step 4).
-4. Call `sequences_resume`. The answer shows `status: active`.
+4. Call `sequences_resume`. The answer shows `status: active`. A sequence that is not paused
+   answers 409 `sequence_not_paused`, and nothing changes.
 
 Do not use `sequences_update` with `is_active: false` to pause. Deactivating cancels every
 enrollment, and resume cannot bring them back.
