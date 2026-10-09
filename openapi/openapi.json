@@ -1239,7 +1239,7 @@
     },
     "/api/v1/me": {
       "get": {
-        "description": "Returns the organization the credential belongs to, the key itself (or, for an OAuth access token, the connected client, its granted scopes and the person who granted it with their current role and locations), every scope a credential can carry, and the rate limit. A location-limited key lists its locations and the manager powers it acts with there. Needs no scope: any live key or token may call it.",
+        "description": "Returns the organization the credential belongs to, the key itself (or, for an OAuth access token, the connected client, its granted scopes and the person who granted it with their current role and locations), every scope a credential can carry, and the rate limit. A key with a role names it (MANAGER or MEMBER) and the manager powers it acts with, and a location-limited key lists its locations. Needs no scope: any live key or token may call it.",
         "operationId": "me_get",
         "parameters": [],
         "responses": {
@@ -1279,7 +1279,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Describe the calling API key or connected client, and the locations it reaches",
+        "summary": "Describe the calling API key or connected client, the role it acts at and the locations it reaches",
         "tags": [
           "Me",
           "Public API"
@@ -5011,10 +5011,19 @@
               "format": "uuid"
             }
           },
+          "role": {
+            "type": "string",
+            "enum": [
+              "MANAGER",
+              "MEMBER"
+            ],
+            "nullable": true,
+            "description": "The role the key acts at, with no person behind it: MANAGER or MEMBER. Each operation's `x-member-access` applies to it as to a person in that role, at `location_ids` when set. A location-limited key is always MANAGER or MEMBER. Null for an organization-wide key with no role, and for a personal key, which acts at its owner's role."
+          },
           "powers": {
             "type": "array",
             "nullable": true,
-            "description": "The manager powers a location-limited key acts with at its locations, fixed when it was made. It acts as a manager with no person: an operation marked `x-member-access: deny` answers 403 `insufficient_role` unless its `x-manager-power` is listed here. Null for every other key.",
+            "description": "The manager powers a key with a role acts with, fixed when it was made. An operation marked `x-member-access: deny` answers 403 `insufficient_role` unless its `x-manager-power` is listed here. Empty for a MEMBER key. Null for a key with no role.",
             "items": {
               "type": "string",
               "enum": [
@@ -5037,6 +5046,7 @@
           "created_at",
           "last_used_at",
           "location_ids",
+          "role",
           "powers"
         ]
       },

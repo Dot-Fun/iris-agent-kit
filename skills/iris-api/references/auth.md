@@ -17,12 +17,16 @@ two kinds:
   there.
 - An **organization key** acts on the whole organization. Only an owner or admin creates one,
   under Organization > API keys.
-- A **location-limited key** is an organization key limited to some locations. It acts as a
-  manager at those locations, with the manager powers stored on it. An owner or admin creates
-  one for any locations, and a manager with the staff power for their own, under Organization >
-  API keys. Its locations and powers never change. It is revoked when its creator loses the
-  powers it carries.
-  `me_get` shows them as `api_key.location_ids` and `api_key.powers`.
+- An organization key may have a **role**, Manager or Member. It then acts as a person in that
+  role with no person behind it. A Manager key holds manager powers: every power from an owner or
+  admin, the creator's own from a manager. A Member key holds none, so it reads a contact's name,
+  email and phone only, sends no SMS and cannot book or change an appointment for a team member.
+- A **location-limited key** is an organization key limited to some locations. It always has a
+  role, Manager unless its creator picked Member. An owner or admin creates one for any
+  locations, and a manager with the staff power for their own, under Organization > API keys.
+  Its role, locations and powers never change. It is revoked when its creator loses the powers it
+  carries.
+  `me_get` shows them as `api_key.role`, `api_key.location_ids` and `api_key.powers`.
 
 Revoke a key in the screen where it was made. A revoked key gets 401 at once.
 
@@ -56,9 +60,9 @@ parameter, no cookie, no body field.
 - **403** `insufficient_scope`: the key is live but lacks the scope named in `required`. The
   user creates a new key with the scope under My agent access, or under Organization > API keys.
 - **403** `insufficient_role`: the person behind the credential is a MEMBER, and members cannot
-  call this operation or act for another team member. A location-limited key gets it on the
-  operations a manager with its powers cannot call. A new scope does not help. An owner or admin
-  must do it.
+  call this operation or act for another team member. A key with a role gets it on the operations
+  a person in that role, with the key's powers, cannot call. A new scope does not help. An owner or
+  admin must do it.
 
 Call `me_get` to see the organization, the key's scopes and the full scope catalog.
 
