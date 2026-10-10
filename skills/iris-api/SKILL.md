@@ -163,8 +163,8 @@ A key carries scopes, one read and one write per noun:
 | `conversations:read` | read conversations and their messages |
 | `conversations:write` | send an SMS, reply in a conversation, and hold or resume its AI (a staff member: only for their own clients, while their SMS setting is on) |
 | `calls:read` | read calls and transcripts |
-| `audiences:read` | read audiences |
-| `audiences:write` | add and remove audience members |
+| `audiences:read` | read and count audiences, and list their contacts |
+| `audiences:write` | create, change, archive and restore audiences, and add and remove members |
 
 Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
 `/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
@@ -383,6 +383,23 @@ does not start a broadcast: only `sequences_start_schedule` does.
 Setting the schedule again puts it back to `draft` and cancels the runs that have not ended:
 start it again after a change. Do not use `sequences_pause` on a broadcast: it answers 400.
 
+### 13. Build an audience
+
+1. Call `audiences_list` to check that a fitting audience does not already exist.
+2. Write a `definition`: `match` (`all` or `any`) and `rules` of `field`, `op` and `value`. The
+   `audiences_create` schema lists the fields and which ops each takes. `field_values.<key>`
+   reads an enabled CRM custom field.
+3. Call `audiences_preview_count` with the definition. A 400 names the field, op or value to fix.
+   Show the user the count.
+4. Call `audiences_create` with the name and definition. For a hand-picked list, send
+   `kind: static` and no definition, then add contacts with `audiences_add_member`.
+5. To change it, read it with `audiences_get`, edit the definition, and send it whole to
+   `audiences_update`. `kind` cannot change.
+6. Call `audiences_count` for its size now, and `audiences_list_members` to see who is in it.
+   Both count opted-out contacts: they are left out only when a message is sent.
+7. To retire it, call `audiences_archive`. `audiences_update` with `is_archived: false` restores
+   it.
+
 ## Other operations
 
 These follow the same rules. Their parameters are in `references/endpoints.md`.
@@ -421,5 +438,6 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
   `sms_not_permitted`, do not send, and do not record consent to get past it.
 - Calls: `calls_list`, `calls_get` (with transcript). Filter `calls_list` with `contact_id` to
   see one contact's calls.
-- Audiences: `audiences_list`, `audiences_add_member`, `audiences_remove_member`. Both writes
-  are safe to repeat. Only a `static` audience takes members.
+- Audiences: `audiences_list`, `audiences_add_member`, `audiences_remove_member`. Both member
+  writes are safe to repeat. Only a `static` audience takes members. To build or change an
+  audience, follow recipe 13.
