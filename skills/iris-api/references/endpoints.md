@@ -366,6 +366,15 @@ Remove a contact from a sequence
 - `sequenceId` (path, string uuid, required)
 - `enrollmentId` (path, string uuid, required)
 
+### sequences_cancel_schedule_run
+
+`POST /api/v1/sequences/{sequenceId}/schedule/runs/{runId}/cancel`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
+
+Cancel one run of a broadcast
+
+- `sequenceId` (path, string uuid, required)
+- `runId` (path, string uuid, required)
+
 ### sequences_capabilities
 
 `GET /api/v1/sequences/capabilities`. Scope: `sequences:read`. Member: `open`.
@@ -457,6 +466,16 @@ Get the send log of one enrollment
 - `sequenceId` (path, string uuid, required)
 - `enrollmentId` (path, string uuid, required)
 
+### sequences_get_schedule
+
+`GET /api/v1/sequences/{sequenceId}/schedule`. Scope: `sequences:read`. Member: `deny`. Manager power: `sequences`.
+
+Get a broadcast's send schedule and its runs
+
+- `sequenceId` (path, string uuid, required)
+- `page` (query, number): 1-based page number, at most 1000
+- `limit` (query, number): Page size (capped at 100)
+
 ### sequences_list
 
 `GET /api/v1/sequences`. Scope: `sequences:read`. Member: `open`.
@@ -496,11 +515,43 @@ Pause a sequence
 
 - `sequenceId` (path, string uuid, required)
 
+### sequences_pause_schedule
+
+`POST /api/v1/sequences/{sequenceId}/schedule/pause`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
+
+Pause a broadcast's schedule
+
+- `sequenceId` (path, string uuid, required)
+
 ### sequences_resume
 
 `POST /api/v1/sequences/{sequenceId}/resume`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
 
 Resume a paused sequence
+
+- `sequenceId` (path, string uuid, required)
+
+### sequences_set_schedule
+
+`PUT /api/v1/sequences/{sequenceId}/schedule`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
+
+Set when a broadcast sends
+
+- `sequenceId` (path, string uuid, required)
+- `schedule_kind` (body, string, required, one of `once`, `recurring`): `once` sends at `send_at`. `recurring` sends on `rrule`.
+- `send_at` (body, string date-time): When a `once` schedule sends. Required for `once`. A real calendar date-time ending in `Z` or an offset such as `-05:00`, for example `2026-11-01T09:00:00Z`.
+- `rrule` (body, string): An RFC 5545 rule such as `FREQ=WEEKLY;BYDAY=MO;BYHOUR=9;BYMINUTE=0`, read in `timezone`. Required for `recurring`. Only these parts, each at most once: `FREQ` (`DAILY`, `WEEKLY` or `MONTHLY`), `INTERVAL` (1 to 100), `BYDAY` (1 to 7 distinct weekdays `MO` to `SU`, no number; on `DAILY` only with `INTERVAL=1`), `BYMONTHDAY` (`MONTHLY` only, 1 to 31 distinct days from 1 to 31 or -31 to -1), `BYSETPOS` (`MONTHLY` only, `1` or `-1`), `BYHOUR` (one hour, 0 to 23) and `BYMINUTE` (one minute, 0 to 59). Any other part, such as `COUNT` or `UNTIL`, answers 400. End a series with `ends_on`.
+- `timezone` (body, string): The IANA timezone `rrule` is read in
+- `starts_on` (body, string date): The first day a recurring schedule may send (YYYY-MM-DD), from 2000-01-01 to 2100-12-31
+- `ends_on` (body, string date): The last day a recurring schedule may send (YYYY-MM-DD), from 2000-01-01 to 2100-12-31 and not before `starts_on`
+- `catchup_policy` (body, string, one of `skip`, `fire_once`): Sends a recurring schedule missed, for example while Iris was down: `skip` drops them, `fire_once` sends only the latest.
+- `throttle_per_minute` (body, number): Stored for a planned limit on sends a minute, from 1 to 2147483647. Iris does not enforce it yet.
+
+### sequences_start_schedule
+
+`POST /api/v1/sequences/{sequenceId}/schedule/start`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
+
+Start a broadcast's schedule
 
 - `sequenceId` (path, string uuid, required)
 

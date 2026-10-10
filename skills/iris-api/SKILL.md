@@ -1,6 +1,6 @@
 ---
 name: iris-api
-description: Work an Iris organization through the Iris public API or the Iris MCP server. Use when asked to find or update a contact, check which sequences a contact is in, enroll or cancel a contact in a sequence, pause or resume a sequence, read a send log or sequence totals, build a draft sequence, or read appointments, conversations and calls in Iris.
+description: Work an Iris organization through the Iris public API or the Iris MCP server. Use when asked to find or update a contact, check which sequences a contact is in, enroll or cancel a contact in a sequence, pause or resume a sequence, read a send log or sequence totals, build a draft sequence, schedule, start or pause a broadcast send, or read appointments, conversations and calls in Iris.
 required_environment_variables:
   - name: IRIS_API_KEY
     prompt: Iris API key (starts with iris_sk_)
@@ -101,8 +101,8 @@ For the writes that do exist:
 4. Read the result back and report it.
 
 Ask the user before any write that sends a message to a person (`sequences_activate`,
-`sequences_resume`, `sequences_enroll`, `conversations_send_sms`, `conversations_reply`,
-`conversations_resume`) unless they asked for that exact action.
+`sequences_resume`, `sequences_enroll`, `sequences_start_schedule`, `conversations_send_sms`,
+`conversations_reply`, `conversations_resume`) unless they asked for that exact action.
 
 ## Errors
 
@@ -128,6 +128,7 @@ Branch on `statusCode` and `error`. Never branch on the text of `message`.
 | 403 | `insufficient_scope` | The key lacks the scope in `required`. Tell the user to create a key with it under My agent access, or under Organization > API keys for an organization key. |
 | 403 | `insufficient_role` | The person behind the credential is a MEMBER, and members cannot call this operation or act for another team member. A key with a role gets it where a person in that role, with its powers, cannot act. Do not retry. Ask an owner or admin. |
 | 404 | `not_found` | The id does not exist in this organization. Search again. Do not guess ids. |
+| 404 | `not_found` from `sequences_get_schedule`, `sequences_start_schedule` or `sequences_pause_schedule` | The broadcast may have no schedule yet. Set one with `sequences_set_schedule`. |
 | 409 | `sequence_inactive` | The sequence is off. Do not enroll. Ask the user. |
 | 409 | `sequence_paused` | The sequence is paused. Resume it first, or wait. |
 | 409 | `sequence_not_paused` | `sequences_resume` on a sequence that is not paused. Nothing changed. Read its `status`. |
@@ -143,7 +144,8 @@ Over MCP, a failing tool call returns `isError: true` with the same envelope as 
 Most list operations take `page` (starts at 1) and `limit` (default 25, at most 100). Every
 page echoes `total`, `page` and `limit`. Fetch the next page while `page * limit < total`.
 `conversations_list` and `calls_list` page with a `cursor` instead: pass back `next_cursor` from
-the last page until it is null.
+the last page until it is null. `sequences_get_schedule` pages its `runs` and names the count
+`runs_total`.
 Stop when you have what you need: do not read every page of a large list to answer one question.
 
 ## Scopes
@@ -154,8 +156,8 @@ A key carries scopes, one read and one write per noun:
 |---|---|
 | `contacts:read` | search and read contacts |
 | `contacts:write` | create and update contacts, notes, tags, suppression and SMS consent, and enroll contacts in sequences or cancel them through events |
-| `sequences:read` | read sequences, enrollments, send logs and totals |
-| `sequences:write` | create, change, activate, pause, resume and duplicate sequences, enroll and cancel |
+| `sequences:read` | read sequences, enrollments, send logs and totals, and a broadcast's schedule and runs |
+| `sequences:write` | create, change, activate, pause, resume and duplicate sequences, enroll and cancel, and set, start and pause a broadcast's schedule and cancel one run |
 | `appointments:read` | read appointments, calendars, locations, booking options, open slots and territories |
 | `appointments:write` | book, reschedule and cancel appointments |
 | `conversations:read` | read conversations and their messages |
@@ -348,6 +350,34 @@ instead of `location_id`. Send one of the two, never both.
 Counts must be nonnegative safe integers. Missing counts match only triggers without an `assessmentAudience` filter.
 The `started` filter requires a positive count. `never_started` requires zero. These filters apply only to `assessment_abandoned`.
 Do not activate the never-started campaign before its copy is approved.
+
+### 12. Send a broadcast on a schedule
+
+A broadcast sends to its audience on its schedule. Each send is a run. `sequences_activate`
+does not start a broadcast: only `sequences_start_schedule` does.
+
+1. Call `sequences_get` and check `kind` is `broadcast`. An automation has no schedule.
+2. Call `sequences_set_schedule`. For one send, pass `schedule_kind: once` and `send_at`, a
+   date-time that ends in `Z` or an offset such as `-05:00`. To repeat, pass
+   `schedule_kind: recurring`, an `rrule` such as `FREQ=WEEKLY;BYDAY=MO;BYHOUR=9;BYMINUTE=0`,
+   and the `timezone` it is read in. The schedule
+   is saved as `draft` and sends nothing yet. A rule takes only `FREQ` (`DAILY`, `WEEKLY` or
+   `MONTHLY`), `INTERVAL` (1 to 100), `BYDAY`, `BYMONTHDAY`, `BYSETPOS`, one `BYHOUR` and one
+   `BYMINUTE`. There is no `COUNT` or `UNTIL`: end a series with `ends_on`. On 400, read which part
+   `message` names and fix it.
+3. Call `sequences_get_schedule` to read it back.
+4. Show the user when it sends and to which audience, and ask before you start it.
+5. Call `sequences_start_schedule`. The answer shows `status: scheduled` and the first send in
+   `next_fire_at`. On 400 `sequence_activation_blocked`, show the `blockers` and stop.
+6. To watch the sends, call `sequences_get_schedule`. Each item in `runs` is one send, with
+   `status` and recipient counts.
+7. To stop later sends, call `sequences_pause_schedule`. A run that is already sending keeps
+   sending. Start again with `sequences_start_schedule`.
+8. To stop one run, call `sequences_cancel_schedule_run` with the run's `id` as `runId`.
+   `cancelled` counts the enrollments it stopped.
+
+Setting the schedule again puts it back to `draft` and cancels the runs that have not ended:
+start it again after a change. Do not use `sequences_pause` on a broadcast: it answers 400.
 
 ## Other operations
 

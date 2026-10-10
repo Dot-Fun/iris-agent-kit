@@ -72,8 +72,8 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 |---|---|
 | `contacts:read` | Search and read contacts |
 | `contacts:write` | Create and update contacts, notes, tags, suppression, SMS consent, and enroll contacts in sequences or cancel them through events |
-| `sequences:read` | Read sequences, enrollments, send logs and totals |
-| `sequences:write` | Author, activate, pause, resume and duplicate sequences, enroll and cancel |
+| `sequences:read` | Read sequences, enrollments, send logs and totals, and a broadcast's schedule and runs |
+| `sequences:write` | Author, activate, pause, resume and duplicate sequences, enroll and cancel, and set, start and pause a broadcast's schedule and cancel one run |
 | `appointments:read` | Read appointments, open slots, calendars, locations, booking options and territories |
 | `appointments:write` | Book, reschedule and cancel appointments |
 | `conversations:read` | Read conversations and messages |

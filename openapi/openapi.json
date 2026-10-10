@@ -3734,7 +3734,7 @@
     },
     "/api/v1/sequences/{sequenceId}/activate": {
       "post": {
-        "description": "Checks that the organization can send what the sequence sends, then turns it on. The\nsequence starts enrolling and sending at once. When it cannot send, answers 400\n`sequence_activation_blocked` with `blockers`, and nothing changes. `activation_warnings`\non success name email setup that may keep mail from landing. A paused sequence stays paused:\ncall `sequences_resume` for it.",
+        "description": "Checks that the organization can send what the sequence sends, then turns it on. The\nsequence starts enrolling and sending at once. When it cannot send, answers 400\n`sequence_activation_blocked` with `blockers`, and nothing changes. `activation_warnings`\non success name email setup that may keep mail from landing. A paused sequence stays paused:\ncall `sequences_resume` for it. For a broadcast, call `sequences_start_schedule`: a broadcast\nsends nothing until its schedule starts.",
         "operationId": "sequences_activate",
         "parameters": [
           {
@@ -3826,7 +3826,7 @@
     },
     "/api/v1/sequences/{sequenceId}/pause": {
       "post": {
-        "description": "Holds every enrollment where it is. Nothing sends and nobody new enrolls until `sequences_resume`. Only an active sequence can pause, and not a broadcast or a sequence Iris manages.",
+        "description": "Holds every enrollment where it is. Nothing sends and nobody new enrolls until `sequences_resume`. Only an active sequence can pause, and not a broadcast or a sequence Iris manages. Pause a broadcast with `sequences_pause_schedule`.",
         "operationId": "sequences_pause",
         "parameters": [
           {
@@ -4343,6 +4343,483 @@
           "Public API"
         ],
         "x-iris-scope": "sequences:read",
+        "x-manager-power": "sequences",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/sequences/{sequenceId}/schedule": {
+      "get": {
+        "description": "A broadcast sends on its schedule. Answers the schedule and one page of its runs, newest\nfirst. Each run is one send to the audience. A broadcast with no schedule answers 404: set one\nwith `sequences_set_schedule`. An automation has no schedule. `page` is at most 1000 and\n`limit` at most 100. A `page` well past the last run can answer 400.",
+        "operationId": "sequences_get_schedule",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number, at most 1000",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (capped at 100)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceSchedulePageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid paging, or a `page` well past the last run"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:read` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "This broadcast has no schedule\n\nNo such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get a broadcast's send schedule and its runs",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ],
+        "x-iris-scope": "sequences:read",
+        "x-manager-power": "sequences",
+        "x-member-access": "deny"
+      },
+      "put": {
+        "description": "Creates or replaces the schedule of a broadcast. `once` needs `send_at`. `recurring` needs an\n`rrule` such as `FREQ=WEEKLY;BYDAY=MO;BYHOUR=9;BYMINUTE=0`, read in `timezone`. The rule takes only\n`FREQ` (`DAILY`, `WEEKLY`, `MONTHLY`), `INTERVAL` (1 to 100), `BYDAY`, `BYMONTHDAY`, `BYSETPOS`,\n`BYHOUR` and `BYMINUTE`, with the limits on `rrule`. `starts_on` and `ends_on` are days from\n2000-01-01 to 2100-12-31. Anything else answers 400 naming the part. The schedule is\nsaved as `draft` and sends nothing until `sequences_start_schedule`. Setting it again puts a\nstarted schedule back to `draft`, so start it again. It also cancels every run that has not\nended, and every enrollment an earlier run made that is still active. An automation answers 400.",
+        "operationId": "sequences_set_schedule",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SequenceScheduleSetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceScheduleDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or the sequence is an automation"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Set when a broadcast sends",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ],
+        "x-iris-scope": "sequences:write",
+        "x-manager-power": "sequences",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/sequences/{sequenceId}/schedule/start": {
+      "post": {
+        "description": "Starts a broadcast sending on its schedule: the schedule moves to `scheduled`, `next_fire_at`\nnames the first send, and the sequence turns on. This is how a broadcast goes live:\n`sequences_activate` only turns the sequence on, and a broadcast sends nothing until its\nschedule starts. Also restarts a paused schedule. Checks that the organization can send what\nthe broadcast sends. When it cannot, answers 400 `sequence_activation_blocked` with\n`blockers`, and nothing changes. A schedule with no future send answers 400. Otherwise a\nschedule that is not `draft` or `paused` answers 409. Ask the user first: this sends to every\ncontact in the audience.",
+        "operationId": "sequences_start_schedule",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceScheduleStartDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`sequence_activation_blocked`: `blockers` says what to fix. Or the schedule has no future send.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "This broadcast has no schedule\n\nNo such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The schedule is not `draft` or `paused`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Start a broadcast's schedule",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ],
+        "x-iris-scope": "sequences:write",
+        "x-manager-power": "sequences",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/sequences/{sequenceId}/schedule/pause": {
+      "post": {
+        "description": "Stops new runs: no send starts while the schedule is `paused`. A run that is already sending\nkeeps sending: cancel it with `sequences_cancel_schedule_run`. This is not `sequences_pause`,\nwhich holds every enrollment of an automation in place. Start again with\n`sequences_start_schedule`.",
+        "operationId": "sequences_pause_schedule",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceScheduleDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "This broadcast has no schedule\n\nNo such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Pause a broadcast's schedule",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ],
+        "x-iris-scope": "sequences:write",
+        "x-manager-power": "sequences",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/sequences/{sequenceId}/schedule/runs/{runId}/cancel": {
+      "post": {
+        "description": "Cancels every enrollment the run made that is still active, with their pending sends, and\nmoves the run to `cancelled` unless it already ended. `cancelled` counts those enrollments.\nTake the run id from `sequences_get_schedule`. A run with no active enrollment answers\n`cancelled: 0`. The schedule keeps its status: pause it to stop later runs.",
+        "operationId": "sequences_cancel_schedule_run",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "runId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceScheduleRunCancelDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such run in this broadcast\n\nNo such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Cancel one run of a broadcast",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ],
+        "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
       }
@@ -7989,6 +8466,344 @@
           "delivery_channels",
           "variant_assignments",
           "email_delivery_reporting"
+        ]
+      },
+      "SequenceScheduleDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sequence_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "schedule_kind": {
+            "type": "string",
+            "enum": [
+              "once",
+              "recurring"
+            ]
+          },
+          "send_at": {
+            "type": "string",
+            "nullable": true
+          },
+          "rrule": {
+            "type": "string",
+            "nullable": true
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "starts_on": {
+            "type": "string",
+            "nullable": true
+          },
+          "ends_on": {
+            "type": "string",
+            "nullable": true
+          },
+          "next_fire_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "The next send while the schedule is `scheduled`. Null on a `draft`."
+          },
+          "last_fired_at": {
+            "type": "string",
+            "nullable": true
+          },
+          "catchup_policy": {
+            "type": "string",
+            "enum": [
+              "skip",
+              "fire_once"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "scheduled",
+              "sending",
+              "paused",
+              "completed",
+              "cancelled"
+            ],
+            "description": "`draft` sends nothing. `scheduled` sends at `next_fire_at`. `paused` starts no new run."
+          },
+          "throttle_per_minute": {
+            "type": "number",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sequence_id",
+          "schedule_kind",
+          "timezone",
+          "catchup_policy",
+          "status",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "SequenceScheduleRunDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "occurrence_at": {
+            "type": "string",
+            "description": "When the run was due to send"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processing",
+              "fanning_out",
+              "completed",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "recipients_total": {
+            "type": "number",
+            "description": "Audience contacts the run counted, suppressed ones included"
+          },
+          "recipients_enrolled": {
+            "type": "number"
+          },
+          "recipients_suppressed": {
+            "type": "number",
+            "description": "Contacts the send rules left out: opted out, without SMS consent, with no phone or email for the channel, or a failed check"
+          },
+          "completed_at": {
+            "type": "string",
+            "nullable": true
+          },
+          "last_error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the run failed"
+          },
+          "created_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "occurrence_at",
+          "status",
+          "recipients_total",
+          "recipients_enrolled",
+          "recipients_suppressed",
+          "created_at"
+        ]
+      },
+      "SequenceSchedulePageDto": {
+        "type": "object",
+        "properties": {
+          "schedule": {
+            "$ref": "#/components/schemas/SequenceScheduleDto"
+          },
+          "runs": {
+            "description": "Newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceScheduleRunDto"
+            }
+          },
+          "runs_total": {
+            "type": "number",
+            "description": "Runs across every page"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "schedule",
+          "runs",
+          "runs_total",
+          "page",
+          "limit"
+        ]
+      },
+      "SequenceScheduleSetDto": {
+        "type": "object",
+        "properties": {
+          "schedule_kind": {
+            "type": "string",
+            "enum": [
+              "once",
+              "recurring"
+            ],
+            "description": "`once` sends at `send_at`. `recurring` sends on `rrule`."
+          },
+          "send_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When a `once` schedule sends. Required for `once`. A real calendar date-time ending in `Z` or an offset such as `-05:00`, for example `2026-11-01T09:00:00Z`."
+          },
+          "rrule": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "An RFC 5545 rule such as `FREQ=WEEKLY;BYDAY=MO;BYHOUR=9;BYMINUTE=0`, read in `timezone`. Required for `recurring`. Only these parts, each at most once: `FREQ` (`DAILY`, `WEEKLY` or `MONTHLY`), `INTERVAL` (1 to 100), `BYDAY` (1 to 7 distinct weekdays `MO` to `SU`, no number; on `DAILY` only with `INTERVAL=1`), `BYMONTHDAY` (`MONTHLY` only, 1 to 31 distinct days from 1 to 31 or -31 to -1), `BYSETPOS` (`MONTHLY` only, `1` or `-1`), `BYHOUR` (one hour, 0 to 23) and `BYMINUTE` (one minute, 0 to 59). Any other part, such as `COUNT` or `UNTIL`, answers 400. End a series with `ends_on`."
+          },
+          "timezone": {
+            "type": "string",
+            "default": "UTC",
+            "maxLength": 100,
+            "description": "The IANA timezone `rrule` is read in"
+          },
+          "starts_on": {
+            "type": "string",
+            "format": "date",
+            "description": "The first day a recurring schedule may send (YYYY-MM-DD), from 2000-01-01 to 2100-12-31"
+          },
+          "ends_on": {
+            "type": "string",
+            "format": "date",
+            "description": "The last day a recurring schedule may send (YYYY-MM-DD), from 2000-01-01 to 2100-12-31 and not before `starts_on`"
+          },
+          "catchup_policy": {
+            "type": "string",
+            "enum": [
+              "skip",
+              "fire_once"
+            ],
+            "default": "skip",
+            "description": "Sends a recurring schedule missed, for example while Iris was down: `skip` drops them, `fire_once` sends only the latest."
+          },
+          "throttle_per_minute": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 2147483647,
+            "description": "Stored for a planned limit on sends a minute, from 1 to 2147483647. Iris does not enforce it yet."
+          }
+        },
+        "required": [
+          "schedule_kind"
+        ]
+      },
+      "SequenceScheduleStartDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sequence_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "schedule_kind": {
+            "type": "string",
+            "enum": [
+              "once",
+              "recurring"
+            ]
+          },
+          "send_at": {
+            "type": "string",
+            "nullable": true
+          },
+          "rrule": {
+            "type": "string",
+            "nullable": true
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "starts_on": {
+            "type": "string",
+            "nullable": true
+          },
+          "ends_on": {
+            "type": "string",
+            "nullable": true
+          },
+          "next_fire_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "The next send while the schedule is `scheduled`. Null on a `draft`."
+          },
+          "last_fired_at": {
+            "type": "string",
+            "nullable": true
+          },
+          "catchup_policy": {
+            "type": "string",
+            "enum": [
+              "skip",
+              "fire_once"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "scheduled",
+              "sending",
+              "paused",
+              "completed",
+              "cancelled"
+            ],
+            "description": "`draft` sends nothing. `scheduled` sends at `next_fire_at`. `paused` starts no new run."
+          },
+          "throttle_per_minute": {
+            "type": "number",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "activation_warnings": {
+            "description": "Email setup that may keep mail from landing. Omitted when there is none.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceActivationWarningDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "sequence_id",
+          "schedule_kind",
+          "timezone",
+          "catchup_policy",
+          "status",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "SequenceScheduleRunCancelDto": {
+        "type": "object",
+        "properties": {
+          "cancelled": {
+            "type": "number",
+            "description": "The enrollments of the run that were still active and are now cancelled"
+          }
+        },
+        "required": [
+          "cancelled"
         ]
       }
     }
