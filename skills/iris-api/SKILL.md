@@ -222,6 +222,9 @@ It may book a new client: any contact at its locations whose id it has.
 4. Call `contacts_get` with the `contactId` for the full record: stage, tags, custom fields. A
    MEMBER, and a MANAGER without the contacts power, get only `id`, `name`, `email` and `phone`,
    from both `contacts_search` and `contacts_get`.
+5. To see what happened with the contact, call `contacts_list_interactions` with the `contactId`.
+   It lists calls, chats and SMS threads, newest first. Email is in `conversations_list`. Filter with `channel` or `status`.
+   It does not list notes: `contacts_get` only counts them.
 
 Never create a contact to "find" one. `contacts_upsert` creates or updates by email, so use it
 only when the user wants a contact created or changed.
@@ -335,7 +338,8 @@ instead of `location_id`. Send one of the two, never both.
 
 1. Find the contact (recipe 1).
 2. Call `contacts_update` to change the name, phone, email, stage or custom fields. An unknown
-   custom field key returns 400 naming it.
+   custom field key returns 400 naming it. To move the contact to a stage, call `contacts_list_stages`
+   first and send one stage `id` as `stage_id`.
 3. Call `contacts_add_note` with what you learned.
 4. Call `contacts_add_tag` or `contacts_remove_tag` to change tags. Both are safe to repeat.
 5. When a person asks to stop email or SMS, call `contacts_suppress` with the channels at once.

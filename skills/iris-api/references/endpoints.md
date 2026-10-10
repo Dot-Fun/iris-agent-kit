@@ -180,6 +180,24 @@ Get one contact
 
 - `contactId` (path, string uuid, required)
 
+### contacts_list_interactions
+
+`GET /api/v1/contacts/{contactId}/interactions`. Scope: `contacts:read`. Member: `scoped`.
+
+List the interactions of a contact
+
+- `contactId` (path, string uuid, required)
+- `page` (query, number): 1-based page number
+- `limit` (query, number): Page size (capped at 100)
+- `channel` (query, string, one of `voice`, `chat`, `sms`): Only interactions on this channel
+- `status` (query, string, one of `in_progress`, `completed`, `abandoned`): Only interactions in this status
+
+### contacts_list_stages
+
+`GET /api/v1/contacts/stages`. Scope: `contacts:read`. Member: `open`.
+
+List the organization’s pipeline stages
+
 ### contacts_remove_tag
 
 `DELETE /api/v1/contacts/{contactId}/tags/{tag}`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`.

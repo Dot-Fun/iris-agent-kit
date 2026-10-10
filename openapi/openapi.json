@@ -742,6 +742,199 @@
         "x-member-access": "deny"
       }
     },
+    "/api/v1/contacts/stages": {
+      "get": {
+        "description": "The stages of the organization’s pipeline, in the order the dashboard shows them.\nSend a stage’s `id` as `stage_id` to `contacts_update` to move a contact to it.\nAn organization with no pipeline stage field answers an empty list.",
+        "operationId": "contacts_list_stages",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactStageListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `contacts:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the organization’s pipeline stages",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ],
+        "x-iris-scope": "contacts:read",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/contacts/{contactId}/interactions": {
+      "get": {
+        "description": "The calls, chats and SMS threads the assistant handled with one contact, most recent first. Email threads are not listed here: use `conversations_list`.\nFilter by `channel` or `status`. An interaction that booked an appointment names it in `appointment_id`.\nThis does not list notes: `contacts_get` counts them.\nA MEMBER’s credential, and a location-limited key, see only the interactions at their locations, and\nonly for contacts they can read (404 otherwise). A MEMBER, and a MANAGER without the contacts power,\ndo not get `captured_fields`.",
+        "operationId": "contacts_list_interactions",
+        "parameters": [
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (capped at 100)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          },
+          {
+            "name": "channel",
+            "required": false,
+            "in": "query",
+            "description": "Only interactions on this channel",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "voice",
+                "chat",
+                "sms"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Only interactions in this status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "in_progress",
+                "completed",
+                "abandoned"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactInteractionPageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `contacts:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the interactions of a contact",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ],
+        "x-iris-scope": "contacts:read",
+        "x-member-access": "scoped"
+      }
+    },
     "/api/v1/sequences": {
       "get": {
         "description": "Every sequence the API key’s organization owns, newest first. A manager or member sees organization-wide sequences and those of their locations.",
@@ -5508,6 +5701,117 @@
         "required": [
           "contact_id",
           "suppressed"
+        ]
+      },
+      "ContactStageListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "In the order the pipeline shows them. Empty when the organization has no pipeline stage field.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactStageDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ContactInteractionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contact_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "conversation_id": {
+            "type": "string",
+            "description": "The call, chat session or SMS thread this interaction belongs to"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "voice",
+              "chat",
+              "sms",
+              "email"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "in_progress",
+              "completed",
+              "abandoned"
+            ]
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "appointment_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The appointment this interaction booked, if any"
+          },
+          "captured_fields": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "What the assistant captured during the interaction, by field name. Absent when the credential reads identity only: a MEMBER, or a MANAGER without the contacts power."
+          }
+        },
+        "required": [
+          "id",
+          "contact_id",
+          "conversation_id",
+          "channel",
+          "status",
+          "started_at",
+          "completed_at",
+          "location_id",
+          "appointment_id"
+        ]
+      },
+      "ContactInteractionPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactInteractionDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
         ]
       },
       "SequenceSummaryDto": {
