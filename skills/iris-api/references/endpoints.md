@@ -251,16 +251,41 @@ Get one conversation with its messages
 
 - `conversationId` (path, string uuid, required)
 
+### conversations_hold
+
+`POST /api/v1/conversations/{conversationId}/hold`. Scope: `conversations:write`. Member: `sms_setting`.
+
+Hold an SMS or web chat conversation for a person: the AI stops answering
+
+- `conversationId` (path, string uuid, required)
+
 ### conversations_list
 
 `GET /api/v1/conversations`. Scope: `conversations:read`. Member: `scoped`.
 
-List email and SMS conversations
+List email, SMS and web chat conversations
 
 - `cursor` (query, string): The `next_cursor` of the page before. Leave out for the first page.
 - `limit` (query, number)
-- `channel` (query, string, one of `email`, `sms`): Only this channel. Both when left out.
+- `channel` (query, string, one of `email`, `sms`, `chat`): Only this channel. Every channel when left out. A search (`q`) leaves chat out.
 - `q` (query, string): Free text search
+
+### conversations_reply
+
+`POST /api/v1/conversations/{conversationId}/reply`. Scope: `conversations:write`. Member: `sms_setting`.
+
+Reply in an email, SMS or web chat conversation
+
+- `conversationId` (path, string uuid, required)
+- `body` (body, string, required): The text of the reply. At most 1600 characters for SMS and 4000 for chat.
+
+### conversations_resume
+
+`POST /api/v1/conversations/{conversationId}/resume`. Scope: `conversations:write`. Member: `sms_setting`.
+
+Hand an SMS or web chat conversation back to the AI
+
+- `conversationId` (path, string uuid, required)
 
 ### conversations_send_sms
 

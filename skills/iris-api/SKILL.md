@@ -101,8 +101,8 @@ For the writes that do exist:
 4. Read the result back and report it.
 
 Ask the user before any write that sends a message to a person (`sequences_activate`,
-`sequences_resume`, `sequences_enroll`, `conversations_send_sms`) unless they asked for that
-exact action.
+`sequences_resume`, `sequences_enroll`, `conversations_send_sms`, `conversations_reply`,
+`conversations_resume`) unless they asked for that exact action.
 
 ## Errors
 
@@ -159,7 +159,7 @@ A key carries scopes, one read and one write per noun:
 | `appointments:read` | read appointments, calendars, locations, booking options, open slots and territories |
 | `appointments:write` | book, reschedule and cancel appointments |
 | `conversations:read` | read conversations and their messages |
-| `conversations:write` | send an SMS (a staff member: only to their own clients, while their SMS setting is on) |
+| `conversations:write` | send an SMS, reply in a conversation, and hold or resume its AI (a staff member: only for their own clients, while their SMS setting is on) |
 | `calls:read` | read calls and transcripts |
 | `audiences:read` | read audiences |
 | `audiences:write` | add and remove audience members |
@@ -364,7 +364,16 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
   book a new appointment instead. A 422 from `appointments_create` can mean the user who created
   the API key left the organization: tell the user to create a new key.
 - Conversations: `conversations_list`, `conversations_get` (with messages),
-  `conversations_send_sms`. Read the conversation before you text the contact. The text goes from
+  `conversations_reply`, `conversations_hold`, `conversations_resume`, `conversations_send_sms`.
+  The channels are `email`, `sms` and `chat` (web chat). A search (`q`) skips chat.
+  `conversations_reply` answers on the conversation's own channel: read the conversation first.
+  `conversations_hold` stops the AI answering an SMS or chat conversation until
+  `conversations_resume`, and `response_mode` in `conversations_get` shows who answers. An email
+  conversation has no AI: hold and resume answer 422 `channel_not_supported`. Do not retry it.
+  `conversations_reply` is not safe to retry: after a 5xx the message may already have gone to the
+  contact. Read the conversation with `conversations_get` before you send it again.
+  A 422 `no_acting_user` on an email reply means the key has no person to send as: tell the user.
+  Read the conversation before you text the contact. The text goes from
   the number of the contact's location, else from the default number. A 422 can mean no number
   can text the contact, or (for a manager) that the contact's thread on that number belongs to
   another location: tell the user, and do not retry. A staff member (MEMBER) texts only their own

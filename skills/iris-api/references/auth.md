@@ -77,7 +77,7 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `appointments:read` | Read appointments, open slots, calendars, locations, booking options and territories |
 | `appointments:write` | Book, reschedule and cancel appointments |
 | `conversations:read` | Read conversations and messages |
-| `conversations:write` | Send an SMS. A staff member sends only to their own clients, while their SMS setting is on |
+| `conversations:write` | Send an SMS, reply in a conversation, and hold or resume its AI. A staff member acts only for their own clients, while their SMS setting is on |
 | `calls:read` | Read calls and transcripts |
 | `audiences:read` | Read audiences |
 | `audiences:write` | Add and remove audience members |
@@ -145,6 +145,7 @@ person's current role. `me_get` shows them as `principal`: `user_id`, `role` and
 a MEMBER's access, plus the `deny` operations marked `x-manager-power` for a power the manager
 holds, at their locations. With the `sequences` power that means the sequences bound to their
 locations only, never an organization-wide one. An operation whose member access is `sms_setting`
-(`conversations_send_sms`) admits a MEMBER only while their SMS setting is on, and only for their
-own clients, and a MANAGER only with the `contacts` power. While a person may not text, the consent
+(`conversations_send_sms`, `conversations_reply`, `conversations_hold`, `conversations_resume`)
+admits a MEMBER only while their SMS setting is on, and only for their own clients, and a MANAGER
+only with the `contacts` power. While a person may not text, the consent
 page leaves `conversations:write` out and the grant drops it, and a personal key cannot take it.

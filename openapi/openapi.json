@@ -2190,7 +2190,7 @@
     },
     "/api/v1/conversations": {
       "get": {
-        "description": "Newest activity first. Pages by cursor: pass `next_cursor` back as `cursor` until it is null.\nA page can hold fewer than `limit` items and still have a next page.\nA MEMBER at the own-records level gets only the conversations of the clients of their own appointments.",
+        "description": "Newest activity first. Pages by cursor: pass `next_cursor` back as `cursor` until it is null.\nA page can hold fewer than `limit` items and still have a next page.\nEvery channel when `channel` is left out. A search (`q`) matches email and SMS only, so it leaves chat out.\nA MEMBER at the own-records level gets only the conversations of the clients of their own appointments.",
         "operationId": "conversations_list",
         "parameters": [
           {
@@ -2217,12 +2217,13 @@
             "name": "channel",
             "required": false,
             "in": "query",
-            "description": "Only this channel. Both when left out.",
+            "description": "Only this channel. Every channel when left out. A search (`q`) leaves chat out.",
             "schema": {
               "type": "string",
               "enum": [
                 "email",
-                "sms"
+                "sms",
+                "chat"
               ]
             }
           },
@@ -2284,7 +2285,7 @@
             "apiKey": []
           }
         ],
-        "summary": "List email and SMS conversations",
+        "summary": "List email, SMS and web chat conversations",
         "tags": [
           "Conversations",
           "Public API"
@@ -2295,7 +2296,7 @@
     },
     "/api/v1/conversations/{conversationId}": {
       "get": {
-        "description": "Every message of an email conversation, or the latest 50 messages of an SMS conversation, oldest first.\nReading an email conversation marks it as read: its unread count in the Iris inbox goes to zero.",
+        "description": "Every message of an email or chat conversation, or the latest 50 messages of an SMS conversation, oldest first.\nA chat conversation shows the visitor’s messages (inbound) and the AI’s and staff replies (outbound), not tool calls or system notes.\n`response_mode` says whether the AI or a person answers an SMS or chat conversation.\nReading an email conversation marks it as read: its unread count in the Iris inbox goes to zero.",
         "operationId": "conversations_get",
         "parameters": [
           {
@@ -2372,6 +2373,291 @@
         ],
         "x-iris-scope": "conversations:read",
         "x-member-access": "scoped"
+      }
+    },
+    "/api/v1/conversations/{conversationId}/reply": {
+      "post": {
+        "description": "Sends `body` into the conversation on its own channel, as the dashboard inbox does, and returns the messages it stored.\nSMS: a text to the conversation’s number from its line, at most 1600 characters. The number must have consented and must not have opted out.\nChat: an operator message to the visitor, at most 4000 characters. Email: an email to the contact, threaded.\nAn SMS or chat reply hands the conversation to a person for 30 minutes: the AI stops answering until then, unless it is on hold.\nA staff member (MEMBER) key needs their SMS setting on for every channel, email and chat too. On every channel it\nreaches only their own clients’ conversations at their locations. A manager needs the contacts power.\nA staff member’s email reply also follows the dashboard rule, which can refuse it with 403.\nAny conversation the caller does not reach answers 404. This call is not idempotent: a retry after a 5xx can send twice.\nIn chat, on a member key, two identical replies sent at the same moment may report the same message id. The text is stored once per request.",
+        "operationId": "conversations_reply",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationReplyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationReplyResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A blank or missing body, or a body too long for the channel"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller may not reply on this channel (for example a manager without the contacts power)\n\nThe key does not carry the `conversations:write` scope; `required` names it. A member’s credential gets `insufficient_role` unless the member’s SMS setting is on, and a manager’s unless they hold the `contacts` power",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such conversation in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`sms_not_permitted`: the SMS recipient opted out or has not consented"
+          },
+          "422": {
+            "description": "`phone_line_invalid`: the SMS line is gone. `no_acting_user`: an email reply from a key with no person to send as"
+          },
+          "429": {
+            "description": "The daily SMS cap for this contact is reached\n\nMore than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The SMS or email provider refused the send"
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Reply in an email, SMS or web chat conversation",
+        "tags": [
+          "Conversations",
+          "Public API"
+        ],
+        "x-iris-scope": "conversations:write",
+        "x-member-access": "sms_setting"
+      }
+    },
+    "/api/v1/conversations/{conversationId}/hold": {
+      "post": {
+        "description": "Sets `response_mode` to `human_manual`: the AI does not answer the contact until someone resumes it. Safe to repeat.\nAn email conversation has no AI to hold: the answer is 422 `channel_not_supported`.\nA staff member (MEMBER) key needs their SMS setting on for every channel, chat too. On every channel it reaches only\ntheir own clients’ conversations at their locations. A manager needs the contacts power.\nA staff member’s SMS hold also follows the dashboard rule, which can refuse it with 403. Any conversation the caller does not reach answers 404.",
+        "operationId": "conversations_hold",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResponseModeResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `conversations:write` scope; `required` names it. A member’s credential gets `insufficient_role` unless the member’s SMS setting is on, and a manager’s unless they hold the `contacts` power",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such conversation in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`channel_not_supported`: an email conversation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Hold an SMS or web chat conversation for a person: the AI stops answering",
+        "tags": [
+          "Conversations",
+          "Public API"
+        ],
+        "x-iris-scope": "conversations:write",
+        "x-member-access": "sms_setting"
+      }
+    },
+    "/api/v1/conversations/{conversationId}/resume": {
+      "post": {
+        "description": "Sets `response_mode` to `ai_auto`: the AI answers the contact again. An SMS contact gets a short note that the AI is back.\nAn email conversation has no AI to resume: the answer is 422 `channel_not_supported`.\nA staff member (MEMBER) key needs their SMS setting on for every channel, chat too. On every channel it reaches only\ntheir own clients’ conversations at their locations. A manager needs the contacts power.\nA staff member’s SMS resume also follows the dashboard rule, which can refuse it with 403. Any conversation the caller does not reach answers 404.",
+        "operationId": "conversations_resume",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResponseModeResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `conversations:write` scope; `required` names it. A member’s credential gets `insufficient_role` unless the member’s SMS setting is on, and a manager’s unless they hold the `contacts` power",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such conversation in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`channel_not_supported`: an email conversation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Hand an SMS or web chat conversation back to the AI",
+        "tags": [
+          "Conversations",
+          "Public API"
+        ],
+        "x-iris-scope": "conversations:write",
+        "x-member-access": "sms_setting"
       }
     },
     "/api/v1/conversations/sms": {
@@ -5799,7 +6085,8 @@
             "type": "string",
             "enum": [
               "email",
-              "sms"
+              "sms",
+              "chat"
             ]
           },
           "contact_id": {
@@ -5809,11 +6096,11 @@
           },
           "title": {
             "type": "string",
-            "description": "The contact’s name or address, or the email subject"
+            "description": "The contact’s name or address, the email subject, or the chat visitor"
           },
           "preview": {
             "type": "string",
-            "description": "The latest message, shortened"
+            "description": "The latest message, shortened. For a chat conversation it is the page the visitor chatted from, not a message: read the conversation for the transcript."
           },
           "last_message_at": {
             "type": "string",
@@ -5916,7 +6203,8 @@
             "type": "string",
             "enum": [
               "email",
-              "sms"
+              "sms",
+              "chat"
             ]
           },
           "contact_id": {
@@ -5926,14 +6214,24 @@
           },
           "title": {
             "type": "string",
-            "description": "The contact’s phone number, or the email subject"
+            "description": "The contact’s phone number, the email subject, or the chat visitor (or the site they chatted on)"
           },
           "messages": {
-            "description": "Oldest first. Every email message, or the latest 50 SMS messages.",
+            "description": "Oldest first. Every email or chat message, or the latest 50 SMS messages.",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ConversationMessageDto"
             }
+          },
+          "response_mode": {
+            "type": "string",
+            "enum": [
+              "ai_auto",
+              "human_auto",
+              "human_manual"
+            ],
+            "nullable": true,
+            "description": "Who answers the contact: `ai_auto` the AI, `human_auto` a person for now (the AI comes back after 30 minutes without a reply), `human_manual` a person until someone resumes the AI. Null for email."
           }
         },
         "required": [
@@ -5941,7 +6239,89 @@
           "channel",
           "contact_id",
           "title",
+          "messages",
+          "response_mode"
+        ]
+      },
+      "ConversationReplyDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "maxLength": 100000,
+            "description": "The text of the reply. At most 1600 characters for SMS and 4000 for chat."
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "ConversationReplyResultDto": {
+        "type": "object",
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms",
+              "chat"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "sent",
+              "partial_failed"
+            ],
+            "description": "`partial_failed`: a long SMS went out only in part. `messages` holds the parts that went out."
+          },
+          "messages": {
+            "description": "The messages this reply stored",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationMessageDto"
+            }
+          }
+        },
+        "required": [
+          "conversation_id",
+          "channel",
+          "status",
           "messages"
+        ]
+      },
+      "ConversationResponseModeResultDto": {
+        "type": "object",
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms",
+              "chat"
+            ]
+          },
+          "response_mode": {
+            "type": "string",
+            "enum": [
+              "ai_auto",
+              "human_auto",
+              "human_manual"
+            ]
+          }
+        },
+        "required": [
+          "conversation_id",
+          "channel",
+          "response_mode"
         ]
       },
       "SmsSendDto": {
