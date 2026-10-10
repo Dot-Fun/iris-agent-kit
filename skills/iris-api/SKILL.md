@@ -400,6 +400,18 @@ start it again after a change. Do not use `sequences_pause` on a broadcast: it a
 7. To retire it, call `audiences_archive`. `audiences_update` with `is_archived: false` restores
    it.
 
+### 14. Test a step and pick a send window
+
+1. To pick when a sequence may send, call `sequences_list_send_schedules`. It pages with `page` and `limit`, and the windows are in `items`. Pass the `id` you
+   choose as `send_schedule_id` on `sequences_create` or `sequences_update`. A sequence with none
+   uses the window where `is_default` is true.
+2. To test a step, save it first: the test sends what is saved. Call `sequences_test_step` with
+   the `sequenceId` and the `step_key` of the step.
+3. Send `to_email` (email step) or `to_phone` (SMS step) only to an address or number the user
+   owns, never to a customer. Or send `contact_id` to fill the variables from a contact: the
+   message then goes to that contact, so ask the user first.
+4. Read `success`. When false, `error` and `reason_code` say why, for example `opted_out`.
+
 ## Other operations
 
 These follow the same rules. Their parameters are in `references/endpoints.md`.

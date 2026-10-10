@@ -4310,6 +4310,95 @@
         "x-member-access": "open"
       }
     },
+    "/api/v1/sequences/send-schedules": {
+      "get": {
+        "description": "A send window sets the days and hours a sequence may send. Use an `id` as `send_schedule_id` on\n`sequences_create` or `sequences_update`. The window with `is_default` true applies to a sequence\nthat names none. This is not the broadcast schedule of `sequences_set_schedule`, which sets when a\nbroadcast starts. Paged by `page` (at most 1000) and `limit` (at most 100).",
+        "operationId": "sequences_list_send_schedules",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number, at most 1000",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (capped at 100)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendSchedulePageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid paging, or a `page` past the last window"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the send windows a sequence can use",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ],
+        "x-iris-scope": "sequences:read",
+        "x-member-access": "open"
+      }
+    },
     "/api/v1/sequences/variables": {
       "get": {
         "description": "Write a token as `{{token}}` in a subject, preheader or body. The list includes the organization’s CRM fields.",
@@ -5220,6 +5309,111 @@
           "Public API"
         ],
         "x-iris-scope": "sequences:read",
+        "x-manager-power": "sequences",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/sequences/{sequenceId}/steps/{stepKey}/test": {
+      "post": {
+        "description": "Sends the saved email or SMS of one step once, to a contact or to an address you give. It sends a real\nmessage, and nothing is recorded: no enrollment, no send log row, no analytics event. The dashboard\nlets an owner or admin send a test to any address, and so does this: send `to_email` or `to_phone`\nonly to an address or number the user owns, never to a customer. With `contact_id` the step variables\nfill from that contact and the message goes to the contact, unless you also send `to_email` or\n`to_phone`. Without it the variables are empty. Opt-out and consent checks apply to the recipient. A\nrefused or failed send answers 200 with `success` false and `error`. A wait or task step answers 400.\nSave the step first: the test sends what is saved. Ask the user first.",
+        "operationId": "sequences_test_step",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "stepKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "maxLength": 128
+            },
+            "description": "The `step_key` of the step, as `sequences_get` lists it. At most 128 characters."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SequenceTestStepDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceTestStepResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, no address for the channel, or not an email or SMS step"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such step, or no such contact in this organization\n\nNo such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Send a test of one step",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ],
+        "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
       }
@@ -8617,6 +8811,99 @@
           "system_managed"
         ]
       },
+      "SendScheduleDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Use as `send_schedule_id` on `sequences_create` or `sequences_update`"
+          },
+          "name": {
+            "type": "string"
+          },
+          "weekdays": {
+            "description": "Days a send may go out: 0 is Sunday, 6 is Saturday",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "start_minute": {
+            "type": "number",
+            "description": "First minute of the day a send may go out (0 to 1439)"
+          },
+          "end_minute": {
+            "type": "number",
+            "description": "Last minute of the day, exclusive (1 to 1440)"
+          },
+          "timezone_mode": {
+            "type": "string",
+            "enum": [
+              "contact",
+              "organization"
+            ],
+            "description": "Whose clock the window is read in: the contact’s or the organization’s"
+          },
+          "skip_holidays": {
+            "type": "boolean"
+          },
+          "holiday_calendar": {
+            "type": "string",
+            "enum": [
+              "US"
+            ]
+          },
+          "randomize_minutes": {
+            "type": "number",
+            "description": "Minutes of random delay added to each send"
+          },
+          "is_default": {
+            "type": "boolean",
+            "description": "The window a sequence with no `send_schedule_id` uses"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "weekdays",
+          "start_minute",
+          "end_minute",
+          "timezone_mode",
+          "skip_holidays",
+          "holiday_calendar",
+          "randomize_minutes",
+          "is_default"
+        ]
+      },
+      "SendSchedulePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Default window first, then by name",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SendScheduleDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Send windows across every page"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
       "SequenceVariableTokenDto": {
         "type": "object",
         "properties": {
@@ -9826,6 +10113,65 @@
           "email_delivery_reporting"
         ]
       },
+      "SequenceTestStepDto": {
+        "type": "object",
+        "properties": {
+          "contact_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Fill the step variables from this contact. The contact must belong to this organization."
+          },
+          "to_email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254,
+            "description": "The address that gets the email. Needed for an email step when `contact_id` is not sent."
+          },
+          "to_phone": {
+            "type": "string",
+            "maxLength": 32,
+            "description": "The number that gets the text. Needed for an SMS step when `contact_id` is not sent."
+          }
+        }
+      },
+      "SequenceTestStepResultDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the channel provider accepted the message"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms"
+            ]
+          },
+          "provider_message_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The provider message id when it was sent"
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the send failed, such as an opt-out or a provider error. Null when it was sent."
+          },
+          "reason_code": {
+            "type": "string",
+            "nullable": true,
+            "description": "A stable reason when the send was held back, such as `opted_out` or `no_consent`"
+          }
+        },
+        "required": [
+          "success",
+          "channel",
+          "provider_message_id",
+          "error",
+          "reason_code"
+        ]
+      },
       "SequenceScheduleDto": {
         "type": "object",
         "properties": {
@@ -10015,7 +10361,8 @@
           "send_at": {
             "type": "string",
             "format": "date-time",
-            "description": "When a `once` schedule sends. Required for `once`. A real calendar date-time ending in `Z` or an offset such as `-05:00`, for example `2026-11-01T09:00:00Z`."
+            "maxLength": 40,
+            "description": "When a `once` schedule sends. Required for `once`. A real calendar date-time ending in `Z` or an offset such as `-05:00`, for example `2026-11-01T09:00:00Z`. At most 40 characters."
           },
           "rrule": {
             "type": "string",
@@ -10031,11 +10378,13 @@
           "starts_on": {
             "type": "string",
             "format": "date",
+            "maxLength": 10,
             "description": "The first day a recurring schedule may send (YYYY-MM-DD), from 2000-01-01 to 2100-12-31"
           },
           "ends_on": {
             "type": "string",
             "format": "date",
+            "maxLength": 10,
             "description": "The last day a recurring schedule may send (YYYY-MM-DD), from 2000-01-01 to 2100-12-31 and not before `starts_on`"
           },
           "catchup_policy": {

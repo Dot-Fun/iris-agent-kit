@@ -611,6 +611,15 @@ List the contacts enrolled in one sequence
 - `contact_id` (query, string uuid): Only this contact's enrollments in the sequence
 - `email` (query, string): Only the enrollments of the contact with this email, in the key’s organization. Matched without regard to case. Takes precedence over `contact_id`. An email no contact carries returns an empty page, not a 404. When more than one contact carries the email, the one that owns it as its identity is used.
 
+### sequences_list_send_schedules
+
+`GET /api/v1/sequences/send-schedules`. Scope: `sequences:read`. Member: `open`.
+
+List the send windows a sequence can use
+
+- `page` (query, number): 1-based page number, at most 1000
+- `limit` (query, number): Page size (capped at 100)
+
 ### sequences_list_triggers
 
 `GET /api/v1/sequences/triggers`. Scope: `sequences:read`. Member: `open`.
@@ -655,7 +664,7 @@ Set when a broadcast sends
 
 - `sequenceId` (path, string uuid, required)
 - `schedule_kind` (body, string, required, one of `once`, `recurring`): `once` sends at `send_at`. `recurring` sends on `rrule`.
-- `send_at` (body, string date-time): When a `once` schedule sends. Required for `once`. A real calendar date-time ending in `Z` or an offset such as `-05:00`, for example `2026-11-01T09:00:00Z`.
+- `send_at` (body, string date-time): When a `once` schedule sends. Required for `once`. A real calendar date-time ending in `Z` or an offset such as `-05:00`, for example `2026-11-01T09:00:00Z`. At most 40 characters.
 - `rrule` (body, string): An RFC 5545 rule such as `FREQ=WEEKLY;BYDAY=MO;BYHOUR=9;BYMINUTE=0`, read in `timezone`. Required for `recurring`. Only these parts, each at most once: `FREQ` (`DAILY`, `WEEKLY` or `MONTHLY`), `INTERVAL` (1 to 100), `BYDAY` (1 to 7 distinct weekdays `MO` to `SU`, no number; on `DAILY` only with `INTERVAL=1`), `BYMONTHDAY` (`MONTHLY` only, 1 to 31 distinct days from 1 to 31 or -31 to -1), `BYSETPOS` (`MONTHLY` only, `1` or `-1`), `BYHOUR` (one hour, 0 to 23) and `BYMINUTE` (one minute, 0 to 59). Any other part, such as `COUNT` or `UNTIL`, answers 400. End a series with `ends_on`.
 - `timezone` (body, string): The IANA timezone `rrule` is read in
 - `starts_on` (body, string date): The first day a recurring schedule may send (YYYY-MM-DD), from 2000-01-01 to 2100-12-31
@@ -670,6 +679,18 @@ Set when a broadcast sends
 Start a broadcast's schedule
 
 - `sequenceId` (path, string uuid, required)
+
+### sequences_test_step
+
+`POST /api/v1/sequences/{sequenceId}/steps/{stepKey}/test`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
+
+Send a test of one step
+
+- `sequenceId` (path, string uuid, required)
+- `stepKey` (path, string, required): The `step_key` of the step, as `sequences_get` lists it. At most 128 characters.
+- `contact_id` (body, string uuid): Fill the step variables from this contact. The contact must belong to this organization.
+- `to_email` (body, string email): The address that gets the email. Needed for an email step when `contact_id` is not sent.
+- `to_phone` (body, string): The number that gets the text. Needed for an SMS step when `contact_id` is not sent.
 
 ### sequences_update
 
