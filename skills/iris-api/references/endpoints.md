@@ -276,6 +276,16 @@ List the interactions of a contact
 - `channel` (query, string, one of `voice`, `chat`, `sms`): Only interactions on this channel
 - `status` (query, string, one of `in_progress`, `completed`, `abandoned`): Only interactions in this status
 
+### contacts_list_notes
+
+`GET /api/v1/contacts/{contactId}/notes`. Scope: `contacts:read`. Member: `deny`. Manager power: `contacts`.
+
+List the notes of a contact
+
+- `contactId` (path, string uuid, required)
+- `page` (query, number): 1-based page number
+- `limit` (query, number): Page size (capped at 100)
+
 ### contacts_list_stages
 
 `GET /api/v1/contacts/stages`. Scope: `contacts:read`. Member: `open`.

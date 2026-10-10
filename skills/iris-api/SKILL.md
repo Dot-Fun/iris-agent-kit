@@ -225,7 +225,8 @@ It may book a new client: any contact at its locations whose id it has.
    from both `contacts_search` and `contacts_get`.
 5. To see what happened with the contact, call `contacts_list_interactions` with the `contactId`.
    It lists calls, chats and SMS threads, newest first. Email is in `conversations_list`. Filter with `channel` or `status`.
-   It does not list notes: `contacts_get` only counts them.
+   To read the contact's notes, call `contacts_list_notes` with the `contactId`. It pages newest first, with `limit` at most 100.
+   A MEMBER, and a MANAGER without the contacts power, get `insufficient_role` there. Notes that belong to one location (dashboard notes and GoHighLevel syncs) are not listed.
 
 Never create a contact to "find" one. `contacts_upsert` creates or updates by email, so use it
 only when the user wants a contact created or changed.

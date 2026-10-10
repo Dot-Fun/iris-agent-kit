@@ -458,6 +458,109 @@
         "x-iris-scope": "contacts:write",
         "x-manager-power": "contacts",
         "x-member-access": "deny"
+      },
+      "get": {
+        "description": "The organization-shared notes on one contact, newest first: those `contacts_add_note` and Zapier write. `contacts_get` counts every note, so its `notes_count` can exceed `total` here.\nEach note gives its `body`, its `source` (`user`, `zapier` or `system`), its author when a team member wrote it, and when it was written.\nPage with `page` and `limit`. `limit` is at most 100 and defaults to 25: a larger `limit` answers 400.\nA contact the credential cannot read answers 404, like one that does not exist.\nNotes that belong to one location are not listed: the ones a team member writes in the dashboard and the ones synced from GoHighLevel. They are private to their location and revisioned.\nA MEMBER, and a MANAGER without the contacts power, get `insufficient_role`: they read a contact’s identity only. A MANAGER with the contacts power reads the notes of contacts at their locations.",
+        "operationId": "contacts_list_notes",
+        "parameters": [
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (capped at 100)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactNotePageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `contacts:read` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `contacts` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the notes of a contact",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ],
+        "x-iris-scope": "contacts:read",
+        "x-manager-power": "contacts",
+        "x-member-access": "deny"
       }
     },
     "/api/v1/contacts/{contactId}/tags": {
@@ -6870,6 +6973,70 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ContactInteractionDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "ContactNoteItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "user",
+              "zapier",
+              "system"
+            ],
+            "description": "Who wrote it: a team member (`user`), Zapier, or the system. Notes added through the API show as `system`."
+          },
+          "author_user_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The team member who wrote it. Null for a Zapier or system note."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "body",
+          "source",
+          "author_user_id",
+          "created_at"
+        ]
+      },
+      "ContactNotePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactNoteItemDto"
             }
           },
           "total": {
