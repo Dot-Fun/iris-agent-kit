@@ -75,7 +75,7 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `sequences:read` | Read sequences, enrollments, send logs and totals, and a broadcast's schedule and runs |
 | `sequences:write` | Author, activate, pause, resume and duplicate sequences, enroll and cancel, and set, start and pause a broadcast's schedule and cancel one run |
 | `appointments:read` | Read appointments, open slots, calendars, locations, booking options and territories |
-| `appointments:write` | Book, reschedule and cancel appointments |
+| `appointments:write` | Book, change, reschedule and cancel appointments, including attendee details |
 | `conversations:read` | Read conversations and messages |
 | `conversations:write` | Send an SMS, reply in a conversation, and hold or resume its AI. A staff member acts only for their own clients, while their SMS setting is on |
 | `calls:read` | Read calls and transcripts |

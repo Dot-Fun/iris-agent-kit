@@ -82,6 +82,20 @@ Move an appointment to a new time
 - `start_time` (body, string date-time, required)
 - `end_time` (body, string date-time, required)
 
+### appointments_update
+
+`PATCH /api/v1/appointments/{appointmentId}`. Scope: `appointments:write`. Member: `scoped`.
+
+Change an appointment’s title, notes or attendee details
+
+- `appointmentId` (path, string uuid, required)
+- `title` (body, string)
+- `description` (body, string): Notes on the appointment. `null` clears them.
+- `attendee_name` (body, string)
+- `attendee_phone` (body, string): E.164, e.g. +14155550100
+- `attendee_email` (body, string)
+- `attendee_notes` (body, string): Notes about the attendee
+
 ## Audiences
 
 ### audiences_add_member

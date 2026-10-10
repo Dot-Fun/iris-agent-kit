@@ -1732,6 +1732,101 @@
         ],
         "x-iris-scope": "appointments:read",
         "x-member-access": "scoped"
+      },
+      "patch": {
+        "description": "Changes only the fields sent: `title`, `description` (the appointment’s notes) and the attendee’s\n`attendee_name`, `attendee_phone`, `attendee_email` and `attendee_notes`. A nullable field set to\n`null` is cleared. Send at least one field. Mirrors the change to Google Calendar, which keeps an\nold description or attendee email that was cleared (the dashboard edit does the same).\nThe time, status, team member, service, location and address do not change here. A body that names\none answers 400 with the operation to use: `appointments_reschedule` moves the appointment and\n`appointments_cancel` cancels it.\nA repeating appointment answers 409 `recurring_series_not_supported` and nothing changes.\nAt a staffed location a member’s credential books and checks only its own times, and changes only its own appointments. Anything else answers 403 `insufficient_role`. A manager’s credential with the appointments power books, checks and changes anyone’s appointments at its own locations.",
+        "operationId": "appointments_update",
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, no field to change, or a time, status, staff or resource field"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `appointments:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such appointment in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`recurring_series_not_supported`: the appointment repeats. Change it in the Iris dashboard."
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change an appointment’s title, notes or attendee details",
+        "tags": [
+          "Appointments",
+          "Public API"
+        ],
+        "x-iris-scope": "appointments:write",
+        "x-member-access": "scoped"
       }
     },
     "/api/v1/appointments/{appointmentId}/reschedule": {
@@ -6361,6 +6456,38 @@
           "end_time",
           "idempotency_key"
         ]
+      },
+      "AppointmentUpdateDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Notes on the appointment. `null` clears them."
+          },
+          "attendee_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "attendee_phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "E.164, e.g. +14155550100"
+          },
+          "attendee_email": {
+            "type": "string",
+            "nullable": true
+          },
+          "attendee_notes": {
+            "type": "string",
+            "nullable": true,
+            "description": "Notes about the attendee"
+          }
+        }
       },
       "AppointmentRescheduleDto": {
         "type": "object",

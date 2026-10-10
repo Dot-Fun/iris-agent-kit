@@ -1,6 +1,6 @@
 ---
 name: iris-api
-description: Work an Iris organization through the Iris public API or the Iris MCP server. Use when asked to find or update a contact, check which sequences a contact is in, enroll or cancel a contact in a sequence, pause or resume a sequence, read a send log or sequence totals, build a draft sequence, schedule, start or pause a broadcast send, or read appointments, conversations and calls in Iris.
+description: Work an Iris organization through the Iris public API or the Iris MCP server. Use when asked to find or update a contact, check which sequences a contact is in, enroll or cancel a contact in a sequence, pause or resume a sequence, read a send log or sequence totals, build a draft sequence, schedule, start or pause a broadcast send, change an appointment’s title, notes or attendee details, or read appointments, conversations and calls in Iris.
 required_environment_variables:
   - name: IRIS_API_KEY
     prompt: Iris API key (starts with iris_sk_)
@@ -159,7 +159,7 @@ A key carries scopes, one read and one write per noun:
 | `sequences:read` | read sequences, enrollments, send logs and totals, and a broadcast's schedule and runs |
 | `sequences:write` | create, change, activate, pause, resume and duplicate sequences, enroll and cancel, and set, start and pause a broadcast's schedule and cancel one run |
 | `appointments:read` | read appointments, calendars, locations, booking options, open slots and territories |
-| `appointments:write` | book, reschedule and cancel appointments |
+| `appointments:write` | book, change, reschedule and cancel appointments |
 | `conversations:read` | read conversations and their messages |
 | `conversations:write` | send an SMS, reply in a conversation, and hold or resume its AI (a staff member: only for their own clients, while their SMS setting is on) |
 | `calls:read` | read calls and transcripts |
@@ -384,11 +384,13 @@ start it again after a change. Do not use `sequences_pause` on a broadcast: it a
 These follow the same rules. Their parameters are in `references/endpoints.md`.
 
 - Appointments: `appointments_list`, `appointments_get`, `appointments_create`,
-  `appointments_reschedule`, `appointments_cancel`, `appointments_availability`, `locations_list`,
+  `appointments_update`, `appointments_reschedule`, `appointments_cancel`, `appointments_availability`, `locations_list`,
   `locations_booking_options`, `territories_list`, `calendars_list`. To book, follow recipe 9.
   To answer "when is Jane booked", find the contact (recipe 1) and call `appointments_list` with
   `contact_id`.
-  Cancel and reschedule answer 409 `recurring_series_not_supported` for a row with
+  To fix a title, notes or attendee detail without moving the appointment, call
+  `appointments_update`. It refuses time and status fields with a 400 that names the operation to use.
+  Cancel, update and reschedule answer 409 `recurring_series_not_supported` for a row with
   `recurring: true`. Nothing changes: tell the user to change it in the Iris dashboard.
   Reschedule answers 409 `appointment_cancelled` for a cancelled appointment. Nothing changes:
   book a new appointment instead. A 422 from `appointments_create` can mean the user who created
