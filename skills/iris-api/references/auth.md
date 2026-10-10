@@ -81,6 +81,7 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `calls:read` | Read calls and transcripts |
 | `audiences:read` | Read audiences |
 | `audiences:write` | Add and remove audience members |
+| `forms:read` | Read forms, their fields and their submissions |
 
 `me_get` returns the live catalog. When this table and `me_get` differ, trust `me_get`.
 

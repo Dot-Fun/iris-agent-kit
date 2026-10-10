@@ -165,6 +165,7 @@ A key carries scopes, one read and one write per noun:
 | `calls:read` | read calls and transcripts |
 | `audiences:read` | read and count audiences, and list their contacts |
 | `audiences:write` | create, change, archive and restore audiences, and add and remove members |
+| `forms:read` | read forms, their fields and their submissions |
 
 Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
 `/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
@@ -453,3 +454,11 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
 - Audiences: `audiences_list`, `audiences_add_member`, `audiences_remove_member`. Both member
   writes are safe to repeat. Only a `static` audience takes members. To build or change an
   audience, follow recipe 13.
+- Forms: `forms_list`, `forms_get` (with fields), `forms_list_submissions`. To review the leads
+  a form brought in, call `forms_list` for the form's `id`, then `forms_list_submissions` with it.
+  Each submission's `payload` is keyed by the `key` of the form's fields, and `contact` is the
+  contact it created or updated: use `contacts_get` for more. Submissions page with `page` and
+  `limit`. Filter by `status` (`accepted` or `spam`), `from`, `to` (ISO 8601 with a time) and
+  `search` (part of an email). Submissions are personal data: quote only what the user asked
+  for. A staff member (MEMBER) reads forms but gets 403 `insufficient_role` on submissions: tell the
+  user, and do not retry.

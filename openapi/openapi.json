@@ -4185,6 +4185,298 @@
         "x-member-access": "deny"
       }
     },
+    "/api/v1/forms": {
+      "get": {
+        "description": "Every form of the organization, newest first, whatever its status. A form’s `id` names it in `forms_get` and `forms_list_submissions`.",
+        "operationId": "forms_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FormDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `forms:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the organization’s forms",
+        "tags": [
+          "Forms",
+          "Public API"
+        ],
+        "x-iris-scope": "forms:read",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/forms/{formId}": {
+      "get": {
+        "description": "The form and its fields in display order. Each field’s `key` is the key of its answer in a submission `payload`. The form’s submission key is never returned.",
+        "operationId": "forms_get",
+        "parameters": [
+          {
+            "name": "formId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormDetailDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `forms:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such form in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get one form with its fields",
+        "tags": [
+          "Forms",
+          "Public API"
+        ],
+        "x-iris-scope": "forms:read",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/forms/{formId}/submissions": {
+      "get": {
+        "description": "Newest first, with the contact each one created or updated and the answers as posted.\nPages by `page` and `limit`: read on until `page * limit` reaches `total`.\n`status`, `from`, `to` and `search` narrow the list. Submissions hold personal data.\nA MEMBER’s credential cannot call this operation, as a member cannot open the inbox.",
+        "operationId": "forms_list_submissions",
+        "parameters": [
+          {
+            "name": "formId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number. (page - 1) * limit must be at most 2147483647.",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (capped at 100)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "accepted",
+                "spam"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "ISO 8601 datetime with a time part. Only submissions at or after it.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "ISO 8601 datetime with a time part. Only submissions at or before it. At most 366 days after `from`.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Case-insensitive match on part of the contact's email or the submitted email. At most 320 characters.",
+            "schema": {
+              "maxLength": 320,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormSubmissionPageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `forms:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such form in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the submissions of a form",
+        "tags": [
+          "Forms",
+          "Public API"
+        ],
+        "x-iris-scope": "forms:read",
+        "x-member-access": "deny"
+      }
+    },
     "/api/v1/sequences/capabilities": {
       "get": {
         "description": "Read before you build a sequence. `multi_trigger_writes_enabled` says whether a sequence may carry more than one trigger.",
@@ -6933,7 +7225,8 @@
                 "conversations:write",
                 "calls:read",
                 "audiences:read",
-                "audiences:write"
+                "audiences:write",
+                "forms:read"
               ]
             }
           },
@@ -7022,7 +7315,8 @@
                 "conversations:write",
                 "calls:read",
                 "audiences:read",
-                "audiences:write"
+                "audiences:write",
+                "forms:read"
               ]
             }
           }
@@ -7082,7 +7376,8 @@
               "conversations:write",
               "calls:read",
               "audiences:read",
-              "audiences:write"
+              "audiences:write",
+              "forms:read"
             ]
           },
           "label": {
@@ -8718,6 +9013,320 @@
           "contact_id",
           "member",
           "changed"
+        ]
+      },
+      "FormSettingsSummaryDto": {
+        "type": "object",
+        "properties": {
+          "target_sequence_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The sequence every accepted submitter is enrolled in. Null: none."
+          },
+          "captcha_enabled": {
+            "type": "boolean",
+            "description": "Whether a submission needs a passing captcha"
+          }
+        },
+        "required": [
+          "target_sequence_id",
+          "captcha_enabled"
+        ]
+      },
+      "FormDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ]
+          },
+          "location_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The location the form collects leads for. Null: all locations."
+          },
+          "settings": {
+            "$ref": "#/components/schemas/FormSettingsSummaryDto"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "status",
+          "location_id",
+          "settings",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "FormFieldOptionDto": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "label"
+        ]
+      },
+      "FormFieldDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "key": {
+            "type": "string",
+            "description": "The key of this answer in a submission `payload`"
+          },
+          "label": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "email",
+              "phone",
+              "select",
+              "checkbox",
+              "hidden"
+            ]
+          },
+          "placeholder": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "options": {
+            "description": "The choices of a `select` field. Empty otherwise.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FormFieldOptionDto"
+            }
+          },
+          "contact_target": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the answer saves on the contact: `none`, a name part, `phone` or `field:<key>`. Null: by key."
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "label",
+          "type",
+          "placeholder",
+          "required",
+          "options",
+          "contact_target"
+        ]
+      },
+      "FormDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ]
+          },
+          "location_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The location the form collects leads for. Null: all locations."
+          },
+          "settings": {
+            "$ref": "#/components/schemas/FormSettingsSummaryDto"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fields": {
+            "description": "In display order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FormFieldDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "status",
+          "location_id",
+          "settings",
+          "created_at",
+          "updated_at",
+          "fields"
+        ]
+      },
+      "FormSubmissionContactDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email"
+        ]
+      },
+      "FormSubmissionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "accepted",
+              "spam"
+            ]
+          },
+          "contact_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "contact": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FormSubmissionContactDto"
+              }
+            ]
+          },
+          "contact_created": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "True: the submission created the contact. False: it updated one. Null: spam, or not recorded."
+          },
+          "sequence_enrollment_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The enrollment this submission started"
+          },
+          "sequence_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The sequence of that enrollment"
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "The submitted answers, keyed by the form’s field `key`s, as posted"
+          }
+        },
+        "required": [
+          "id",
+          "submitted_at",
+          "status",
+          "contact_id",
+          "contact",
+          "contact_created",
+          "sequence_enrollment_id",
+          "sequence_id",
+          "payload"
+        ]
+      },
+      "FormSubmissionPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FormSubmissionDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Submissions that match the filters, on every page"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
         ]
       },
       "SequenceCapabilitiesDto": {

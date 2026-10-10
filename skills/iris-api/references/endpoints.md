@@ -413,6 +413,36 @@ Send an SMS to a contact who has consented
 - `phone` (body, string): Send to this number, with its country code
 - `body` (body, string, required)
 
+## Forms
+
+### forms_get
+
+`GET /api/v1/forms/{formId}`. Scope: `forms:read`. Member: `open`.
+
+Get one form with its fields
+
+- `formId` (path, string uuid, required)
+
+### forms_list
+
+`GET /api/v1/forms`. Scope: `forms:read`. Member: `open`.
+
+List the organization’s forms
+
+### forms_list_submissions
+
+`GET /api/v1/forms/{formId}/submissions`. Scope: `forms:read`. Member: `deny`.
+
+List the submissions of a form
+
+- `formId` (path, string uuid, required)
+- `page` (query, number): 1-based page number. (page - 1) * limit must be at most 2147483647.
+- `limit` (query, number): Page size (capped at 100)
+- `status` (query, string, one of `accepted`, `spam`)
+- `from` (query, string): ISO 8601 datetime with a time part. Only submissions at or after it.
+- `to` (query, string): ISO 8601 datetime with a time part. Only submissions at or before it. At most 366 days after `from`.
+- `search` (query, string): Case-insensitive match on part of the contact's email or the submitted email. At most 320 characters.
+
 ## Locations
 
 ### locations_booking_options
