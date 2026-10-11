@@ -23,7 +23,7 @@ Find open slots at a location on one day
 
 ### appointments_cancel
 
-`POST /api/v1/appointments/{appointmentId}/cancel`. Scope: `appointments:write`. Member: `scoped`.
+`POST /api/v1/appointments/{appointmentId}/cancel`. Scope: `appointments:write`. Member: `scoped`. Confirm: required. Changes: `appointments`.
 
 Cancel an appointment
 
@@ -31,7 +31,7 @@ Cancel an appointment
 
 ### appointments_create
 
-`POST /api/v1/appointments`. Scope: `appointments:write`. Member: `scoped`.
+`POST /api/v1/appointments`. Scope: `appointments:write`. Member: `scoped`. Changes: `appointments`. Idempotent: send `idempotency_key`.
 
 Book an appointment for a contact
 
@@ -74,7 +74,7 @@ List appointments in a time window
 
 ### appointments_reschedule
 
-`POST /api/v1/appointments/{appointmentId}/reschedule`. Scope: `appointments:write`. Member: `scoped`.
+`POST /api/v1/appointments/{appointmentId}/reschedule`. Scope: `appointments:write`. Member: `scoped`. Changes: `appointments`.
 
 Move an appointment to a new time
 
@@ -84,7 +84,7 @@ Move an appointment to a new time
 
 ### appointments_update
 
-`PATCH /api/v1/appointments/{appointmentId}`. Scope: `appointments:write`. Member: `scoped`.
+`PATCH /api/v1/appointments/{appointmentId}`. Scope: `appointments:write`. Member: `scoped`. Changes: `appointments`.
 
 Change an appointment’s title, notes or attendee details
 
@@ -100,7 +100,7 @@ Change an appointment’s title, notes or attendee details
 
 ### audiences_add_member
 
-`POST /api/v1/audiences/{audienceId}/members`. Scope: `audiences:write`. Member: `deny`.
+`POST /api/v1/audiences/{audienceId}/members`. Scope: `audiences:write`. Member: `deny`. Changes: `audiences`.
 
 Add a contact to a static audience
 
@@ -109,7 +109,7 @@ Add a contact to a static audience
 
 ### audiences_archive
 
-`POST /api/v1/audiences/{audienceId}/archive`. Scope: `audiences:write`. Member: `deny`.
+`POST /api/v1/audiences/{audienceId}/archive`. Scope: `audiences:write`. Member: `deny`. Changes: `audiences`.
 
 Archive an audience
 
@@ -125,10 +125,11 @@ Count the contacts in a saved audience
 
 ### audiences_create
 
-`POST /api/v1/audiences`. Scope: `audiences:write`. Member: `deny`.
+`POST /api/v1/audiences`. Scope: `audiences:write`. Member: `deny`. Changes: `audiences`. Idempotent: send `idempotency_key`.
 
 Create an audience
 
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
 - `name` (body, string, required)
 - `description` (body, string)
 - `kind` (body, string, one of `static`, `dynamic`): `dynamic` holds the contacts that match `definition`. `static` holds the contacts added to it. Fixed after create.
@@ -167,7 +168,7 @@ List the contacts in an audience
 
 ### audiences_preview_count
 
-`POST /api/v1/audiences/preview-count`. Scope: `audiences:read`. Member: `open`.
+`POST /api/v1/audiences/preview-count`. Scope: `audiences:read`. Member: `open`. Changes: none.
 
 Count the contacts a draft definition matches
 
@@ -180,7 +181,7 @@ Count the contacts a draft definition matches
 
 ### audiences_remove_member
 
-`DELETE /api/v1/audiences/{audienceId}/members/{contactId}`. Scope: `audiences:write`. Member: `deny`.
+`DELETE /api/v1/audiences/{audienceId}/members/{contactId}`. Scope: `audiences:write`. Member: `deny`. Confirm: required. Changes: `audiences`.
 
 Remove a contact from a static audience
 
@@ -189,7 +190,7 @@ Remove a contact from a static audience
 
 ### audiences_update
 
-`PATCH /api/v1/audiences/{audienceId}`. Scope: `audiences:write`. Member: `deny`.
+`PATCH /api/v1/audiences/{audienceId}`. Scope: `audiences:write`. Member: `deny`. Changes: `audiences`.
 
 Change an audience
 
@@ -240,16 +241,17 @@ List calls
 
 ### contacts_add_note
 
-`POST /api/v1/contacts/{contactId}/notes`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`.
+`POST /api/v1/contacts/{contactId}/notes`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`. Changes: `contacts`. Idempotent: send `idempotency_key`.
 
 Add a note to a contact
 
 - `contactId` (path, string uuid, required)
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
 - `body` (body, string, required)
 
 ### contacts_add_tag
 
-`POST /api/v1/contacts/{contactId}/tags`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`.
+`POST /api/v1/contacts/{contactId}/tags`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`. Changes: `contacts`.
 
 Add a tag to a contact
 
@@ -294,7 +296,7 @@ List the organization’s pipeline stages
 
 ### contacts_remove_tag
 
-`DELETE /api/v1/contacts/{contactId}/tags/{tag}`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`.
+`DELETE /api/v1/contacts/{contactId}/tags/{tag}`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`. Confirm: required. Changes: `contacts`.
 
 Remove a tag from a contact
 
@@ -315,7 +317,7 @@ Search contacts
 
 ### contacts_suppress
 
-`POST /api/v1/contacts/{contactId}/suppress`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`.
+`POST /api/v1/contacts/{contactId}/suppress`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`. Confirm: required. Changes: `contacts`, `sequences`.
 
 Suppress a contact on email or SMS
 
@@ -325,7 +327,7 @@ Suppress a contact on email or SMS
 
 ### contacts_update
 
-`PATCH /api/v1/contacts/{contactId}`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`.
+`PATCH /api/v1/contacts/{contactId}`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`. Changes: `contacts`.
 
 Update a contact
 
@@ -338,7 +340,7 @@ Update a contact
 
 ### contacts_upsert
 
-`POST /api/v1/contacts`. Scope: `contacts:write`. Member: `deny`.
+`POST /api/v1/contacts`. Scope: `contacts:write`. Member: `deny`. Confirm: required. Changes: `contacts`, `sequences`.
 
 Create or update a contact by email
 
@@ -361,11 +363,12 @@ Create or update a contact by email
 
 ### contacts_record_sms_consent
 
-`POST /api/v1/contacts/{contactId}/sms-consent`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`.
+`POST /api/v1/contacts/{contactId}/sms-consent`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`. Confirm: required. Changes: `contacts`, `sequences`. Idempotent: send `idempotency_key`.
 
 Record a contact’s SMS opt-in or opt-out
 
 - `contactId` (path, string uuid, required)
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
 - `action` (body, string, required, one of `opt_in`, `opt_out`)
 - `source` (body, string): Where the contact gave or withdrew consent, for example "web form". Kept with an opt-in.
 
@@ -379,7 +382,7 @@ Get one conversation with its messages
 
 ### conversations_hold
 
-`POST /api/v1/conversations/{conversationId}/hold`. Scope: `conversations:write`. Member: `sms_setting`.
+`POST /api/v1/conversations/{conversationId}/hold`. Scope: `conversations:write`. Member: `sms_setting`. Changes: `conversations`.
 
 Hold an SMS or web chat conversation for a person: the AI stops answering
 
@@ -398,27 +401,30 @@ List email, SMS and web chat conversations
 
 ### conversations_reply
 
-`POST /api/v1/conversations/{conversationId}/reply`. Scope: `conversations:write`. Member: `sms_setting`.
+`POST /api/v1/conversations/{conversationId}/reply`. Scope: `conversations:write`. Member: `sms_setting`. Confirm: required. Changes: `conversations`. Idempotent: send `idempotency_key`.
 
 Reply in an email, SMS or web chat conversation
 
 - `conversationId` (path, string uuid, required)
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
 - `body` (body, string, required): The text of the reply. At most 1600 characters for SMS and 4000 for chat.
 
 ### conversations_resume
 
-`POST /api/v1/conversations/{conversationId}/resume`. Scope: `conversations:write`. Member: `sms_setting`.
+`POST /api/v1/conversations/{conversationId}/resume`. Scope: `conversations:write`. Member: `sms_setting`. Confirm: required. Changes: `conversations`. Idempotent: send `idempotency_key`.
 
 Hand an SMS or web chat conversation back to the AI
 
 - `conversationId` (path, string uuid, required)
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
 
 ### conversations_send_sms
 
-`POST /api/v1/conversations/sms`. Scope: `conversations:write`. Member: `sms_setting`.
+`POST /api/v1/conversations/sms`. Scope: `conversations:write`. Member: `sms_setting`. Confirm: required. Changes: `conversations`. Idempotent: send `idempotency_key`.
 
 Send an SMS to a contact who has consented
 
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
 - `contact_id` (body, string uuid): Send to this contact’s phone number
 - `phone` (body, string): Send to this number, with its country code
 - `body` (body, string, required)
@@ -499,7 +505,7 @@ List one contact’s enrollments across every sequence
 
 ### sequences_activate
 
-`POST /api/v1/sequences/{sequenceId}/activate`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
+`POST /api/v1/sequences/{sequenceId}/activate`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Confirm: required. Changes: `sequences`.
 
 Turn a sequence on
 
@@ -515,7 +521,7 @@ Get the send totals of a sequence
 
 ### sequences_cancel_enrollment
 
-`POST /api/v1/sequences/{sequenceId}/enrollments/{enrollmentId}/cancel`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
+`POST /api/v1/sequences/{sequenceId}/enrollments/{enrollmentId}/cancel`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Confirm: required. Changes: `sequences`.
 
 Remove a contact from a sequence
 
@@ -524,7 +530,7 @@ Remove a contact from a sequence
 
 ### sequences_cancel_schedule_run
 
-`POST /api/v1/sequences/{sequenceId}/schedule/runs/{runId}/cancel`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
+`POST /api/v1/sequences/{sequenceId}/schedule/runs/{runId}/cancel`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Confirm: required. Changes: `sequences`.
 
 Cancel one run of a broadcast
 
@@ -539,10 +545,11 @@ What sequence authoring this server allows
 
 ### sequences_create
 
-`POST /api/v1/sequences`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
+`POST /api/v1/sequences`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Changes: `sequences`. Idempotent: send `idempotency_key`.
 
 Create a draft sequence
 
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
 - `name` (body, string, required)
 - `description` (body, string)
 - `trigger_type` (body, string, required): The primary trigger, a `key` from `sequences_list_triggers`
@@ -582,15 +589,16 @@ Create a draft sequence
 
 ### sequences_duplicate
 
-`POST /api/v1/sequences/{sequenceId}/duplicate`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
+`POST /api/v1/sequences/{sequenceId}/duplicate`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Changes: `sequences`. Idempotent: send `idempotency_key`.
 
 Copy a sequence into a new draft
 
 - `sequenceId` (path, string uuid, required)
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
 
 ### sequences_enroll
 
-`POST /api/v1/sequences/{sequenceId}/enrollments`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
+`POST /api/v1/sequences/{sequenceId}/enrollments`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Confirm: required. Changes: `sequences`.
 
 Enroll a contact in a sequence
 
@@ -674,7 +682,7 @@ List the variables step copy may use
 
 ### sequences_pause
 
-`POST /api/v1/sequences/{sequenceId}/pause`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
+`POST /api/v1/sequences/{sequenceId}/pause`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Changes: `sequences`.
 
 Pause a sequence
 
@@ -682,7 +690,7 @@ Pause a sequence
 
 ### sequences_pause_schedule
 
-`POST /api/v1/sequences/{sequenceId}/schedule/pause`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
+`POST /api/v1/sequences/{sequenceId}/schedule/pause`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Changes: `sequences`.
 
 Pause a broadcast's schedule
 
@@ -690,7 +698,7 @@ Pause a broadcast's schedule
 
 ### sequences_resume
 
-`POST /api/v1/sequences/{sequenceId}/resume`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
+`POST /api/v1/sequences/{sequenceId}/resume`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Confirm: required. Changes: `sequences`.
 
 Resume a paused sequence
 
@@ -698,7 +706,7 @@ Resume a paused sequence
 
 ### sequences_set_schedule
 
-`PUT /api/v1/sequences/{sequenceId}/schedule`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
+`PUT /api/v1/sequences/{sequenceId}/schedule`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Confirm: required. Changes: `sequences`.
 
 Set when a broadcast sends
 
@@ -714,7 +722,7 @@ Set when a broadcast sends
 
 ### sequences_start_schedule
 
-`POST /api/v1/sequences/{sequenceId}/schedule/start`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
+`POST /api/v1/sequences/{sequenceId}/schedule/start`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Confirm: required. Changes: `sequences`.
 
 Start a broadcast's schedule
 
@@ -722,19 +730,20 @@ Start a broadcast's schedule
 
 ### sequences_test_step
 
-`POST /api/v1/sequences/{sequenceId}/steps/{stepKey}/test`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
+`POST /api/v1/sequences/{sequenceId}/steps/{stepKey}/test`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Confirm: required. Changes: none. Idempotent: send `idempotency_key`.
 
 Send a test of one step
 
 - `sequenceId` (path, string uuid, required)
 - `stepKey` (path, string, required): The `step_key` of the step, as `sequences_get` lists it. At most 128 characters.
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
 - `contact_id` (body, string uuid): Fill the step variables from this contact. The contact must belong to this organization.
 - `to_email` (body, string email): The address that gets the email. Needed for an email step when `contact_id` is not sent.
 - `to_phone` (body, string): The number that gets the text. Needed for an SMS step when `contact_id` is not sent.
 
 ### sequences_update
 
-`PATCH /api/v1/sequences/{sequenceId}`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`.
+`PATCH /api/v1/sequences/{sequenceId}`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Confirm: required. Changes: `sequences`.
 
 Change a sequence
 

@@ -104,6 +104,18 @@ Ask the user before any write that sends a message to a person (`sequences_activ
 `sequences_resume`, `sequences_enroll`, `sequences_start_schedule`, `conversations_send_sms`,
 `conversations_reply`, `conversations_resume`) unless they asked for that exact action.
 
+Each operation in `references/endpoints.md` states these facts, and the OpenAPI document carries
+them as extensions. `Confirm: required` (`x-iris-confirm`) marks a call that sends to a customer,
+deletes or cancels, or moves money. Ask the user before you call it, unless they asked for that
+exact action. `Changes` (`x-iris-changes`) names the resources a write changes, or `none`.
+Over MCP, each tool's `_meta` carries both as `iris/confirm` and
+`iris/changes`. `Idempotent` (`x-iris-idempotent`) marks a call that takes an `idempotency_key`
+of your own. A retry on the same credential with the same key and details within 24 hours
+returns the first answer and does not run the call again. The same key with other details
+answers 409 `idempotency_key_reused`. A 409 `idempotency_in_progress` means the first call is
+still running. A 409 `idempotency_outcome_unknown` means the first call failed and may have
+taken effect. A 503 `idempotency_unavailable` means the call did not run.
+
 ## Errors
 
 Every failure returns the same JSON envelope:

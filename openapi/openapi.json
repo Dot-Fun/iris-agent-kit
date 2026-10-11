@@ -71,6 +71,11 @@
           "Contacts",
           "Public API"
         ],
+        "x-iris-changes": [
+          "contacts",
+          "sequences"
+        ],
+        "x-iris-confirm": true,
         "x-iris-scope": "contacts:write",
         "x-member-access": "deny"
       },
@@ -363,6 +368,9 @@
           "Contacts",
           "Public API"
         ],
+        "x-iris-changes": [
+          "contacts"
+        ],
         "x-iris-scope": "contacts:write",
         "x-manager-power": "contacts",
         "x-member-access": "deny"
@@ -434,8 +442,28 @@
               }
             }
           },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
             "content": {
               "application/json": {
                 "schema": {
@@ -455,6 +483,10 @@
           "Contacts",
           "Public API"
         ],
+        "x-iris-changes": [
+          "contacts"
+        ],
+        "x-iris-idempotent": true,
         "x-iris-scope": "contacts:write",
         "x-manager-power": "contacts",
         "x-member-access": "deny"
@@ -653,6 +685,9 @@
           "Contacts",
           "Public API"
         ],
+        "x-iris-changes": [
+          "contacts"
+        ],
         "x-iris-scope": "contacts:write",
         "x-manager-power": "contacts",
         "x-member-access": "deny"
@@ -745,6 +780,10 @@
           "Contacts",
           "Public API"
         ],
+        "x-iris-changes": [
+          "contacts"
+        ],
+        "x-iris-confirm": true,
         "x-iris-scope": "contacts:write",
         "x-manager-power": "contacts",
         "x-member-access": "deny"
@@ -840,6 +879,11 @@
           "Contacts",
           "Public API"
         ],
+        "x-iris-changes": [
+          "contacts",
+          "sequences"
+        ],
+        "x-iris-confirm": true,
         "x-iris-scope": "contacts:write",
         "x-manager-power": "contacts",
         "x-member-access": "deny"
@@ -1159,8 +1203,28 @@
               }
             }
           },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
             "content": {
               "application/json": {
                 "schema": {
@@ -1180,6 +1244,10 @@
           "Sequences",
           "Public API"
         ],
+        "x-iris-changes": [
+          "sequences"
+        ],
+        "x-iris-idempotent": true,
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -1423,6 +1491,10 @@
           "Sequences",
           "Public API"
         ],
+        "x-iris-changes": [
+          "sequences"
+        ],
+        "x-iris-confirm": true,
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -1796,6 +1868,10 @@
           "Appointments",
           "Public API"
         ],
+        "x-iris-changes": [
+          "appointments"
+        ],
+        "x-iris-idempotent": true,
         "x-iris-scope": "appointments:write",
         "x-member-access": "scoped"
       }
@@ -2121,6 +2197,9 @@
           "Appointments",
           "Public API"
         ],
+        "x-iris-changes": [
+          "appointments"
+        ],
         "x-iris-scope": "appointments:write",
         "x-member-access": "scoped"
       }
@@ -2218,6 +2297,9 @@
           "Appointments",
           "Public API"
         ],
+        "x-iris-changes": [
+          "appointments"
+        ],
         "x-iris-scope": "appointments:write",
         "x-member-access": "scoped"
       }
@@ -2302,6 +2384,10 @@
           "Appointments",
           "Public API"
         ],
+        "x-iris-changes": [
+          "appointments"
+        ],
+        "x-iris-confirm": true,
         "x-iris-scope": "appointments:write",
         "x-member-access": "scoped"
       }
@@ -2768,7 +2854,7 @@
     },
     "/api/v1/conversations/{conversationId}/reply": {
       "post": {
-        "description": "Sends `body` into the conversation on its own channel, as the dashboard inbox does, and returns the messages it stored.\nSMS: a text to the conversation’s number from its line, at most 1600 characters. The number must have consented and must not have opted out.\nChat: an operator message to the visitor, at most 4000 characters. Email: an email to the contact, threaded.\nAn SMS or chat reply hands the conversation to a person for 30 minutes: the AI stops answering until then, unless it is on hold.\nA staff member (MEMBER) key needs their SMS setting on for every channel, email and chat too. On every channel it\nreaches only their own clients’ conversations at their locations. A manager needs the contacts power.\nA staff member’s email reply also follows the dashboard rule, which can refuse it with 403.\nAny conversation the caller does not reach answers 404. This call is not idempotent: a retry after a 5xx can send twice.\nIn chat, on a member key, two identical replies sent at the same moment may report the same message id. The text is stored once per request.",
+        "description": "Sends `body` into the conversation on its own channel, as the dashboard inbox does, and returns the messages it stored.\nSMS: a text to the conversation’s number from its line, at most 1600 characters. The number must have consented and must not have opted out.\nChat: an operator message to the visitor, at most 4000 characters. Email: an email to the contact, threaded.\nAn SMS or chat reply hands the conversation to a person for 30 minutes: the AI stops answering until then, unless it is on hold.\nA staff member (MEMBER) key needs their SMS setting on for every channel, email and chat too. On every channel it\nreaches only their own clients’ conversations at their locations. A manager needs the contacts power.\nA staff member’s email reply also follows the dashboard rule, which can refuse it with 403.\nAny conversation the caller does not reach answers 404. Without `idempotency_key`, a retry after a 5xx can send twice.\nIn chat, on a member key, two identical replies sent at the same moment may report the same message id. The text is stored once per request.",
         "operationId": "conversations_reply",
         "parameters": [
           {
@@ -2836,7 +2922,14 @@
             }
           },
           "409": {
-            "description": "`sms_not_permitted`: the SMS recipient opted out or has not consented"
+            "description": "`sms_not_permitted`: the SMS recipient opted out or has not consented\n\n`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
           },
           "422": {
             "description": "`phone_line_invalid`: the SMS line is gone. `no_acting_user`: an email reply from a key with no person to send as"
@@ -2853,6 +2946,16 @@
           },
           "502": {
             "description": "The SMS or email provider refused the send"
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2865,6 +2968,11 @@
           "Conversations",
           "Public API"
         ],
+        "x-iris-changes": [
+          "conversations"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
         "x-iris-scope": "conversations:write",
         "x-member-access": "sms_setting"
       }
@@ -2956,13 +3064,16 @@
           "Conversations",
           "Public API"
         ],
+        "x-iris-changes": [
+          "conversations"
+        ],
         "x-iris-scope": "conversations:write",
         "x-member-access": "sms_setting"
       }
     },
     "/api/v1/conversations/{conversationId}/resume": {
       "post": {
-        "description": "Sets `response_mode` to `ai_auto`: the AI answers the contact again. An SMS contact gets a short note that the AI is back.\nAn email conversation has no AI to resume: the answer is 422 `channel_not_supported`.\nA staff member (MEMBER) key needs their SMS setting on for every channel, chat too. On every channel it reaches only\ntheir own clients’ conversations at their locations. A manager needs the contacts power.\nA staff member’s SMS resume also follows the dashboard rule, which can refuse it with 403. Any conversation the caller does not reach answers 404.",
+        "description": "Sets `response_mode` to `ai_auto`: the AI answers the contact again. An SMS contact gets a short note that the AI is back each time the call runs.\nA retry with the same `idempotency_key` answers the first result and does not send the note again.\nAn email conversation has no AI to resume: the answer is 422 `channel_not_supported`.\nA staff member (MEMBER) key needs their SMS setting on for every channel, chat too. On every channel it reaches only\ntheir own clients’ conversations at their locations. A manager needs the contacts power.\nA staff member’s SMS resume also follows the dashboard rule, which can refuse it with 403. Any conversation the caller does not reach answers 404.",
         "operationId": "conversations_resume",
         "parameters": [
           {
@@ -2975,6 +3086,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdempotencyKeyDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -3016,6 +3137,16 @@
               }
             }
           },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
           "422": {
             "description": "`channel_not_supported`: an email conversation",
             "content": {
@@ -3035,6 +3166,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -3047,13 +3188,18 @@
           "Conversations",
           "Public API"
         ],
+        "x-iris-changes": [
+          "conversations"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
         "x-iris-scope": "conversations:write",
         "x-member-access": "sms_setting"
       }
     },
     "/api/v1/conversations/sms": {
       "post": {
-        "description": "Sends to `contact_id`’s phone or to `phone`. Send exactly one of them. The text goes from the\nnumber of the contact’s location when that number can text, else from the organization’s\ndefault SMS number, and joins the contact’s thread on that number, filed under that location.\nFor a manager, only their own locations count. A staff member (MEMBER) may send only while\ntheir SMS setting is on, and only to their own clients at their locations: any other contact\nor number answers 404. The recipient must have active SMS consent and must not have opted out:\notherwise the answer is 409 `sms_not_permitted` and nothing is sent. The daily per-contact cap\napplies. This call is not idempotent: a retry after a 5xx can send twice.",
+        "description": "Sends to `contact_id`’s phone or to `phone`. Send exactly one of them. The text goes from the\nnumber of the contact’s location when that number can text, else from the organization’s\ndefault SMS number, and joins the contact’s thread on that number, filed under that location.\nFor a manager, only their own locations count. A staff member (MEMBER) may send only while\ntheir SMS setting is on, and only to their own clients at their locations: any other contact\nor number answers 404. The recipient must have active SMS consent and must not have opted out:\notherwise the answer is 409 `sms_not_permitted` and nothing is sent. The daily per-contact cap\napplies. Without `idempotency_key`, a retry after a 5xx can send twice.",
         "operationId": "conversations_send_sms",
         "parameters": [],
         "requestBody": {
@@ -3111,13 +3257,30 @@
             }
           },
           "409": {
-            "description": "`sms_not_permitted`: the recipient opted out or has not consented"
+            "description": "`sms_not_permitted`: the recipient opted out or has not consented\n\n`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
           },
           "422": {
             "description": "No number can text the contact (no location number and no default), the daily cap is reached, the provider refused the send, or (for a manager) the contact’s thread on that number belongs to another location"
           },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
             "content": {
               "application/json": {
                 "schema": {
@@ -3137,6 +3300,11 @@
           "Conversations",
           "Public API"
         ],
+        "x-iris-changes": [
+          "conversations"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
         "x-iris-scope": "conversations:write",
         "x-member-access": "sms_setting"
       }
@@ -3211,10 +3379,27 @@
             }
           },
           "409": {
-            "description": "`sms_not_permitted`: the contact opted out by text"
+            "description": "`sms_not_permitted`: the contact opted out by text\n\n`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
           },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
             "content": {
               "application/json": {
                 "schema": {
@@ -3234,6 +3419,12 @@
           "Conversations",
           "Public API"
         ],
+        "x-iris-changes": [
+          "contacts",
+          "sequences"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
         "x-iris-scope": "contacts:write",
         "x-manager-power": "contacts",
         "x-member-access": "deny"
@@ -3559,8 +3750,28 @@
               }
             }
           },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
             "content": {
               "application/json": {
                 "schema": {
@@ -3580,6 +3791,10 @@
           "Audiences",
           "Public API"
         ],
+        "x-iris-changes": [
+          "audiences"
+        ],
+        "x-iris-idempotent": true,
         "x-iris-scope": "audiences:write",
         "x-member-access": "deny"
       }
@@ -3753,6 +3968,9 @@
           "Audiences",
           "Public API"
         ],
+        "x-iris-changes": [
+          "audiences"
+        ],
         "x-iris-scope": "audiences:write",
         "x-member-access": "deny"
       }
@@ -3833,6 +4051,9 @@
         "tags": [
           "Audiences",
           "Public API"
+        ],
+        "x-iris-changes": [
+          "audiences"
         ],
         "x-iris-scope": "audiences:write",
         "x-member-access": "deny"
@@ -3992,6 +4213,7 @@
           "Audiences",
           "Public API"
         ],
+        "x-iris-changes": [],
         "x-iris-scope": "audiences:read",
         "x-member-access": "open"
       }
@@ -4191,6 +4413,9 @@
           "Audiences",
           "Public API"
         ],
+        "x-iris-changes": [
+          "audiences"
+        ],
         "x-iris-scope": "audiences:write",
         "x-member-access": "deny"
       }
@@ -4284,6 +4509,10 @@
           "Audiences",
           "Public API"
         ],
+        "x-iris-changes": [
+          "audiences"
+        ],
+        "x-iris-confirm": true,
         "x-iris-scope": "audiences:write",
         "x-member-access": "deny"
       }
@@ -5088,6 +5317,10 @@
           "Sequences",
           "Public API"
         ],
+        "x-iris-changes": [
+          "sequences"
+        ],
+        "x-iris-confirm": true,
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -5180,6 +5413,10 @@
           "Sequences",
           "Public API"
         ],
+        "x-iris-changes": [
+          "sequences"
+        ],
+        "x-iris-confirm": true,
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -5264,6 +5501,9 @@
         "tags": [
           "Sequences",
           "Public API"
+        ],
+        "x-iris-changes": [
+          "sequences"
         ],
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
@@ -5357,6 +5597,10 @@
           "Sequences",
           "Public API"
         ],
+        "x-iris-changes": [
+          "sequences"
+        ],
+        "x-iris-confirm": true,
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -5377,6 +5621,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdempotencyKeyDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -5418,8 +5672,28 @@
               }
             }
           },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
             "content": {
               "application/json": {
                 "schema": {
@@ -5439,6 +5713,10 @@
           "Sequences",
           "Public API"
         ],
+        "x-iris-changes": [
+          "sequences"
+        ],
+        "x-iris-idempotent": true,
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -5621,6 +5899,10 @@
           "Sequences",
           "Public API"
         ],
+        "x-iris-changes": [
+          "sequences"
+        ],
+        "x-iris-confirm": true,
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -5787,8 +6069,28 @@
               }
             }
           },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
             "content": {
               "application/json": {
                 "schema": {
@@ -5808,6 +6110,9 @@
           "Sequences",
           "Public API"
         ],
+        "x-iris-changes": [],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -6010,6 +6315,10 @@
           "Sequences",
           "Public API"
         ],
+        "x-iris-changes": [
+          "sequences"
+        ],
+        "x-iris-confirm": true,
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -6112,6 +6421,10 @@
           "Sequences",
           "Public API"
         ],
+        "x-iris-changes": [
+          "sequences"
+        ],
+        "x-iris-confirm": true,
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -6193,6 +6506,9 @@
         "tags": [
           "Sequences",
           "Public API"
+        ],
+        "x-iris-changes": [
+          "sequences"
         ],
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
@@ -6285,6 +6601,10 @@
           "Sequences",
           "Public API"
         ],
+        "x-iris-changes": [
+          "sequences"
+        ],
+        "x-iris-confirm": true,
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -6764,6 +7084,11 @@
       "ContactNoteCreateDto": {
         "type": "object",
         "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
           "body": {
             "type": "string",
             "pattern": "\\S",
@@ -8399,6 +8724,11 @@
       "ConversationReplyDto": {
         "type": "object",
         "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
           "body": {
             "type": "string",
             "maxLength": 100000,
@@ -8477,9 +8807,24 @@
           "response_mode"
         ]
       },
+      "IdempotencyKeyDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          }
+        }
+      },
       "SmsSendDto": {
         "type": "object",
         "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
           "contact_id": {
             "type": "string",
             "format": "uuid",
@@ -8532,6 +8877,11 @@
       "SmsConsentDto": {
         "type": "object",
         "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
           "action": {
             "type": "string",
             "enum": [
@@ -8963,6 +9313,11 @@
       "AudienceCreateDto": {
         "type": "object",
         "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
           "name": {
             "type": "string",
             "minLength": 1,
@@ -10268,6 +10623,11 @@
       "SequenceCreateDto": {
         "type": "object",
         "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
           "name": {
             "type": "string",
             "maxLength": 200
@@ -10892,6 +11252,11 @@
       "SequenceTestStepDto": {
         "type": "object",
         "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
           "contact_id": {
             "type": "string",
             "format": "uuid",
