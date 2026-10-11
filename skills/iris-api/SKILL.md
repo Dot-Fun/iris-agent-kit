@@ -402,7 +402,8 @@ start it again after a change. Do not use `sequences_pause` on a broadcast: it a
 1. Call `audiences_list` to check that a fitting audience does not already exist.
 2. Write a `definition`: `match` (`all` or `any`) and `rules` of `field`, `op` and `value`. The
    `audiences_create` schema lists the fields and which ops each takes. `field_values.<key>`
-   reads an enabled CRM custom field.
+   reads an enabled CRM custom field. To filter by pipeline stage, call `contacts_list_stages`:
+   use its `audience_field` as the `field`, with stage ids as values.
 3. Call `audiences_preview_count` with the definition. A 400 names the field, op or value to fix.
    Show the user the count.
 4. Call `audiences_create` with the name and definition. For a hand-picked list, send

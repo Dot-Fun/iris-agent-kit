@@ -891,7 +891,7 @@
     },
     "/api/v1/contacts/stages": {
       "get": {
-        "description": "The stages of the organization’s pipeline, in the order the dashboard shows them.\nSend a stage’s `id` as `stage_id` to `contacts_update` to move a contact to it.\nAn organization with no pipeline stage field answers an empty list.",
+        "description": "The stages of the organization’s pipeline, in the order the dashboard shows them.\nSend a stage’s `id` as `stage_id` to `contacts_update` to move a contact to it.\nAn organization with no pipeline stage field answers an empty list.\nThe answer’s `audience_field` is the audience rule `field` that tests a contact’s stage. Use it in an audience definition, with stage ids as values.",
         "operationId": "contacts_list_stages",
         "parameters": [],
         "responses": {
@@ -7215,10 +7215,17 @@
             "items": {
               "$ref": "#/components/schemas/ContactStageDto"
             }
+          },
+          "audience_field": {
+            "type": "string",
+            "nullable": true,
+            "example": "field_values.stage",
+            "description": "The audience rule `field` that tests a contact’s stage, with stage ids as values, for example with `eq` or `in`. Null when the organization has no pipeline stage field, or when the stage field name has a character other than a letter, digit or underscore. An audience rule cannot use that name."
           }
         },
         "required": [
-          "items"
+          "items",
+          "audience_field"
         ]
       },
       "ContactInteractionDto": {
@@ -9175,7 +9182,7 @@
             "pattern": "^[a-zA-Z0-9_.]+$",
             "maxLength": 200,
             "example": "total_calls",
-            "description": "The contact field the rule tests. Either a contact column: `display_name`, `email`, `phone_number` (text); `total_calls` (number); `first_seen_at`, `last_seen_at`, `created_at`, `updated_at` (dates, compared as ISO 8601 strings). Or `field_values.<key>`, which reads a CRM custom field of this organization: `<key>` is the name of an enabled custom field (letters, digits and underscore only). A custom field of type number or currency compares as a number, date or datetime as an ISO 8601 string, boolean as true or false, and any other type as text. Any other field makes `audiences_preview_count`, and `audiences_count` and `audiences_list_members` on a dynamic audience, answer 400. Create and update check only its format, at most 200 characters."
+            "description": "The contact field the rule tests. Either a contact column: `display_name`, `email`, `phone_number` (text); `total_calls` (number); `first_seen_at`, `last_seen_at`, `created_at`, `updated_at` (dates, compared as ISO 8601 strings). Or `field_values.<key>`, which reads a CRM custom field of this organization: `<key>` is the name of an enabled custom field (letters, digits and underscore only). A custom field of type number or currency compares as a number, date or datetime as an ISO 8601 string, boolean as true or false, and any other type as text. To filter by pipeline stage, use the `audience_field` that `contacts_list_stages` answers, with stage ids as values. Any other field makes `audiences_preview_count`, and `audiences_count` and `audiences_list_members` on a dynamic audience, answer 400. Create and update check only its format, at most 200 characters."
           },
           "op": {
             "type": "string",
