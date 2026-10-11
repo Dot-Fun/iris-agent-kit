@@ -492,7 +492,7 @@
         "x-member-access": "deny"
       },
       "get": {
-        "description": "The organization-shared notes on one contact, newest first: those `contacts_add_note` and Zapier write. `contacts_get` counts every note, so its `notes_count` can exceed `total` here.\nEach note gives its `body`, its `source` (`user`, `zapier` or `system`), its author when a team member wrote it, and when it was written.\nPage with `page` and `limit`. `limit` is at most 100 and defaults to 25: a larger `limit` answers 400.\nA contact the credential cannot read answers 404, like one that does not exist.\nNotes that belong to one location are not listed: the ones a team member writes in the dashboard and the ones synced from GoHighLevel. They are private to their location and revisioned.\nA MEMBER, and a MANAGER without the contacts power, get `insufficient_role`: they read a contact’s identity only. A MANAGER with the contacts power reads the notes of contacts at their locations.",
+        "description": "The organization-shared notes on one contact, newest first: those `contacts_add_note` and Zapier write. `contacts_get` counts every note, so its `notes_count` can exceed `total` here.\nEach note gives its `body`, its `source` (`user`, `zapier` or `system`), its author when a team member wrote it, and when it was written.\nPage with `page` and `limit`. `limit` is at most 100 and defaults to 25: a larger `limit` answers 400.\nA `page` past the last note answers 400.\nA contact the credential cannot read answers 404, like one that does not exist.\nNotes that belong to one location are not listed: the ones a team member writes in the dashboard and the ones synced from GoHighLevel. They are private to their location and revisioned.\nA MEMBER, and a MANAGER without the contacts power, get `insufficient_role`: they read a contact’s identity only. A MANAGER with the contacts power reads the notes of contacts at their locations.",
         "operationId": "contacts_list_notes",
         "parameters": [
           {
@@ -538,6 +538,9 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Invalid paging, or a `page` past the last note"
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
