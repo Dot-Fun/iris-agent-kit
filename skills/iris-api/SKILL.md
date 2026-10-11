@@ -236,7 +236,7 @@ It may book a new client: any contact at its locations whose id it has.
    MEMBER, and a MANAGER without the contacts power, get only `id`, `name`, `email` and `phone`,
    from both `contacts_search` and `contacts_get`.
 5. To see what happened with the contact, call `contacts_list_interactions` with the `contactId`.
-   It lists calls, chats and SMS threads, newest first. Email is in `conversations_list`. Filter with `channel` or `status`.
+   It lists calls, chats and SMS threads, newest first. Email is in `conversations_list`. Filter with `channel` or `status`. A `page` past the last interaction answers 400.
    To read the contact's notes, call `contacts_list_notes` with the `contactId`. It pages newest first, with `limit` at most 100. A `page` past the last note answers 400.
    A MEMBER, and a MANAGER without the contacts power, get `insufficient_role` there. Notes that belong to one location (dashboard notes and GoHighLevel syncs) are not listed.
 

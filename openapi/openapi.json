@@ -955,7 +955,7 @@
     },
     "/api/v1/contacts/{contactId}/interactions": {
       "get": {
-        "description": "The calls, chats and SMS threads the assistant handled with one contact, most recent first. Email threads are not listed here: use `conversations_list`.\nFilter by `channel` or `status`. An interaction that booked an appointment names it in `appointment_id`.\nThis does not list notes: `contacts_get` counts them.\nA MEMBER’s credential, and a location-limited key, see only the interactions at their locations, and\nonly for contacts they can read (404 otherwise). A MEMBER, and a MANAGER without the contacts power,\ndo not get `captured_fields`.",
+        "description": "The calls, chats and SMS threads the assistant handled with one contact, most recent first. Email threads are not listed here: use `conversations_list`.\nFilter by `channel` or `status`. An interaction that booked an appointment names it in `appointment_id`.\nA `page` past the last interaction answers 400.\nThis does not list notes: `contacts_get` counts them.\nA MEMBER’s credential, and a location-limited key, see only the interactions at their locations, and\nonly for contacts they can read (404 otherwise). A MEMBER, and a MANAGER without the contacts power,\ndo not get `captured_fields`.",
         "operationId": "contacts_list_interactions",
         "parameters": [
           {
@@ -1029,6 +1029,9 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Invalid paging, or a `page` past the last interaction"
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
