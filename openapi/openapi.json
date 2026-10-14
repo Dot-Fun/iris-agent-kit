@@ -378,7 +378,7 @@
     },
     "/api/v1/contacts/{contactId}/notes": {
       "post": {
-        "description": "The team sees the note on the contact. Notes cannot be edited or deleted.",
+        "description": "Stores the note with source `api`. Its author is the user the credential acts for: the user who granted an OAuth client, or a personal key’s owner. A note added with an organization key has no author. `contacts_list_notes` lists it. Notes cannot be edited or deleted.",
         "operationId": "contacts_add_note",
         "parameters": [
           {
@@ -492,7 +492,7 @@
         "x-member-access": "deny"
       },
       "get": {
-        "description": "The organization-shared notes on one contact, newest first: those `contacts_add_note` and Zapier write. `contacts_get` counts every note, so its `notes_count` can exceed `total` here.\nEach note gives its `body`, its `source` (`user`, `zapier` or `system`), its author when a team member wrote it, and when it was written.\nPage with `page` and `limit`. `limit` is at most 100 and defaults to 25: a larger `limit` answers 400.\nA `page` past the last note answers 400.\nA contact the credential cannot read answers 404, like one that does not exist.\nNotes that belong to one location are not listed: the ones a team member writes in the dashboard and the ones synced from GoHighLevel. They are private to their location and revisioned.\nA MEMBER, and a MANAGER without the contacts power, get `insufficient_role`: they read a contact’s identity only. A MANAGER with the contacts power reads the notes of contacts at their locations.",
+        "description": "The organization-shared notes on one contact, newest first: those `contacts_add_note` and Zapier write. `contacts_get` counts every note, so its `notes_count` can exceed `total` here.\nEach note gives its `body`, its `source` (`user`, `zapier`, `system` or `api`), its author when a team member wrote it or the API acted for one, and when it was written.\nSource `api` is a note added through /api/v1 (`contacts_add_note`). Its author is the user the credential acted for: the user who granted an OAuth client, or a personal key’s owner. A note added with an organization key has no author.\nPage with `page` and `limit`. `limit` is at most 100 and defaults to 25: a larger `limit` answers 400.\nA `page` past the last note answers 400.\nA contact the credential cannot read answers 404, like one that does not exist.\nNotes that belong to one location are not listed: the ones a team member writes in the dashboard and the ones synced from GoHighLevel. They are private to their location and revisioned.\nA MEMBER, and a MANAGER without the contacts power, get `insufficient_role`: they read a contact’s identity only. A MANAGER with the contacts power reads the notes of contacts at their locations.",
         "operationId": "contacts_list_notes",
         "parameters": [
           {
@@ -7345,15 +7345,16 @@
             "enum": [
               "user",
               "zapier",
-              "system"
+              "system",
+              "api"
             ],
-            "description": "Who wrote it: a team member (`user`), Zapier, or the system. Notes added through the API show as `system`."
+            "description": "Where it came from: a team member (`user`), Zapier, the system, or the API (`api`, a note added through `contacts_add_note`)."
           },
           "author_user_id": {
             "type": "string",
             "format": "uuid",
             "nullable": true,
-            "description": "The team member who wrote it. Null for a Zapier or system note."
+            "description": "The team member who wrote it. For an `api` note, the user the credential acts for: the OAuth grant’s user or a personal key’s owner. Null for a Zapier or system note, and for an `api` note added with an organization key."
           },
           "created_at": {
             "type": "string",
