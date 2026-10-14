@@ -115,6 +115,8 @@ returns the first answer and does not run the call again. The same key with othe
 answers 409 `idempotency_key_reused`. A 409 `idempotency_in_progress` means the first call is
 still running. A 409 `idempotency_outcome_unknown` means the first call failed and may have
 taken effect. A 503 `idempotency_unavailable` means the call did not run.
+Each write in the document also carries `x-iris-reverse`: the call that undoes it, or why it
+cannot be undone.
 
 ## Errors
 
@@ -323,6 +325,9 @@ enrollment, and resume cannot bring them back.
 5. Show the user the draft and ask before you activate it.
 6. Call `sequences_activate`. On 400 `sequence_activation_blocked`, show the `blockers` (for
    example a missing sending domain) and stop.
+7. To throw away a draft the user no longer wants, ask first, then call `sequences_delete`. It
+   deletes the sequence with its enrollments and send log, and it cannot be restored. To stop a
+   sequence and keep it, pause it (recipe 5) instead.
 
 ### 9. Book an appointment
 

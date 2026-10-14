@@ -587,6 +587,14 @@ Create a draft sequence
   - `start_minute` (body, number, required): Opens at this minute of the day, organization time. 540 is 09:00.
   - `end_minute` (body, number, required): Closes at this minute (exclusive). 1080 is 18:00.
 
+### sequences_delete
+
+`DELETE /api/v1/sequences/{sequenceId}`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Confirm: required. Changes: `sequences`.
+
+Delete a sequence
+
+- `sequenceId` (path, string uuid, required)
+
 ### sequences_duplicate
 
 `POST /api/v1/sequences/{sequenceId}/duplicate`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Changes: `sequences`. Idempotent: send `idempotency_key`.

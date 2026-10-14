@@ -76,6 +76,9 @@
           "sequences"
         ],
         "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Adding or updating a contact this way can start sequences that message them."
+        },
         "x-iris-scope": "contacts:write",
         "x-member-access": "deny"
       },
@@ -371,6 +374,21 @@
         "x-iris-changes": [
           "contacts"
         ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "contacts_get",
+            "args": {
+              "contactId": "request.contactId"
+            }
+          },
+          "fields": {
+            "stage_id": "stage.id"
+          },
+          "merges": true,
+          "noUndo": {
+            "stage_id": "Moving the contact back to the earlier stage could start sequences that message them."
+          }
+        },
         "x-iris-scope": "contacts:write",
         "x-manager-power": "contacts",
         "x-member-access": "deny"
@@ -487,6 +505,9 @@
           "contacts"
         ],
         "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "Contact notes cannot be deleted."
+        },
         "x-iris-scope": "contacts:write",
         "x-manager-power": "contacts",
         "x-member-access": "deny"
@@ -691,6 +712,22 @@
         "x-iris-changes": [
           "contacts"
         ],
+        "x-iris-reverse": {
+          "operation": "contacts_remove_tag",
+          "args": {
+            "contactId": "request.contactId",
+            "tag": "request.tag"
+          },
+          "record": {
+            "operation": "contacts_get",
+            "args": {
+              "contactId": "request.contactId"
+            },
+            "watch": [
+              "tags"
+            ]
+          }
+        },
         "x-iris-scope": "contacts:write",
         "x-manager-power": "contacts",
         "x-member-access": "deny"
@@ -787,6 +824,22 @@
           "contacts"
         ],
         "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "operation": "contacts_add_tag",
+          "args": {
+            "contactId": "request.contactId",
+            "tag": "request.tag"
+          },
+          "record": {
+            "operation": "contacts_get",
+            "args": {
+              "contactId": "request.contactId"
+            },
+            "watch": [
+              "tags"
+            ]
+          }
+        },
         "x-iris-scope": "contacts:write",
         "x-manager-power": "contacts",
         "x-member-access": "deny"
@@ -887,6 +940,9 @@
           "sequences"
         ],
         "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Suppressing a contact ends their sequences, and those cannot be restored."
+        },
         "x-iris-scope": "contacts:write",
         "x-manager-power": "contacts",
         "x-member-access": "deny"
@@ -1254,6 +1310,18 @@
           "sequences"
         ],
         "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "operation": "sequences_delete",
+          "args": {
+            "sequenceId": "response.id"
+          },
+          "record": {
+            "operation": "sequences_get",
+            "args": {
+              "sequenceId": "response.id"
+            }
+          }
+        },
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -1501,6 +1569,9 @@
           "sequences"
         ],
         "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Enrolled contacts may already have been sent messages."
+        },
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -1878,6 +1949,9 @@
           "appointments"
         ],
         "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "Booking an appointment can send the customer a confirmation."
+        },
         "x-iris-scope": "appointments:write",
         "x-member-access": "scoped"
       }
@@ -2206,6 +2280,14 @@
         "x-iris-changes": [
           "appointments"
         ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "appointments_get",
+            "args": {
+              "appointmentId": "request.appointmentId"
+            }
+          }
+        },
         "x-iris-scope": "appointments:write",
         "x-member-access": "scoped"
       }
@@ -2306,6 +2388,9 @@
         "x-iris-changes": [
           "appointments"
         ],
+        "x-iris-reverse": {
+          "irreversible": "Moving an appointment can send the customer a message about the new time."
+        },
         "x-iris-scope": "appointments:write",
         "x-member-access": "scoped"
       }
@@ -2394,6 +2479,9 @@
           "appointments"
         ],
         "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Cancelling an appointment can tell the customer, and it cannot be un-cancelled."
+        },
         "x-iris-scope": "appointments:write",
         "x-member-access": "scoped"
       }
@@ -2979,6 +3067,9 @@
         ],
         "x-iris-confirm": true,
         "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "It sent a text to a customer, which cannot be unsent."
+        },
         "x-iris-scope": "conversations:write",
         "x-member-access": "sms_setting"
       }
@@ -3073,6 +3164,9 @@
         "x-iris-changes": [
           "conversations"
         ],
+        "x-iris-reverse": {
+          "irreversible": "Undoing a hold hands the conversation back to the AI, which texts an SMS contact."
+        },
         "x-iris-scope": "conversations:write",
         "x-member-access": "sms_setting"
       }
@@ -3199,6 +3293,9 @@
         ],
         "x-iris-confirm": true,
         "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "Handing a conversation back to the AI texts an SMS contact that the AI is back."
+        },
         "x-iris-scope": "conversations:write",
         "x-member-access": "sms_setting"
       }
@@ -3311,6 +3408,9 @@
         ],
         "x-iris-confirm": true,
         "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "It sent a text to a customer, which cannot be unsent."
+        },
         "x-iris-scope": "conversations:write",
         "x-member-access": "sms_setting"
       }
@@ -3431,6 +3531,9 @@
         ],
         "x-iris-confirm": true,
         "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "Iris keeps SMS consent as a compliance record."
+        },
         "x-iris-scope": "contacts:write",
         "x-manager-power": "contacts",
         "x-member-access": "deny"
@@ -3801,6 +3904,18 @@
           "audiences"
         ],
         "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "operation": "audiences_archive",
+          "args": {
+            "audienceId": "response.id"
+          },
+          "record": {
+            "operation": "audiences_get",
+            "args": {
+              "audienceId": "response.id"
+            }
+          }
+        },
         "x-iris-scope": "audiences:write",
         "x-member-access": "deny"
       }
@@ -3977,6 +4092,14 @@
         "x-iris-changes": [
           "audiences"
         ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "audiences_get",
+            "args": {
+              "audienceId": "request.audienceId"
+            }
+          }
+        },
         "x-iris-scope": "audiences:write",
         "x-member-access": "deny"
       }
@@ -4061,6 +4184,19 @@
         "x-iris-changes": [
           "audiences"
         ],
+        "x-iris-reverse": {
+          "operation": "audiences_update",
+          "args": {
+            "audienceId": "request.audienceId",
+            "is_archived": "const:false"
+          },
+          "record": {
+            "operation": "audiences_get",
+            "args": {
+              "audienceId": "request.audienceId"
+            }
+          }
+        },
         "x-iris-scope": "audiences:write",
         "x-member-access": "deny"
       }
@@ -4220,6 +4356,7 @@
           "Public API"
         ],
         "x-iris-changes": [],
+        "x-iris-reverse": "nothing",
         "x-iris-scope": "audiences:read",
         "x-member-access": "open"
       }
@@ -4422,6 +4559,9 @@
         "x-iris-changes": [
           "audiences"
         ],
+        "x-iris-reverse": {
+          "irreversible": "Adding or updating a contact this way can start sequences that message them."
+        },
         "x-iris-scope": "audiences:write",
         "x-member-access": "deny"
       }
@@ -4519,6 +4659,9 @@
           "audiences"
         ],
         "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Putting the contact back in the audience could start sequences that message them."
+        },
         "x-iris-scope": "audiences:write",
         "x-member-access": "deny"
       }
@@ -5327,6 +5470,114 @@
           "sequences"
         ],
         "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "sequences_get",
+            "args": {
+              "sequenceId": "request.sequenceId"
+            }
+          },
+          "together": [
+            [
+              "send_window",
+              "send_schedule_id"
+            ],
+            [
+              "steps",
+              "edges"
+            ]
+          ]
+        },
+        "x-iris-scope": "sequences:write",
+        "x-manager-power": "sequences",
+        "x-member-access": "deny"
+      },
+      "delete": {
+        "description": "Deletes the sequence with its steps, enrollments, runs and send log. It cannot be restored. To\nstop it sending and keep it, use `sequences_pause` or `sequences_update` with `is_active: false`.\nA sequence Iris manages answers 400 and nothing changes. A deleted sequence answers 404, so a\nrepeat changes nothing.",
+        "operationId": "sequences_delete",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceDeletedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The sequence is managed by Iris"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete a sequence",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "sequences"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A deleted sequence cannot be restored."
+        },
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -5423,6 +5674,9 @@
           "sequences"
         ],
         "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Turning a sequence on starts messages to customers."
+        },
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -5511,6 +5765,9 @@
         "x-iris-changes": [
           "sequences"
         ],
+        "x-iris-reverse": {
+          "irreversible": "Undoing a pause restarts messages to customers."
+        },
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -5607,6 +5864,9 @@
           "sequences"
         ],
         "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Resuming a sequence restarts messages to customers."
+        },
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -5723,6 +5983,18 @@
           "sequences"
         ],
         "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "operation": "sequences_delete",
+          "args": {
+            "sequenceId": "response.id"
+          },
+          "record": {
+            "operation": "sequences_get",
+            "args": {
+              "sequenceId": "response.id"
+            }
+          }
+        },
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -5909,6 +6181,9 @@
           "sequences"
         ],
         "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A cancelled enrollment cannot be restarted where it stopped."
+        },
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -6119,6 +6394,9 @@
         "x-iris-changes": [],
         "x-iris-confirm": true,
         "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "It sent a test message."
+        },
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -6325,6 +6603,9 @@
           "sequences"
         ],
         "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Setting a schedule cancels the runs of the one before, and a new schedule cannot be removed."
+        },
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -6431,6 +6712,9 @@
           "sequences"
         ],
         "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Starting a schedule sends to its audience."
+        },
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -6516,6 +6800,9 @@
         "x-iris-changes": [
           "sequences"
         ],
+        "x-iris-reverse": {
+          "irreversible": "Undoing a pause starts the schedule, which sends to its audience."
+        },
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -6611,6 +6898,9 @@
           "sequences"
         ],
         "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A cancelled run cannot be restarted."
+        },
         "x-iris-scope": "sequences:write",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
@@ -10917,6 +11207,25 @@
           "statusCode",
           "timestamp",
           "path"
+        ]
+      },
+      "SequenceDeletedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deleted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "deleted"
         ]
       },
       "SequenceEnrollDto": {
