@@ -118,6 +118,11 @@ taken effect. A 503 `idempotency_unavailable` means the call did not run.
 Each write in the document also carries `x-iris-reverse`: the call that undoes it, or why it
 cannot be undone.
 
+To make an update conditional, send `expected_updated_at` with the `updated_at` from your last
+GET of the record. A write rewind undoes with takes it as a query parameter. When the record
+changed since, the call answers 409 `stale_revision` and changes nothing. Read the record again,
+then decide. A contact's tags do not move its `updated_at`, so the check does not see a tag change.
+
 ## Errors
 
 Every failure returns the same JSON envelope:
@@ -148,6 +153,7 @@ Branch on `statusCode` and `error`. Never branch on the text of `message`.
 | 409 | `sequence_not_paused` | `sequences_resume` on a sequence that is not paused. Nothing changed. Read its `status`. |
 | 409 | `contact_not_at_location` | The sequence runs for one location and the contact is not there. Do not retry. Tell the user. |
 | 409 | `sms_not_permitted` | The contact has not consented or is suppressed. Do not send. |
+| 409 | `stale_revision` | The record changed after the `expected_updated_at` you sent. Nothing changed. Read it again, then decide. |
 | 429 | | Too many requests. Wait 60 seconds, then retry. |
 | 5xx | | Retry once after a few seconds. Then stop and report. |
 

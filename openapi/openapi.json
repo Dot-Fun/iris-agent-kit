@@ -291,6 +291,16 @@
               "format": "uuid",
               "type": "string"
             }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -348,7 +358,14 @@
             }
           },
           "409": {
-            "description": "Another contact already uses that phone number or email"
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nAnother contact already uses that phone number or email.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
           },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
@@ -632,6 +649,16 @@
               "format": "uuid",
               "type": "string"
             }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -677,6 +704,16 @@
           },
           "404": {
             "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nAdding or removing a tag does not move the contact’s `updated_at`, so `expected_updated_at` does not see another tag change.",
             "content": {
               "application/json": {
                 "schema": {
@@ -756,6 +793,16 @@
               "type": "string",
               "maxLength": 120
             }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -791,6 +838,16 @@
           },
           "404": {
             "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nAdding or removing a tag does not move the contact’s `updated_at`, so `expected_updated_at` does not see another tag change.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2197,6 +2254,16 @@
               "format": "uuid",
               "type": "string"
             }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -2254,7 +2321,14 @@
             }
           },
           "409": {
-            "description": "`recurring_series_not_supported`: the appointment repeats. Change it in the Iris dashboard."
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\n`recurring_series_not_supported`: the appointment repeats. Change it in the Iris dashboard.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
           },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
@@ -4012,6 +4086,16 @@
               "format": "uuid",
               "type": "string"
             }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -4060,6 +4144,16 @@
           },
           "404": {
             "description": "No such audience in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4117,6 +4211,16 @@
               "format": "uuid",
               "type": "string"
             }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4152,6 +4256,16 @@
           },
           "404": {
             "description": "No such audience in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5389,6 +5503,16 @@
               "format": "uuid",
               "type": "string"
             }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -5437,6 +5561,16 @@
           },
           "404": {
             "description": "No such sequence in this organization\n\nNo such audience in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5504,6 +5638,16 @@
               "format": "uuid",
               "type": "string"
             }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -5542,6 +5686,16 @@
           },
           "404": {
             "description": "No such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
             "content": {
               "application/json": {
                 "schema": {

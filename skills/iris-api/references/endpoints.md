@@ -89,6 +89,7 @@ Move an appointment to a new time
 Change an appointment’s title, notes or attendee details
 
 - `appointmentId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
 - `title` (body, string)
 - `description` (body, string): Notes on the appointment. `null` clears them.
 - `attendee_name` (body, string)
@@ -114,6 +115,7 @@ Add a contact to a static audience
 Archive an audience
 
 - `audienceId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
 
 ### audiences_count
 
@@ -195,6 +197,7 @@ Remove a contact from a static audience
 Change an audience
 
 - `audienceId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
 - `name` (body, string)
 - `description` (body, string): Null clears it
 - `channel` (body, string, one of `any`, `email`, `sms`)
@@ -256,6 +259,7 @@ Add a note to a contact
 Add a tag to a contact
 
 - `contactId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
 - `tag` (body, string, required): Tag name. Matched without regard to case or surrounding space; created on first use.
 
 ### contacts_get
@@ -302,6 +306,7 @@ Remove a tag from a contact
 
 - `contactId` (path, string uuid, required)
 - `tag` (path, string, required): Tag name, URL-encoded
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
 
 ### contacts_search
 
@@ -332,6 +337,7 @@ Suppress a contact on email or SMS
 Update a contact
 
 - `contactId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
 - `name` (body, string)
 - `phone` (body, string): E.164, e.g. +14155550100
 - `email` (body, string email)
@@ -594,6 +600,7 @@ Create a draft sequence
 Delete a sequence
 
 - `sequenceId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
 
 ### sequences_duplicate
 
@@ -756,6 +763,7 @@ Send a test of one step
 Change a sequence
 
 - `sequenceId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
 - `name` (body, string)
 - `description` (body, string)
 - `trigger_type` (body, string): The primary trigger, a `key` from `sequences_list_triggers`
