@@ -367,7 +367,8 @@ instead of `location_id`. Send one of the two, never both.
    first and send one stage `id` as `stage_id`.
 3. Call `contacts_add_note` with what you learned. The note is stored with source `api` and, as its
    author, the user you act for (an organization key stores no author).
-4. Call `contacts_add_tag` or `contacts_remove_tag` to change tags. Both are safe to repeat.
+4. Call `contacts_add_tag` or `contacts_remove_tag` to change tags. Both are safe to repeat. An added
+   tag is applied with source `api`, by the user you act for (an organization key records no user).
 5. When a person asks to stop email or SMS, call `contacts_suppress` with the channels at once.
 
 ### 11. Report assessment abandonment

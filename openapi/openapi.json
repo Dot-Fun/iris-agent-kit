@@ -638,7 +638,7 @@
     },
     "/api/v1/contacts/{contactId}/tags": {
       "post": {
-        "description": "Idempotent: adding a tag the contact already carries changes nothing. A tag the organization does not have yet is created.",
+        "description": "Idempotent: adding a tag the contact already carries changes nothing. A tag the organization does not have yet is created. The tag is applied with source `api`, by the user the credential acts for: the user who granted an OAuth client, or a personal key’s owner. A tag added with an organization key has no applying user.",
         "operationId": "contacts_add_tag",
         "parameters": [
           {
