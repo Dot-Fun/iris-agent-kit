@@ -91,9 +91,8 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 
 ## MCP connection
 
-The MCP server is `https://api.iris.dotfun.co/api/v1/mcp` (Streamable HTTP, stateless). It is
-rolling out behind a feature flag. An organization without the flag gets 404 after the key is
-checked. Tool names are the operationIds, and read tools carry `readOnlyHint: true`.
+The MCP server is `https://api.iris.dotfun.co/api/v1/mcp` (Streamable HTTP, stateless). Every
+organization can use it. Tool names are the operationIds, and read tools carry `readOnlyHint: true`.
 
 Clients that can send a header use the key today:
 
