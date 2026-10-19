@@ -49,7 +49,8 @@ comes from the key, never from a request body, so you cannot reach another organ
 The MCP server is one operation, `mcp_request` (`POST /api/v1/mcp`). Add it to your client as
 a Streamable HTTP server with the header `Authorization: Bearer $IRIS_API_KEY`. The config for
 each client is in `references/auth.md`. Every other operation is a tool with the same name.
-Read tools carry `readOnlyHint: true`. A 404 from the MCP URL means MCP is not turned on for
+Read tools carry `readOnlyHint: true`. Every write tool carries
+`destructiveHint: true`. A 404 from the MCP URL means MCP is not turned on for
 this organization yet. Use REST instead.
 
 Claude Desktop, claude.ai, Cowork and ChatGPT cannot send that header. Add the MCP URL as a
