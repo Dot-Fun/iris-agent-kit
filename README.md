@@ -8,10 +8,16 @@ holds everything an agent client needs:
 - the public OpenAPI document (`openapi/openapi.json`),
 - a plugin marketplace for Claude Code and Claude Cowork, and one for Codex.
 
+Setup guide: https://www.dotfun.co/iris/mcp shows every client's steps on one page.
+
 Site: https://dot-fun.github.io/iris-agent-kit/ serves `llms.txt`, `llms-full.txt`,
 `openapi.json` and the `.well-known` skill indexes.
 
 ## Before you start
+
+The MCP server is `https://api.iris.dotfun.co/api/v1/mcp`. Chat apps (Claude, Claude Desktop,
+ChatGPT) sign in with Iris over OAuth and need no key. Claude Code and Codex can sign in with
+Iris or send an API key. The plugins, the skill and the other clients use an API key:
 
 1. **Get a key.** In the Iris dashboard, open Organization > API keys. Create a key with the
    scopes the agent needs. Iris shows the key once.
@@ -21,11 +27,28 @@ Site: https://dot-fun.github.io/iris-agent-kit/ serves `llms.txt`, `llms-full.tx
    export IRIS_API_KEY=iris_sk_...
    ```
 
-3. **Know the MCP status.** The MCP server is `https://api.iris.dotfun.co/api/v1/mcp`. It is
-   rolling out behind a feature flag. If your organization does not have it yet, the server
-   answers 404, and the skill still works over plain REST with the same key.
-
 Never commit the key or paste it into a chat.
+
+Iris tools send real SMS and book real appointments. Keep your client set to confirm each
+write. For read-only access, create a key with only `:read` scopes.
+
+## Cursor and VS Code
+
+- [Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=iris&config=eyJ1cmwiOiJodHRwczovL2FwaS5pcmlzLmRvdGZ1bi5jby9hcGkvdjEvbWNwIn0=)
+- [Install in VS Code](https://vscode.dev/redirect/mcp/install?name=iris&config=%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fapi.iris.dotfun.co%2Fapi%2Fv1%2Fmcp%22%7D)
+
+GitHub may not open the Cursor link, because it uses a custom scheme. Copy the URL into your
+browser instead:
+
+```text
+cursor://anysphere.cursor-deeplink/mcp/install?name=iris&config=eyJ1cmwiOiJodHRwczovL2FwaS5pcmlzLmRvdGZ1bi5jby9hcGkvdjEvbWNwIn0=
+https://vscode.dev/redirect/mcp/install?name=iris&config=%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fapi.iris.dotfun.co%2Fapi%2Fv1%2Fmcp%22%7D
+```
+
+Auth: Cursor and VS Code cannot sign in with Iris yet, so they send an API key. After you
+install, add `"headers": { "Authorization": "Bearer ${env:IRIS_API_KEY}" }` to the `iris`
+entry in `~/.cursor/mcp.json`. In VS Code, run MCP: Open User Configuration and add the same
+header, with a `promptString` input in place of the environment variable.
 
 ## Claude Code
 
@@ -42,6 +65,10 @@ Or from a shell: `claude plugin marketplace add Dot-Fun/iris-agent-kit`, then
 Auth: the plugin's `.mcp.json` sends `Authorization: Bearer ${IRIS_API_KEY}`. Start Claude Code
 from a shell where `IRIS_API_KEY` is set.
 
+To connect the MCP server alone and sign in with Iris instead, run
+`claude mcp add --transport http iris https://api.iris.dotfun.co/api/v1/mcp`, then open `/mcp`
+in Claude Code, choose `iris` and sign in.
+
 Update: the plugin has no version, so every commit to `main` is an update. Claude Code checks
 in the background. To update now, run `/plugin marketplace update iris`, then
 `/plugin update iris@iris`.
@@ -51,11 +78,9 @@ in the background. To update now, run `/plugin marketplace update iris`, then
 Install: in Cowork, or the Code tab of Claude Desktop, add the marketplace `Dot-Fun/iris-agent-kit`
 and install the `iris` plugin. The skill arrives with it.
 
-Auth: the MCP connection in Cowork, Claude Desktop chat and claude.ai is a custom connector
-(Customize > Connectors, URL `https://api.iris.dotfun.co/api/v1/mcp`). These connectors cannot
-send an API key header. They need OAuth on the Iris server, which is not live yet. Organizations
-in Anthropic's request-headers beta can add `Authorization: Bearer iris_sk_...` under Request
-headers today.
+Auth: the MCP connection in Cowork, Claude Desktop chat and claude.ai is a custom connector.
+Open Customize > Connectors, add a custom connector with the URL
+`https://api.iris.dotfun.co/api/v1/mcp`, press Connect and sign in with Iris.
 
 Update: Cowork checks the marketplace for updates. Press Update on the marketplace page to pull
 now.
@@ -72,8 +97,9 @@ Then open `/plugins` in Codex and install `iris`. To install only the skill, run
 `$skill-installer install https://github.com/Dot-Fun/iris-agent-kit/tree/main/skills/iris-api`
 inside Codex.
 
-Auth: add the MCP server to `~/.codex/config.toml`. The CLI, the desktop app and the IDE
-extension share this file.
+Auth: to sign in with Iris, run `codex mcp add iris --url https://api.iris.dotfun.co/api/v1/mcp`,
+then `codex mcp login iris`. To use an API key instead, add the MCP server to
+`~/.codex/config.toml`. The CLI, the desktop app and the IDE extension share this file.
 
 ```toml
 [mcp_servers.iris]
@@ -86,12 +112,9 @@ the plugin by version, and every skill change here bumps it.
 
 ## ChatGPT
 
-Iris on ChatGPT waits for OAuth. ChatGPT connectors do not accept an API key, and the Iris
-server does not offer OAuth yet. This section changes when it does.
-
-When OAuth ships: turn on Settings > Security and login > Developer mode, open
-chatgpt.com/plugins, press the plus button, and enter `https://api.iris.dotfun.co/api/v1/mcp`.
-ChatGPT reads the tool list live, so no update step exists.
+Turn on Settings > Security and login > Developer mode, open chatgpt.com/plugins, press the
+plus button, and enter `https://api.iris.dotfun.co/api/v1/mcp`. Sign in with Iris when ChatGPT
+asks. ChatGPT reads the tool list live, so no update step exists.
 
 ## Hermes Agent
 
