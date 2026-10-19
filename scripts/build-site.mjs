@@ -53,12 +53,14 @@ write(
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Iris agent kit</title>
+<title>Iris MCP Server and Agent Kit for Claude, ChatGPT and Codex</title>
+<meta name="description" content="Connect the Iris AI receptionist to Claude, ChatGPT, Cursor, VS Code or Codex: the MCP server URL, the iris-api skill, plugins and the OpenAPI contract.">
+<link rel="canonical" href="https://dot-fun.github.io/iris-agent-kit/">
 <link rel="alternate" type="text/plain" href="llms.txt" title="llms.txt">
 <style>body{margin:0 auto;max-width:52rem;padding:1rem;font:15px/1.5 ui-monospace,Menlo,monospace}pre{white-space:pre-wrap}</style>
 </head>
 <body>
-<p><a href="llms.txt">llms.txt</a> · <a href="llms-full.txt">llms-full.txt</a> · <a href="openapi.json">openapi.json</a> · <a href="skills/iris-api/SKILL.md">SKILL.md</a> · <a href="https://github.com/Dot-Fun/iris-agent-kit">GitHub</a></p>
+<p><a href="https://www.dotfun.co/iris/mcp">Setup guide</a> · <a href="llms.txt">llms.txt</a> · <a href="llms-full.txt">llms-full.txt</a> · <a href="openapi.json">openapi.json</a> · <a href="skills/iris-api/SKILL.md">SKILL.md</a> · <a href="https://github.com/Dot-Fun/iris-agent-kit">GitHub</a></p>
 <pre>${escapeHtml(readme)}</pre>
 </body>
 </html>
