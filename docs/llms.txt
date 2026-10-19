@@ -1,8 +1,8 @@
 # Iris
 
-> Iris is an AI receptionist for small businesses by dotfun. It answers calls and texts, books appointments, keeps a CRM of contacts, and follows up with email and SMS sequences. Agents act on one Iris organization with an API key over REST at https://api.iris.dotfun.co or over MCP at https://api.iris.dotfun.co/api/v1/mcp.
+> Iris is an AI receptionist for small businesses by dotfun. It answers calls and texts, books appointments, keeps a CRM of contacts, and follows up with email and SMS sequences. Agents act on one Iris organization with an API key, over REST at https://api.iris.dotfun.co or over MCP at https://api.iris.dotfun.co/api/v1/mcp.
 
-Authenticate with `Authorization: Bearer iris_sk_...`. Keys come from Organization > API keys in the Iris dashboard. Call `me_get` (`GET /api/v1/me`) first.
+Authenticate with `Authorization: Bearer iris_sk_...`. Create keys in the Iris dashboard under Organization > API keys. Call `me_get` (`GET /api/v1/me`) first.
 
 ## Docs
 
