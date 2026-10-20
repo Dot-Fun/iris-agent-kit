@@ -10987,7 +10987,7 @@
             "type": "object",
             "additionalProperties": true,
             "nullable": true,
-            "description": "A designed email body (EmailDocument v1). Omit to keep the stored one. Null clears it."
+            "description": "A designed email body (EmailDocument v1), on `email` steps only. At most 60 blocks, counting each block inside columns, and 10000 characters. Omit to keep the stored one. A step that leaves `email` loses it. Null clears it."
           },
           "ai_enabled": {
             "type": "boolean",
