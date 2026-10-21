@@ -2686,6 +2686,97 @@
         ],
         "x-iris-scope": "appointments:read",
         "x-member-access": "scoped"
+      },
+      "post": {
+        "description": "The draft takes no calls or bookings and costs nothing until `locations_activate`. Add its address\nand hours in the dashboard. Retry with the same `idempotency_key` to get the first draft back\nrather than a second one. 409 when multi-location is not available to the organization.",
+        "operationId": "locations_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or a timezone that is not an IANA timezone"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `locations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Multi-location is not available to the organization"
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Create an inactive location draft",
+        "tags": [
+          "Locations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "locations"
+        ],
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "operation": "locations_delete",
+          "args": {
+            "locationId": "response.id"
+          },
+          "record": {
+            "operation": "locations_get",
+            "args": {
+              "locationId": "response.id"
+            }
+          }
+        },
+        "x-iris-scope": "locations:write",
+        "x-member-access": "deny"
       }
     },
     "/api/v1/locations/{locationId}/booking-options": {
@@ -2767,6 +2858,565 @@
         ],
         "x-iris-scope": "appointments:read",
         "x-member-access": "scoped"
+      }
+    },
+    "/api/v1/locations/{locationId}": {
+      "get": {
+        "description": "Its status, whether it is the default, its `updated_at`, and `actions`: whether\n`locations_activate`, `locations_set_default`, `locations_deactivate` and `locations_delete` can\nrun now, and the blocker when one cannot. `locations_list` lists the active locations only.",
+        "operationId": "locations_get",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationDetailDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `locations:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such location in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Read one location, a draft included",
+        "tags": [
+          "Locations",
+          "Public API"
+        ],
+        "x-iris-scope": "locations:read",
+        "x-member-access": "deny"
+      },
+      "delete": {
+        "description": "Only a draft that was never active and holds no records can be deleted, and it cannot be restored.\nAsk the user first. A deleted draft answers 404, so a repeat changes nothing.",
+        "operationId": "locations_delete",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationDeletedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `locations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such location in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nThe location was active once, or holds records.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete an unused location draft",
+        "tags": [
+          "Locations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "locations"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A deleted location draft cannot be restored."
+        },
+        "x-iris-scope": "locations:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/locations/{locationId}/activate": {
+      "post": {
+        "description": "Moves money: it raises the subscription’s location quantity, and can charge a prorated amount at\nonce. Ask the user first. `status` says how billing went. Retry with the same `idempotency_key`\nto read the outcome of the first call rather than start a second one.",
+        "operationId": "locations_activate",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationWriteKeyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationBillingResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `locations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such location in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nThe location cannot change now: `actions` in `locations_get` names the blocker. Also when multi-location is not available to the organization, when it has no usable subscription, or when another location billing operation is open.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Activate a location, which adds it to the subscription",
+        "tags": [
+          "Locations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "locations"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "operation": "locations_deactivate",
+          "args": {
+            "locationId": "request.locationId"
+          },
+          "record": {
+            "operation": "locations_get",
+            "args": {
+              "locationId": "request.locationId"
+            }
+          }
+        },
+        "x-iris-scope": "locations:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/locations/{locationId}/deactivate": {
+      "post": {
+        "description": "The location stops taking calls and bookings, and the subscription’s location quantity goes down.\nAsk the user first. The default location, the last active one, and one with future bookings or\nopen conversations cannot be deactivated. Retry with the same `idempotency_key` to read the\noutcome of the first call.",
+        "operationId": "locations_deactivate",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationWriteKeyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationBillingResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `locations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such location in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nThe location cannot change now: `actions` in `locations_get` names the blocker. Also when multi-location is not available to the organization, when it has no usable subscription, or when another location billing operation is open.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Deactivate a location, which removes it from the subscription",
+        "tags": [
+          "Locations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "locations"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "operation": "locations_activate",
+          "args": {
+            "locationId": "request.locationId"
+          },
+          "record": {
+            "operation": "locations_get",
+            "args": {
+              "locationId": "request.locationId"
+            }
+          }
+        },
+        "x-iris-scope": "locations:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/locations/{locationId}/default": {
+      "put": {
+        "description": "The default is where calls, contacts and bookings go when no other location is chosen. Only an\nactive location can be the default. The answer names the default before the call as\n`previous_default_location_id`.",
+        "operationId": "locations_set_default",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationDefaultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `locations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such location in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nThe location is inactive.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Make an active location the organization’s default",
+        "tags": [
+          "Locations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "locations"
+        ],
+        "x-iris-reverse": {
+          "operation": "locations_set_default",
+          "args": {
+            "locationId": "response.previous_default_location_id"
+          },
+          "record": {
+            "operation": "locations_get",
+            "args": {
+              "locationId": "response.previous_default_location_id"
+            }
+          }
+        },
+        "x-iris-scope": "locations:write",
+        "x-member-access": "deny"
       }
     },
     "/api/v1/territories": {
@@ -10673,7 +11323,9 @@
                 "members:read",
                 "members:write",
                 "invitations:read",
-                "invitations:write"
+                "invitations:write",
+                "locations:read",
+                "locations:write"
               ]
             }
           },
@@ -10771,7 +11423,9 @@
                 "members:read",
                 "members:write",
                 "invitations:read",
-                "invitations:write"
+                "invitations:write",
+                "locations:read",
+                "locations:write"
               ]
             }
           }
@@ -10840,7 +11494,9 @@
               "members:read",
               "members:write",
               "invitations:read",
-              "invitations:write"
+              "invitations:write",
+              "locations:read",
+              "locations:write"
             ]
           },
           "label": {
@@ -11480,6 +12136,266 @@
           "staffed",
           "offerings",
           "team_members"
+        ]
+      },
+      "LocationCreateDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key returns the first answer and does not run the call again."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "timezone": {
+            "type": "string",
+            "example": "America/Chicago",
+            "description": "IANA timezone"
+          }
+        },
+        "required": [
+          "idempotency_key",
+          "name",
+          "timezone"
+        ]
+      },
+      "LocationActionStateDto": {
+        "type": "object",
+        "properties": {
+          "allowed": {
+            "type": "boolean",
+            "description": "Whether the action can run now"
+          },
+          "blocker_code": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why it cannot, such as `inactive_location`, `last_active_location` or `future_bookings`"
+          },
+          "blocker_message": {
+            "type": "string",
+            "nullable": true,
+            "description": "The same reason, in words to show the user"
+          }
+        },
+        "required": [
+          "allowed",
+          "blocker_code",
+          "blocker_message"
+        ]
+      },
+      "LocationActionSetDto": {
+        "type": "object",
+        "properties": {
+          "activate": {
+            "$ref": "#/components/schemas/LocationActionStateDto"
+          },
+          "set_default": {
+            "$ref": "#/components/schemas/LocationActionStateDto"
+          },
+          "deactivate": {
+            "$ref": "#/components/schemas/LocationActionStateDto"
+          },
+          "delete": {
+            "$ref": "#/components/schemas/LocationActionStateDto"
+          }
+        },
+        "required": [
+          "activate",
+          "set_default",
+          "deactivate",
+          "delete"
+        ]
+      },
+      "LocationDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "America/Chicago",
+            "description": "IANA timezone"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "description": "A new location is an inactive draft"
+          },
+          "is_default": {
+            "type": "boolean",
+            "description": "Whether this is the organization’s default location"
+          },
+          "first_activated_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When it was first activated. null for a draft that was never active"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actions": {
+            "description": "What each location write can do now, and why not",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocationActionSetDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "timezone",
+          "status",
+          "is_default",
+          "first_activated_at",
+          "created_at",
+          "updated_at",
+          "actions"
+        ]
+      },
+      "LocationWriteKeyDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key returns the first answer and does not run the call again."
+          }
+        },
+        "required": [
+          "idempotency_key"
+        ]
+      },
+      "LocationBillingResultDto": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The billing operation. The same `idempotency_key` names the same one"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending_payment",
+              "retryable",
+              "compensation_required",
+              "compensated",
+              "applied",
+              "superseded"
+            ],
+            "description": "`applied`: the location and the subscription both changed. `pending_payment`: billing needs a payment before it can finish. Activation waits for it. `retryable`: the billing provider failed, and Iris retries by itself. A deactivated location is already inactive. `compensation_required` or `compensated`: Iris is restoring, or restored, the earlier location quantity. An activated location stays inactive. `superseded`: a newer billing attempt replaced this one. Send the call again with a new key."
+          }
+        },
+        "required": [
+          "operation_id",
+          "status"
+        ]
+      },
+      "LocationDefaultDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "America/Chicago",
+            "description": "IANA timezone"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "description": "A new location is an inactive draft"
+          },
+          "is_default": {
+            "type": "boolean",
+            "description": "Whether this is the organization’s default location"
+          },
+          "first_activated_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When it was first activated. null for a draft that was never active"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actions": {
+            "description": "What each location write can do now, and why not",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocationActionSetDto"
+              }
+            ]
+          },
+          "previous_default_location_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The location that was the default before this call"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "timezone",
+          "status",
+          "is_default",
+          "first_activated_at",
+          "created_at",
+          "updated_at",
+          "actions",
+          "previous_default_location_id"
+        ]
+      },
+      "LocationDeletedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deleted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "deleted"
         ]
       },
       "TerritoryDto": {

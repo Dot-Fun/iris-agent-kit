@@ -90,6 +90,8 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `members:write` | Manage members |
 | `invitations:read` | Read invitations |
 | `invitations:write` | Send invitations |
+| `locations:read` | Read one location, a draft included, and what each location write can do now |
+| `locations:write` | Create and delete location drafts, activate and deactivate locations, and choose the default |
 
 `me_get` returns the live catalog. When this table and `me_get` differ, trust `me_get`.
 

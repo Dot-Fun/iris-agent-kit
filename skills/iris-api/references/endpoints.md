@@ -579,6 +579,16 @@ Revoke an invitation
 
 ## Locations
 
+### locations_activate
+
+`POST /api/v1/locations/{locationId}/activate`. Scope: `locations:write`. Member: `deny`. Confirm: required. Changes: `locations`. Idempotent: send `idempotency_key`.
+
+Activate a location, which adds it to the subscription
+
+- `locationId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `idempotency_key` (body, string, required): Your own key for this call. A retry with the same key returns the first answer and does not run the call again.
+
 ### locations_booking_options
 
 `GET /api/v1/locations/{locationId}/booking-options`. Scope: `appointments:read`. Member: `scoped`.
@@ -587,11 +597,57 @@ List the services and team members a location books
 
 - `locationId` (path, string uuid, required)
 
+### locations_create
+
+`POST /api/v1/locations`. Scope: `locations:write`. Member: `deny`. Changes: `locations`. Idempotent: send `idempotency_key`.
+
+Create an inactive location draft
+
+- `idempotency_key` (body, string, required): Your own key for this call. A retry with the same key returns the first answer and does not run the call again.
+- `name` (body, string, required)
+- `timezone` (body, string, required): IANA timezone
+
+### locations_deactivate
+
+`POST /api/v1/locations/{locationId}/deactivate`. Scope: `locations:write`. Member: `deny`. Confirm: required. Changes: `locations`. Idempotent: send `idempotency_key`.
+
+Deactivate a location, which removes it from the subscription
+
+- `locationId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `idempotency_key` (body, string, required): Your own key for this call. A retry with the same key returns the first answer and does not run the call again.
+
+### locations_delete
+
+`DELETE /api/v1/locations/{locationId}`. Scope: `locations:write`. Member: `deny`. Confirm: required. Changes: `locations`.
+
+Delete an unused location draft
+
+- `locationId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
+### locations_get
+
+`GET /api/v1/locations/{locationId}`. Scope: `locations:read`. Member: `deny`.
+
+Read one location, a draft included
+
+- `locationId` (path, string uuid, required)
+
 ### locations_list
 
 `GET /api/v1/locations`. Scope: `appointments:read`. Member: `scoped`.
 
 List the locations appointments can be booked at
+
+### locations_set_default
+
+`PUT /api/v1/locations/{locationId}/default`. Scope: `locations:write`. Member: `deny`. Changes: `locations`.
+
+Make an active location the organization’s default
+
+- `locationId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
 
 ## MCP
 

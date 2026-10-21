@@ -195,6 +195,8 @@ A key carries scopes, one read and one write per noun:
 | `members:write` | change a member's role, status, agent access, locations, manager powers, access level and SMS setting, and remove a member |
 | `invitations:read` | read the organization's invitations |
 | `invitations:write` | invite a person by email, and revoke an invitation |
+| `locations:read` | read one location, a draft included, and what each location write can do now |
+| `locations:write` | create and delete location drafts, activate and deactivate locations, and choose the default |
 
 Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
 `/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
@@ -479,6 +481,27 @@ user, and do not retry.
    as `disabled_roles`. Ask the user first: people in those roles lose their personal keys,
    agent connections and Assistant until the role is turned back on. Only an owner's credential
    can add or remove `ADMIN`. Any other caller gets 409: tell the user an owner must do it.
+
+### 17. Add a location and make it the default
+
+1. Call `locations_create` with `name`, an IANA `timezone` and an `idempotency_key`. The new
+   location is an inactive draft. A 409 means multi-location is not available to the
+   organization: tell the user.
+2. Call `locations_get` and read `actions.activate`. When `allowed` is false, tell the user its
+   `blocker_message`.
+3. Ask the user first: activation adds the location to the subscription and can charge a
+   prorated amount at once. Then call `locations_activate` with an `idempotency_key`. Read
+   `status`: `applied` means done, `pending_payment` means the user must pay first, and
+   `retryable` means Iris retries by itself.
+4. To make it the default, call `locations_set_default` with the `updated_at` from
+   `locations_get` as `expected_updated_at`. The answer names the old default as
+   `previous_default_location_id`.
+5. To retire a location, move the default away first, ask the user, then call
+   `locations_deactivate` with an `idempotency_key`. To remove a draft that was not active, ask
+   the user and call `locations_delete`. It cannot be restored.
+
+Every location operation except `locations_list` and `locations_booking_options` needs an owner
+or admin. A MEMBER or MANAGER gets 403 `insufficient_role`: tell the user, and do not retry.
 
 ## Other operations
 
