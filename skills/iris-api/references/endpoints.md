@@ -5,6 +5,92 @@ Generated from the Iris public OpenAPI document (Iris Public API 1.0.0) by
 
 Base URL: `https://api.iris.dotfun.co`. Send `Authorization: Bearer $IRIS_API_KEY` on every call.
 
+## Agents
+
+### agents_activate
+
+`POST /api/v1/agents/{agentId}/activate`. Scope: `agents:write`. Member: `deny`. Confirm: required. Changes: `agents`.
+
+Turn a subagent on, so it takes calls
+
+- `agentId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
+### agents_disable
+
+`POST /api/v1/agents/{agentId}/disable`. Scope: `agents:write`. Member: `deny`. Confirm: required. Changes: `agents`.
+
+Turn a subagent off, so it stops taking calls
+
+- `agentId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
+### agents_get
+
+`GET /api/v1/agents/{agentId}`. Scope: `agents:read`. Member: `open`.
+
+Read one phone agent
+
+- `agentId` (path, string uuid, required)
+
+### agents_get_staging_diff
+
+`GET /api/v1/agents/{agentId}/staging-diff`. Scope: `agents:read`. Member: `open`.
+
+Check whether an agent’s draft differs from its live version
+
+- `agentId` (path, string uuid, required)
+
+### agents_go_live
+
+`POST /api/v1/agents/{agentId}/go-live`. Scope: `agents:write`. Member: `deny`. Confirm: required. Changes: `agents`.
+
+Publish an agent’s draft, so callers hear it
+
+- `agentId` (path, string uuid, required)
+- `notes` (body, string): Notes to keep with the new version
+
+### agents_list
+
+`GET /api/v1/agents`. Scope: `agents:read`. Member: `open`.
+
+List the organization’s phone agents
+
+### agents_list_versions
+
+`GET /api/v1/agents/{agentId}/versions`. Scope: `agents:read`. Member: `open`.
+
+List the versions an agent has published
+
+- `agentId` (path, string uuid, required)
+- `limit` (query, number)
+- `offset` (query, number)
+
+### agents_rollback
+
+`POST /api/v1/agents/{agentId}/rollback`. Scope: `agents:write`. Member: `deny`. Confirm: required. Changes: `agents`.
+
+Put an earlier version of an agent back on the phone line
+
+- `agentId` (path, string uuid, required)
+- `version_number` (body, number, required): The version to go back to, from `agents_list_versions`
+
+### agents_update
+
+`PATCH /api/v1/agents/{agentId}`. Scope: `agents:write`. Member: `deny`. Changes: `agents`.
+
+Change a phone agent’s name, greeting or prompt fields
+
+- `agentId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `name` (body, string)
+- `first_message` (body, string): The greeting. Null clears it.
+- `prompt_template` (body, string)
+- `custom_notes` (body, string)
+- `agent_instructions` (body, string)
+- `transfer_condition` (body, string)
+- `agent_tone_option_id` (body, string uuid)
+
 ## Appointments
 
 ### appointments_availability
@@ -496,6 +582,34 @@ Send one MCP JSON-RPC message
 `GET /api/v1/me`. Scope: any live key. Member: `open`.
 
 Describe the calling API key or connected client, the role it acts at and the locations it reaches
+
+## Organization
+
+### organization_get
+
+`GET /api/v1/organization`. Scope: `organization:read`. Member: `open`.
+
+Read the organization’s settings
+
+### organization_set_agent_access
+
+`PUT /api/v1/organization/agent-access`. Scope: `organization:write`. Member: `deny`. Confirm: required. Changes: `organization`.
+
+Turn agent access off or on for admins, managers or members
+
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `disabled_roles` (body, array of string, required, one of `ADMIN`, `MANAGER`, `MEMBER`): The roles whose agent access is off: their personal keys and agent connections answer 401, and their Assistant is off. An OWNER is never switched off.
+
+### organization_update
+
+`PATCH /api/v1/organization`. Scope: `organization:write`. Member: `deny`. Changes: `organization`.
+
+Change the organization’s industry, website or timezone
+
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `industry` (body, string)
+- `website_url` (body, string): An http or https URL. An empty string clears it.
+- `timezone` (body, string): IANA timezone, such as America/Chicago
 
 ## Sequences
 

@@ -187,6 +187,10 @@ A key carries scopes, one read and one write per noun:
 | `audiences:read` | read and count audiences, and list their contacts |
 | `audiences:write` | create, change, archive and restore audiences, and add and remove members |
 | `forms:read` | read forms, their fields and their submissions |
+| `agents:read` | read phone agents, their versions, and whether a draft differs from the live version |
+| `agents:write` | change a phone agent's draft, turn a subagent on or off, publish a draft and roll back |
+| `organization:read` | read the organization's settings and the roles whose agent access is off |
+| `organization:write` | change the industry, website and timezone, and turn agent access off or on |
 
 Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
 `/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
@@ -440,6 +444,37 @@ start it again after a change. Do not use `sequences_pause` on a broadcast: it a
    owns, never to a customer. Or send `contact_id` to fill the variables from a contact: the
    message then goes to that contact, so ask the user first.
 4. Read `success`. When false, `error` and `reason_code` say why, for example `opted_out`.
+
+### 15. Change a phone agent and publish it
+
+1. Call `agents_list` and pick the agent by `name`. The Assistant is not a phone agent: its id
+   answers 404.
+2. Call `agents_get` and keep its `updated_at`.
+3. Call `agents_update` with only the fields to change and `expected_updated_at`. A 409
+   `stale_revision` means someone changed it since: read it again and ask the user. The change
+   edits the draft, and `status` reads `updating` until the voice agent catches up. Callers still
+   hear the live version.
+4. Call `agents_get_staging_diff` and show the user `changed_fields`.
+5. Ask the user, then call `agents_go_live`. Publish the orchestrator before a subagent. Going
+   live cannot be undone. To undo it, call `agents_list_versions` and `agents_rollback` to the
+   version before.
+6. To turn a subagent on or off, call `agents_activate` or `agents_disable`. Turning one on uses
+   an agent slot: a 403 means the plan has none left, so tell the user. The orchestrator answers
+   400 on both.
+
+Every write needs an owner or admin. A MEMBER or MANAGER gets 403 `insufficient_role`: tell the
+user, and do not retry.
+
+### 16. Update the organization settings
+
+1. Call `organization_get` and keep its `updated_at`.
+2. Call `organization_update` with only the fields to change (`industry`, `website_url`,
+   `timezone`) and `expected_updated_at`. An empty `website_url` clears it. The name cannot
+   change here: tell the user to change it in the Context Engine.
+3. To turn agent access off for a role, send the whole list to `organization_set_agent_access`
+   as `disabled_roles`. Ask the user first: people in those roles lose their personal keys,
+   agent connections and Assistant until the role is turned back on. Only an owner's credential
+   can add or remove `ADMIN`. Any other caller gets 409: tell the user an owner must do it.
 
 ## Other operations
 

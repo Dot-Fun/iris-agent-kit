@@ -7060,6 +7060,1139 @@
         "x-member-access": "deny"
       }
     },
+    "/api/v1/agents": {
+      "get": {
+        "description": "The orchestrator that answers calls, and its subagents, in the order the dashboard shows them.",
+        "operationId": "agents_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `agents:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the organization’s phone agents",
+        "tags": [
+          "Agents",
+          "Public API"
+        ],
+        "x-iris-scope": "agents:read",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/agents/{agentId}": {
+      "get": {
+        "description": "Every field `agents_update` changes, and `updated_at` for `expected_updated_at`.",
+        "operationId": "agents_get",
+        "parameters": [
+          {
+            "name": "agentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `agents:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such agent in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Read one phone agent",
+        "tags": [
+          "Agents",
+          "Public API"
+        ],
+        "x-iris-scope": "agents:read",
+        "x-member-access": "open"
+      },
+      "patch": {
+        "description": "Changes only the fields sent, then queues a job that updates the voice agent, so `status` reads\n`updating` until it finishes. When the job cannot be queued, the call answers 500: read the agent\nwith `agents_get` before you retry. `agents_get_staging_diff` shows what `agents_go_live` would publish.",
+        "operationId": "agents_update",
+        "parameters": [
+          {
+            "name": "agentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `agents:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such agent in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change a phone agent’s name, greeting or prompt fields",
+        "tags": [
+          "Agents",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "agents"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "A background job updates the agent after this call, so rewind cannot undo it. Send agents_update again with the earlier values."
+        },
+        "x-iris-scope": "agents:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/agents/{agentId}/activate": {
+      "post": {
+        "description": "Uses one agent slot of the plan, and answers 403 when the plan has none left. An orchestrator is\nalways on and answers 400. The agent goes live in the background: read `status` with `agents_get`.",
+        "operationId": "agents_activate",
+        "parameters": [
+          {
+            "name": "agentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentStatusDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `agents:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such agent in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Turn a subagent on, so it takes calls",
+        "tags": [
+          "Agents",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "agents"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A background job updates the agent after this call, so rewind cannot undo it. Turn it off with agents_disable."
+        },
+        "x-iris-scope": "agents:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/agents/{agentId}/disable": {
+      "post": {
+        "description": "Frees its agent slot. An orchestrator cannot be turned off and answers 400.",
+        "operationId": "agents_disable",
+        "parameters": [
+          {
+            "name": "agentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentStatusDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `agents:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such agent in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Turn a subagent off, so it stops taking calls",
+        "tags": [
+          "Agents",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "agents"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A background job updates the agent after this call, so rewind cannot undo it. Turn it back on with agents_activate."
+        },
+        "x-iris-scope": "agents:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/agents/{agentId}/versions": {
+      "get": {
+        "description": "Newest first. `limit` is 1 to 100 (default 10), and `offset` skips that many.",
+        "operationId": "agents_list_versions",
+        "parameters": [
+          {
+            "name": "agentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "default": 0,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentVersionPageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `agents:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such agent in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the versions an agent has published",
+        "tags": [
+          "Agents",
+          "Public API"
+        ],
+        "x-iris-scope": "agents:read",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/agents/{agentId}/staging-diff": {
+      "get": {
+        "description": "A disabled agent always differs: going live puts it back.",
+        "operationId": "agents_get_staging_diff",
+        "parameters": [
+          {
+            "name": "agentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentStagingDiffDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `agents:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such agent in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Check whether an agent’s draft differs from its live version",
+        "tags": [
+          "Agents",
+          "Public API"
+        ],
+        "x-iris-scope": "agents:read",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/agents/{agentId}/go-live": {
+      "post": {
+        "description": "Saves the draft as a new version and puts it on the phone line. An inactive or disabled subagent\nturns on and uses an agent slot. A subagent goes live only after its orchestrator. Check\n`agents_get_staging_diff` first.",
+        "operationId": "agents_go_live",
+        "parameters": [
+          {
+            "name": "agentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentGoLiveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentPublishedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `agents:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such agent in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Publish an agent’s draft, so callers hear it",
+        "tags": [
+          "Agents",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "agents"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Roll back with agents_rollback to the version agents_list_versions shows."
+        },
+        "x-iris-scope": "agents:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/agents/{agentId}/rollback": {
+      "post": {
+        "description": "Saves a copy of that version as a new version, and makes it live.",
+        "operationId": "agents_rollback",
+        "parameters": [
+          {
+            "name": "agentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentRollbackDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentPublishedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `agents:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such agent in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Put an earlier version of an agent back on the phone line",
+        "tags": [
+          "Agents",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "agents"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Roll back with agents_rollback to the version agents_list_versions shows."
+        },
+        "x-iris-scope": "agents:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/organization": {
+      "get": {
+        "description": "Its name, industry, website, timezone, and the roles whose agent access is off.",
+        "operationId": "organization_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `organization:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The organization has no industry set yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Read the organization’s settings",
+        "tags": [
+          "Organization",
+          "Public API"
+        ],
+        "x-iris-scope": "organization:read",
+        "x-member-access": "open"
+      },
+      "patch": {
+        "description": "Changes only the fields sent. The name cannot change here: the Context Engine owns it. An\ninvalid industry, website or timezone answers 400 and changes nothing.",
+        "operationId": "organization_update",
+        "parameters": [
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "An invalid industry, website or timezone"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `organization:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change the organization’s industry, website or timezone",
+        "tags": [
+          "Organization",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "organization"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "organization_get",
+            "args": {}
+          }
+        },
+        "x-iris-scope": "organization:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/organization/agent-access": {
+      "put": {
+        "description": "Replaces the list of roles whose agent access is off. Their personal keys and agent connections\nanswer 401, and their Assistant is off, until the role is turned back on. Nothing is revoked.\nOnly an owner’s credential changes `ADMIN`: any other caller that changes it answers 409.",
+        "operationId": "organization_set_agent_access",
+        "parameters": [
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationAgentAccessDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationAgentAccessDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `organization:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nAgent access for admins changed, and only an owner can change it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Turn agent access off or on for admins, managers or members",
+        "tags": [
+          "Organization",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "organization"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "organization_get",
+            "args": {}
+          },
+          "fields": {
+            "disabled_roles": "agent_access_disabled_roles"
+          }
+        },
+        "x-iris-scope": "organization:write",
+        "x-member-access": "deny"
+      }
+    },
     "/api/v1/mcp": {
       "post": {
         "description": "The Iris MCP server, over stateless Streamable HTTP. Point an MCP client at this URL with\nthe key as a bearer token. Every other operation in this document is a tool named by its\noperationId, and `tools/list` shows only the tools the key’s scopes allow (and, for a\nmember’s credential, only the tools a member may call). A tool call runs\nthe REST operation, so it answers what the REST call answers. A failing call has\n`isError: true` and the REST error body as its text. Send\n`Accept: application/json, text/event-stream`. Answers 404 while the organization does\nnot have the MCP server turned on.",
@@ -8176,7 +9309,11 @@
                 "calls:read",
                 "audiences:read",
                 "audiences:write",
-                "forms:read"
+                "forms:read",
+                "agents:read",
+                "agents:write",
+                "organization:read",
+                "organization:write"
               ]
             }
           },
@@ -8266,7 +9403,11 @@
                 "calls:read",
                 "audiences:read",
                 "audiences:write",
-                "forms:read"
+                "forms:read",
+                "agents:read",
+                "agents:write",
+                "organization:read",
+                "organization:write"
               ]
             }
           }
@@ -8327,7 +9468,11 @@
               "calls:read",
               "audiences:read",
               "audiences:write",
-              "forms:read"
+              "forms:read",
+              "agents:read",
+              "agents:write",
+              "organization:read",
+              "organization:write"
             ]
           },
           "label": {
@@ -12141,6 +13286,379 @@
         },
         "required": [
           "cancelled"
+        ]
+      },
+      "AgentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "agent_type": {
+            "type": "string",
+            "enum": [
+              "orchestrator",
+              "subagent"
+            ],
+            "description": "The `orchestrator` answers the call. A `subagent` takes the calls it transfers to it."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "provisioning",
+              "inactive",
+              "activating",
+              "active",
+              "disabled",
+              "failed",
+              "updating",
+              "deleted"
+            ],
+            "description": "`active` answers calls. `disabled` does not. The other states are a change in progress."
+          },
+          "parent_agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The orchestrator of a subagent"
+          },
+          "staging_enabled": {
+            "type": "boolean",
+            "description": "Whether the draft version can be previewed in the dashboard"
+          },
+          "prod_enabled": {
+            "type": "boolean",
+            "description": "Whether the live version answers phone calls"
+          },
+          "first_message": {
+            "type": "string",
+            "nullable": true,
+            "description": "The greeting the agent opens a call with"
+          },
+          "prompt_template": {
+            "type": "string",
+            "nullable": true,
+            "description": "The prompt, with its placeholders"
+          },
+          "custom_notes": {
+            "type": "string",
+            "nullable": true,
+            "description": "Notes the prompt adds about the business"
+          },
+          "agent_instructions": {
+            "type": "string",
+            "nullable": true,
+            "description": "How the agent behaves on a call"
+          },
+          "transfer_condition": {
+            "type": "string",
+            "nullable": true,
+            "description": "When the orchestrator transfers a call to this subagent"
+          },
+          "agent_tone_option_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The tone the agent speaks in"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "agent_type",
+          "status",
+          "parent_agent_id",
+          "staging_enabled",
+          "prod_enabled",
+          "first_message",
+          "prompt_template",
+          "custom_notes",
+          "agent_instructions",
+          "transfer_condition",
+          "agent_tone_option_id",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "AgentUpdateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "first_message": {
+            "type": "string",
+            "nullable": true,
+            "description": "The greeting. Null clears it."
+          },
+          "prompt_template": {
+            "type": "string",
+            "nullable": true
+          },
+          "custom_notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "agent_instructions": {
+            "type": "string",
+            "nullable": true
+          },
+          "transfer_condition": {
+            "type": "string",
+            "nullable": true
+          },
+          "agent_tone_option_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
+      "AgentStatusDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "provisioning",
+              "inactive",
+              "activating",
+              "active",
+              "disabled",
+              "failed",
+              "updating",
+              "deleted"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ]
+      },
+      "AgentVersionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version_number": {
+            "type": "number",
+            "description": "Starts at 1 and counts up. `agents_rollback` takes it."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by_user_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "is_rollback": {
+            "type": "boolean",
+            "description": "Whether a rollback made this version"
+          },
+          "rollback_from_version": {
+            "type": "number",
+            "nullable": true,
+            "description": "The version a rollback copied"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "version_number",
+          "created_at",
+          "created_by_user_id",
+          "is_rollback",
+          "rollback_from_version",
+          "notes"
+        ]
+      },
+      "AgentVersionPageDto": {
+        "type": "object",
+        "properties": {
+          "versions": {
+            "description": "Newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentVersionDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Every version the agent has"
+          }
+        },
+        "required": [
+          "versions",
+          "total"
+        ]
+      },
+      "AgentStagingDiffDto": {
+        "type": "object",
+        "properties": {
+          "has_staging_changes": {
+            "type": "boolean",
+            "description": "Whether the draft differs from the live version, so `agents_go_live` has work to do"
+          },
+          "changed_fields": {
+            "description": "The fields that differ",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "production_version_number": {
+            "type": "number",
+            "description": "The live version"
+          }
+        },
+        "required": [
+          "has_staging_changes"
+        ]
+      },
+      "AgentGoLiveDto": {
+        "type": "object",
+        "properties": {
+          "notes": {
+            "type": "string",
+            "description": "Notes to keep with the new version"
+          }
+        }
+      },
+      "AgentPublishedDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "$ref": "#/components/schemas/AgentVersionDto"
+          }
+        },
+        "required": [
+          "version"
+        ]
+      },
+      "AgentRollbackDto": {
+        "type": "object",
+        "properties": {
+          "version_number": {
+            "type": "number",
+            "minimum": 1,
+            "description": "The version to go back to, from `agents_list_versions`"
+          }
+        },
+        "required": [
+          "version_number"
+        ]
+      },
+      "OrganizationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "The company name. The Context Engine owns it, so `organization_update` cannot change it."
+          },
+          "industry": {
+            "type": "string",
+            "description": "A suggested industry or a typed one"
+          },
+          "website_url": {
+            "type": "string",
+            "description": "The website, or an empty string"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "IANA timezone, such as America/Chicago"
+          },
+          "agent_access_disabled_roles": {
+            "type": "array",
+            "description": "The roles whose agent access is off: their personal keys and agent connections answer 401, and their Assistant is off. An OWNER is never switched off.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "MEMBER"
+              ]
+            }
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "industry",
+          "website_url",
+          "timezone",
+          "agent_access_disabled_roles",
+          "updated_at"
+        ]
+      },
+      "OrganizationUpdateDto": {
+        "type": "object",
+        "properties": {
+          "industry": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "website_url": {
+            "type": "string",
+            "description": "An http or https URL. An empty string clears it."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "IANA timezone, such as America/Chicago"
+          }
+        }
+      },
+      "OrganizationAgentAccessDto": {
+        "type": "object",
+        "properties": {
+          "disabled_roles": {
+            "type": "array",
+            "description": "The roles whose agent access is off: their personal keys and agent connections answer 401, and their Assistant is off. An OWNER is never switched off.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "MEMBER"
+              ]
+            }
+          }
+        },
+        "required": [
+          "disabled_roles"
         ]
       }
     }
