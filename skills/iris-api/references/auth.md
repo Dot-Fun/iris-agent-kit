@@ -86,6 +86,10 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `agents:write` | Change a phone agent's draft, turn a subagent on or off, publish a draft and roll back |
 | `organization:read` | Read the organization's settings and the roles whose agent access is off |
 | `organization:write` | Change the industry, website and timezone, and turn agent access off or on |
+| `members:read` | Read members |
+| `members:write` | Manage members |
+| `invitations:read` | Read invitations |
+| `invitations:write` | Send invitations |
 
 `me_get` returns the live catalog. When this table and `me_get` differ, trust `me_get`.
 

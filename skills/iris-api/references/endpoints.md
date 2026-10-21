@@ -551,6 +551,32 @@ List the submissions of a form
 - `to` (query, string): ISO 8601 datetime with a time part. Only submissions at or before it. At most 366 days after `from`.
 - `search` (query, string): Case-insensitive match on part of the contact's email or the submitted email. At most 320 characters.
 
+## Invitations
+
+### invitations_create
+
+`POST /api/v1/invitations`. Scope: `invitations:write`. Member: `deny`. Confirm: required. Changes: `invitations`. Idempotent: send `idempotency_key`.
+
+Invite a person to the organization by email
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `email` (body, string, required): The email to invite. Stored in lower case.
+- `role` (body, string, one of `ADMIN`, `MEMBER`): Nobody is invited above ADMIN.
+
+### invitations_list
+
+`GET /api/v1/invitations`. Scope: `invitations:read`. Member: `deny`.
+
+List the organization’s invitations
+
+### invitations_revoke
+
+`DELETE /api/v1/invitations/{invitationId}`. Scope: `invitations:write`. Member: `deny`. Confirm: required. Changes: `invitations`.
+
+Revoke an invitation
+
+- `invitationId` (path, string uuid, required)
+
 ## Locations
 
 ### locations_booking_options
@@ -582,6 +608,101 @@ Send one MCP JSON-RPC message
 `GET /api/v1/me`. Scope: any live key. Member: `open`.
 
 Describe the calling API key or connected client, the role it acts at and the locations it reaches
+
+## Members
+
+### members_get
+
+`GET /api/v1/members/{membershipId}`. Scope: `members:read`. Member: `open`.
+
+Get one member
+
+- `membershipId` (path, string uuid, required)
+
+### members_list
+
+`GET /api/v1/members`. Scope: `members:read`. Member: `open`.
+
+List the organization’s members
+
+### members_remove
+
+`DELETE /api/v1/members/{membershipId}`. Scope: `members:write`. Member: `deny`. Confirm: required. Changes: `members`.
+
+Remove a member from the organization
+
+- `membershipId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
+### members_set_access_level
+
+`PUT /api/v1/members/{membershipId}/access-level`. Scope: `members:write`. Member: `deny`. Manager power: `access_levels`. Changes: `members`.
+
+Set a member’s record level
+
+- `membershipId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `access_level` (body, string, required, one of `whole_location`, `own_records`)
+
+### members_set_locations
+
+`PUT /api/v1/members/{membershipId}/locations`. Scope: `members:write`. Member: `deny`. Changes: `members`.
+
+Set a manager’s or member’s locations
+
+- `membershipId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `location_ids` (body, array of string uuid, required): The whole set, replacing the current one. Each id is a location of this organization. [] removes all.
+
+### members_set_manager_powers
+
+`PUT /api/v1/members/{membershipId}/manager-powers`. Scope: `members:write`. Member: `deny`. Changes: `members`.
+
+Set a manager’s powers
+
+- `membershipId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `manager_powers` (body, array of string, required, one of `contacts`, `location_settings`, `sequences`, `staff`, `leader_schedules`, `appointments`, `access_levels`): The whole set, replacing the current one.
+
+### members_set_sms_send
+
+`PUT /api/v1/members/{membershipId}/sms-send`. Scope: `members:write`. Member: `deny`. Manager power: `access_levels`. Confirm: required. Changes: `members`.
+
+Let a member text their clients, or stop it
+
+- `membershipId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `sms_send_enabled` (body, boolean, required): True lets a MEMBER text their own consented clients. False stops it.
+
+### members_update_agent_access
+
+`PATCH /api/v1/members/{membershipId}/agent-access`. Scope: `members:write`. Member: `deny`. Manager power: `staff`. Changes: `members`.
+
+Switch a member’s agent access off or on
+
+- `membershipId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `agent_access_enabled` (body, boolean, required): False switches off the person’s personal keys and agent connections. Nothing is revoked.
+
+### members_update_role
+
+`PATCH /api/v1/members/{membershipId}/role`. Scope: `members:write`. Member: `deny`. Confirm: required. Changes: `members`.
+
+Change a member’s role
+
+- `membershipId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `role` (body, string, required, one of `ADMIN`, `MANAGER`, `MEMBER`): An owner is made only by an ownership transfer in the dashboard.
+
+### members_update_status
+
+`PATCH /api/v1/members/{membershipId}/status`. Scope: `members:write`. Member: `deny`. Confirm: required. Changes: `members`.
+
+Activate or deactivate a member
+
+- `membershipId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `status` (body, string, required, one of `ACTIVE`, `DEACTIVATED`)
 
 ## Organization
 

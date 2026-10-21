@@ -8193,6 +8193,1362 @@
         "x-member-access": "deny"
       }
     },
+    "/api/v1/members": {
+      "get": {
+        "description": "Every membership, active and deactivated, oldest first. Any credential may call it. A MEMBER’s or\nMANAGER’s credential sees a colleague’s locations only when the dashboard shows them to it.\nA member’s `id` is the `membershipId` of `members_get` and every members write.",
+        "operationId": "members_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicMemberDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `members:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the organization’s members",
+        "tags": [
+          "Members",
+          "Public API"
+        ],
+        "x-iris-scope": "members:read",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/members/{membershipId}": {
+      "get": {
+        "description": "One membership, as `members_list` shows it. Its `updated_at` is the `expected_updated_at` of a members write.",
+        "operationId": "members_get",
+        "parameters": [
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicMemberDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `members:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such member in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get one member",
+        "tags": [
+          "Members",
+          "Public API"
+        ],
+        "x-iris-scope": "members:read",
+        "x-member-access": "open"
+      },
+      "delete": {
+        "description": "Deletes the membership and revokes the keys the person holds here. Their login and their other\norganizations stay. An owner cannot be removed. To let them back, send `invitations_create`.\nAnswers the member as it was.\nAn OWNER or ADMIN calls it with a personal credential, and a MANAGER only where this description says so.\nAny other MEMBER’s or MANAGER’s credential gets 403 `insufficient_role`, and an organization key gets 403\n`no_acting_user`: a change to a person is made by a person.\nNobody changes their own membership with it, and an ADMIN never changes an OWNER (403 `ACCESS_DENIED`, unless a 409 of this operation already refuses the OWNER’s role).\nRead the member with `members_get` first and send its `updated_at` as `expected_updated_at`.",
+        "operationId": "members_remove",
+        "parameters": [
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicMemberDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`insufficient_role`: a MEMBER’s credential, or a MANAGER’s that this operation does not admit. `no_acting_user`: an organization key, which has no person to act as. `ACCESS_DENIED`: an ADMIN acting on an OWNER, or a person out of reach.\n\nThe key does not carry the `members:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such member in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\n`NO_SELF_ACTION`: your own membership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Remove a member from the organization",
+        "tags": [
+          "Members",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "members"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "The person must be invited again, and their keys are revoked."
+        },
+        "x-iris-scope": "members:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/members/{membershipId}/role": {
+      "patch": {
+        "description": "Sets ADMIN, MANAGER or MEMBER. An owner is made only by an ownership transfer in the dashboard.\nTaking admin away, or a manager’s powers, revokes the organization API keys the person created.\nA move away from MANAGER clears the powers. A new MANAGER gets powers with `members_set_manager_powers`.\nAn OWNER or ADMIN calls it with a personal credential, and a MANAGER only where this description says so.\nAny other MEMBER’s or MANAGER’s credential gets 403 `insufficient_role`, and an organization key gets 403\n`no_acting_user`: a change to a person is made by a person.\nNobody changes their own membership with it, and an ADMIN never changes an OWNER (403 `ACCESS_DENIED`, unless a 409 of this operation already refuses the OWNER’s role).\nRead the member with `members_get` first and send its `updated_at` as `expected_updated_at`.",
+        "operationId": "members_update_role",
+        "parameters": [
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberRoleBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicMemberDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`insufficient_role`: a MEMBER’s credential, or a MANAGER’s that this operation does not admit. `no_acting_user`: an organization key, which has no person to act as. `ACCESS_DENIED`: an ADMIN acting on an OWNER, or a person out of reach.\n\nThe key does not carry the `members:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such member in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\n`NO_CHANGE`: the member already has that role. `NO_SELF_ACTION`: your own membership. `SOLE_OWNER_GUARD`: the last active owner.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change a member’s role",
+        "tags": [
+          "Members",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "members"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A demotion revokes the API keys the person created."
+        },
+        "x-iris-scope": "members:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/members/{membershipId}/status": {
+      "patch": {
+        "description": "DEACTIVATED signs the person out of this organization, emails them, and revokes their keys here.\nACTIVE lets them back in. To remove a membership for good, use `members_remove`.\nAn OWNER or ADMIN calls it with a personal credential, and a MANAGER only where this description says so.\nAny other MEMBER’s or MANAGER’s credential gets 403 `insufficient_role`, and an organization key gets 403\n`no_acting_user`: a change to a person is made by a person.\nNobody changes their own membership with it, and an ADMIN never changes an OWNER (403 `ACCESS_DENIED`, unless a 409 of this operation already refuses the OWNER’s role).\nRead the member with `members_get` first and send its `updated_at` as `expected_updated_at`.",
+        "operationId": "members_update_status",
+        "parameters": [
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberStatusBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicMemberDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`insufficient_role`: a MEMBER’s credential, or a MANAGER’s that this operation does not admit. `no_acting_user`: an organization key, which has no person to act as. `ACCESS_DENIED`: an ADMIN acting on an OWNER, or a person out of reach.\n\nThe key does not carry the `members:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such member in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\n`NO_CHANGE`: the member already has that status. `NO_SELF_ACTION`: your own membership. `SOLE_OWNER_GUARD`: the last active owner.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Activate or deactivate a member",
+        "tags": [
+          "Members",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "members"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Deactivation signs the person out, emails them and revokes their keys."
+        },
+        "x-iris-scope": "members:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/members/{membershipId}/agent-access": {
+      "patch": {
+        "description": "False makes the person’s personal keys and agent connections answer 401 until it is on again.\nNothing is revoked. An owner’s access is always on. A MANAGER with the staff power may call it\nfor the staff whose every location is the manager’s.\nAn OWNER or ADMIN calls it with a personal credential, and a MANAGER only where this description says so.\nAny other MEMBER’s or MANAGER’s credential gets 403 `insufficient_role`, and an organization key gets 403\n`no_acting_user`: a change to a person is made by a person.\nNobody changes their own membership with it, and an ADMIN never changes an OWNER (403 `ACCESS_DENIED`, unless a 409 of this operation already refuses the OWNER’s role).\nRead the member with `members_get` first and send its `updated_at` as `expected_updated_at`.",
+        "operationId": "members_update_agent_access",
+        "parameters": [
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberAgentAccessBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicMemberDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`insufficient_role`: a MEMBER’s credential, or a MANAGER’s that this operation does not admit. `no_acting_user`: an organization key, which has no person to act as. `ACCESS_DENIED`: an ADMIN acting on an OWNER, or a person out of reach.\n\nThe key does not carry the `members:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `staff` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such member in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\n`NO_SELF_ACTION`: your own membership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Switch a member’s agent access off or on",
+        "tags": [
+          "Members",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "members"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "members_get",
+            "args": {
+              "membershipId": "request.membershipId"
+            }
+          }
+        },
+        "x-iris-scope": "members:write",
+        "x-manager-power": "staff",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/members/{membershipId}/locations": {
+      "put": {
+        "description": "Replaces the whole set. An OWNER or ADMIN reaches every location and has none. Location ids come\nfrom `locations_list`. This change does not move `updated_at`.\nAn OWNER or ADMIN calls it with a personal credential, and a MANAGER only where this description says so.\nAny other MEMBER’s or MANAGER’s credential gets 403 `insufficient_role`, and an organization key gets 403\n`no_acting_user`: a change to a person is made by a person.\nNobody changes their own membership with it, and an ADMIN never changes an OWNER (403 `ACCESS_DENIED`, unless a 409 of this operation already refuses the OWNER’s role).\nRead the member with `members_get` first and send its `updated_at` as `expected_updated_at`.",
+        "operationId": "members_set_locations",
+        "parameters": [
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberLocationsBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicMemberDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`INVALID_LOCATION`: an id is not a location of this organization"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`insufficient_role`: a MEMBER’s credential, or a MANAGER’s that this operation does not admit. `no_acting_user`: an organization key, which has no person to act as. `ACCESS_DENIED`: an ADMIN acting on an OWNER, or a person out of reach.\n\nThe key does not carry the `members:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such member in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\n`ORG_WIDE_ROLE`: the person is an OWNER or ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Set a manager’s or member’s locations",
+        "tags": [
+          "Members",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "members"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "members_get",
+            "args": {
+              "membershipId": "request.membershipId"
+            },
+            "watch": [
+              "location_ids"
+            ]
+          }
+        },
+        "x-iris-scope": "members:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/members/{membershipId}/manager-powers": {
+      "put": {
+        "description": "Replaces the whole set. Each power applies only at the manager’s locations. The person must be a MANAGER.\nAn OWNER or ADMIN calls it with a personal credential, and a MANAGER only where this description says so.\nAny other MEMBER’s or MANAGER’s credential gets 403 `insufficient_role`, and an organization key gets 403\n`no_acting_user`: a change to a person is made by a person.\nNobody changes their own membership with it, and an ADMIN never changes an OWNER (403 `ACCESS_DENIED`, unless a 409 of this operation already refuses the OWNER’s role).\nRead the member with `members_get` first and send its `updated_at` as `expected_updated_at`.",
+        "operationId": "members_set_manager_powers",
+        "parameters": [
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberManagerPowersBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicMemberDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`insufficient_role`: a MEMBER’s credential, or a MANAGER’s that this operation does not admit. `no_acting_user`: an organization key, which has no person to act as. `ACCESS_DENIED`: an ADMIN acting on an OWNER, or a person out of reach.\n\nThe key does not carry the `members:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such member in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\n`NOT_MANAGER`: the person is not a MANAGER.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Set a manager’s powers",
+        "tags": [
+          "Members",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "members"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "members_get",
+            "args": {
+              "membershipId": "request.membershipId"
+            }
+          }
+        },
+        "x-iris-scope": "members:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/members/{membershipId}/access-level": {
+      "put": {
+        "description": "whole_location reads everything at the member’s locations. own_records reads only their own\nappointments and those clients. A MEMBER only. A MANAGER with the access_levels power may call it\nfor the members whose every location is the manager’s.\nAn OWNER or ADMIN calls it with a personal credential, and a MANAGER only where this description says so.\nAny other MEMBER’s or MANAGER’s credential gets 403 `insufficient_role`, and an organization key gets 403\n`no_acting_user`: a change to a person is made by a person.\nNobody changes their own membership with it, and an ADMIN never changes an OWNER (403 `ACCESS_DENIED`, unless a 409 of this operation already refuses the OWNER’s role).\nRead the member with `members_get` first and send its `updated_at` as `expected_updated_at`.",
+        "operationId": "members_set_access_level",
+        "parameters": [
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberAccessLevelBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicMemberDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`insufficient_role`: a MEMBER’s credential, or a MANAGER’s that this operation does not admit. `no_acting_user`: an organization key, which has no person to act as. `ACCESS_DENIED`: an ADMIN acting on an OWNER, or a person out of reach.\n\nThe key does not carry the `members:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `access_levels` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such member in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\n`NOT_MEMBER`: the person is not a MEMBER.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Set a member’s record level",
+        "tags": [
+          "Members",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "members"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "members_get",
+            "args": {
+              "membershipId": "request.membershipId"
+            }
+          }
+        },
+        "x-iris-scope": "members:write",
+        "x-manager-power": "access_levels",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/members/{membershipId}/sms-send": {
+      "put": {
+        "description": "While true, the MEMBER texts their own consented clients at their locations, from the dashboard\nand through their keys and agents. A MEMBER only. A MANAGER with the access_levels power may call\nit for the members whose every location is the manager’s. Turning it on also needs the contacts power.\nAn OWNER or ADMIN calls it with a personal credential, and a MANAGER only where this description says so.\nAny other MEMBER’s or MANAGER’s credential gets 403 `insufficient_role`, and an organization key gets 403\n`no_acting_user`: a change to a person is made by a person.\nNobody changes their own membership with it, and an ADMIN never changes an OWNER (403 `ACCESS_DENIED`, unless a 409 of this operation already refuses the OWNER’s role).\nRead the member with `members_get` first and send its `updated_at` as `expected_updated_at`.",
+        "operationId": "members_set_sms_send",
+        "parameters": [
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberSmsSendBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicMemberDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`insufficient_role`: a MEMBER’s credential, or a MANAGER’s that this operation does not admit. `no_acting_user`: an organization key, which has no person to act as. `ACCESS_DENIED`: an ADMIN acting on an OWNER, or a person out of reach.\n\nThe key does not carry the `members:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `access_levels` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such member in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\n`NOT_MEMBER`: the person is not a MEMBER.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Let a member text their clients, or stop it",
+        "tags": [
+          "Members",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "members"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "members_get",
+            "args": {
+              "membershipId": "request.membershipId"
+            }
+          }
+        },
+        "x-iris-scope": "members:write",
+        "x-manager-power": "access_levels",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/invitations": {
+      "get": {
+        "description": "Every invitation, newest first, with its status. A PENDING or EXPIRED one can be revoked with `invitations_revoke`.\nAn OWNER or ADMIN calls it. A MEMBER’s or MANAGER’s credential gets 403 `insufficient_role`, as in the dashboard.\nAn organization key also reads it.",
+        "operationId": "invitations_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicInvitationDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `invitations:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the organization’s invitations",
+        "tags": [
+          "Invitations",
+          "Public API"
+        ],
+        "x-iris-scope": "invitations:read",
+        "x-member-access": "deny"
+      },
+      "post": {
+        "description": "Creates a PENDING invitation, valid for 7 days, and emails the person a link to accept it.\nThe role is MEMBER unless you send ADMIN. After they accept, `members_list` shows them.\nAn OWNER or ADMIN calls it. A MEMBER’s or MANAGER’s credential gets 403 `insufficient_role`, as in the dashboard.\nAn organization key gets 403 `no_acting_user`: an invitation is sent by a person.\n409 `EMAIL_ALREADY_EXISTS`: the email is a member already, or has a PENDING invitation.\n500 `UNKNOWN_ERROR`: the email could not be sent, and no invitation was kept. Try again.",
+        "operationId": "invitations_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationCreateBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicInvitationDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`insufficient_role` or `no_acting_user`\n\nThe key does not carry the `invitations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`EMAIL_ALREADY_EXISTS`\n\n`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Invite a person to the organization by email",
+        "tags": [
+          "Invitations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "invitations"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "The email is sent. Revoke the invitation with invitations_revoke."
+        },
+        "x-iris-scope": "invitations:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/invitations/{invitationId}": {
+      "delete": {
+        "description": "Cancels a PENDING or EXPIRED invitation, so its link stops working. Answers it as CANCELLED.\nAn OWNER or ADMIN calls it. A MEMBER’s or MANAGER’s credential gets 403 `insufficient_role`, as in the dashboard.\nAn organization key gets 403 `no_acting_user`. 404 `not_found`: no PENDING or EXPIRED invitation with that id.",
+        "operationId": "invitations_revoke",
+        "parameters": [
+          {
+            "name": "invitationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicInvitationDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`insufficient_role` or `no_acting_user`\n\nThe key does not carry the `invitations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such pending invitation in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Revoke an invitation",
+        "tags": [
+          "Invitations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "invitations"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A cancelled invitation cannot reopen. Send a new one with invitations_create."
+        },
+        "x-iris-scope": "invitations:write",
+        "x-member-access": "deny"
+      }
+    },
     "/api/v1/mcp": {
       "post": {
         "description": "The Iris MCP server, over stateless Streamable HTTP. Point an MCP client at this URL with\nthe key as a bearer token. Every other operation in this document is a tool named by its\noperationId, and `tools/list` shows only the tools the key’s scopes allow (and, for a\nmember’s credential, only the tools a member may call). A tool call runs\nthe REST operation, so it answers what the REST call answers. A failing call has\n`isError: true` and the REST error body as its text. Send\n`Accept: application/json, text/event-stream`. Answers 404 while the organization does\nnot have the MCP server turned on.",
@@ -9313,7 +10669,11 @@
                 "agents:read",
                 "agents:write",
                 "organization:read",
-                "organization:write"
+                "organization:write",
+                "members:read",
+                "members:write",
+                "invitations:read",
+                "invitations:write"
               ]
             }
           },
@@ -9407,7 +10767,11 @@
                 "agents:read",
                 "agents:write",
                 "organization:read",
-                "organization:write"
+                "organization:write",
+                "members:read",
+                "members:write",
+                "invitations:read",
+                "invitations:write"
               ]
             }
           }
@@ -9472,7 +10836,11 @@
               "agents:read",
               "agents:write",
               "organization:read",
-              "organization:write"
+              "organization:write",
+              "members:read",
+              "members:write",
+              "invitations:read",
+              "invitations:write"
             ]
           },
           "label": {
@@ -13659,6 +15027,334 @@
         },
         "required": [
           "disabled_roles"
+        ]
+      },
+      "PublicMemberDerivedLocationsDto": {
+        "type": "object",
+        "properties": {
+          "person_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The linked team member’s name, or null."
+          },
+          "location_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "person_name",
+          "location_ids"
+        ]
+      },
+      "PublicMemberDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The membership id. Every members_* operation takes it as `membershipId`."
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The person’s login id."
+          },
+          "email": {
+            "type": "string",
+            "description": "The login email, or \"unknown\" when it cannot be read."
+          },
+          "display_name": {
+            "type": "string",
+            "description": "The profile name, else the email’s local part."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "OWNER",
+              "ADMIN",
+              "MANAGER",
+              "MEMBER"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "DEACTIVATED"
+            ]
+          },
+          "joined_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Send it as `expected_updated_at` on a write. Changing the locations does not move it."
+          },
+          "is_current_user": {
+            "type": "boolean",
+            "description": "True for the person behind this credential."
+          },
+          "agent_access_enabled": {
+            "type": "boolean",
+            "description": "False while the person’s personal keys and agent connections are switched off."
+          },
+          "manager_powers": {
+            "type": "array",
+            "description": "A MANAGER’s powers. Empty for every other role.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "contacts",
+                "location_settings",
+                "sequences",
+                "staff",
+                "leader_schedules",
+                "appointments",
+                "access_levels"
+              ]
+            }
+          },
+          "access_level": {
+            "type": "string",
+            "enum": [
+              "whole_location",
+              "own_records"
+            ],
+            "description": "A MEMBER’s record level. whole_location for every other role."
+          },
+          "sms_send_enabled": {
+            "type": "boolean",
+            "description": "A MEMBER’s SMS setting. False for every other role."
+          },
+          "location_ids": {
+            "description": "A MANAGER’s or MEMBER’s assigned locations, when the credential may see them. Empty for an OWNER or ADMIN.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "derived_locations": {
+            "nullable": true,
+            "description": "The locations a MANAGER or MEMBER with none assigned reaches through their linked team member.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicMemberDerivedLocationsDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "email",
+          "display_name",
+          "role",
+          "status",
+          "joined_at",
+          "updated_at",
+          "is_current_user",
+          "agent_access_enabled",
+          "manager_powers",
+          "access_level",
+          "sms_send_enabled",
+          "location_ids",
+          "derived_locations"
+        ]
+      },
+      "MemberRoleBodyDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "MANAGER",
+              "MEMBER"
+            ],
+            "description": "An owner is made only by an ownership transfer in the dashboard."
+          }
+        },
+        "required": [
+          "role"
+        ]
+      },
+      "MemberStatusBodyDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "DEACTIVATED"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "MemberAgentAccessBodyDto": {
+        "type": "object",
+        "properties": {
+          "agent_access_enabled": {
+            "type": "boolean",
+            "description": "False switches off the person’s personal keys and agent connections. Nothing is revoked."
+          }
+        },
+        "required": [
+          "agent_access_enabled"
+        ]
+      },
+      "MemberLocationsBodyDto": {
+        "type": "object",
+        "properties": {
+          "location_ids": {
+            "description": "The whole set, replacing the current one. Each id is a location of this organization. [] removes all.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "location_ids"
+        ]
+      },
+      "MemberManagerPowersBodyDto": {
+        "type": "object",
+        "properties": {
+          "manager_powers": {
+            "type": "array",
+            "description": "The whole set, replacing the current one.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "contacts",
+                "location_settings",
+                "sequences",
+                "staff",
+                "leader_schedules",
+                "appointments",
+                "access_levels"
+              ]
+            }
+          }
+        },
+        "required": [
+          "manager_powers"
+        ]
+      },
+      "MemberAccessLevelBodyDto": {
+        "type": "object",
+        "properties": {
+          "access_level": {
+            "type": "string",
+            "enum": [
+              "whole_location",
+              "own_records"
+            ]
+          }
+        },
+        "required": [
+          "access_level"
+        ]
+      },
+      "MemberSmsSendBodyDto": {
+        "type": "object",
+        "properties": {
+          "sms_send_enabled": {
+            "type": "boolean",
+            "description": "True lets a MEMBER text their own consented clients. False stops it."
+          }
+        },
+        "required": [
+          "sms_send_enabled"
+        ]
+      },
+      "PublicInvitationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The `invitationId` of `invitations_revoke`."
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "MEMBER"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ACCEPTED",
+              "EXPIRED",
+              "CANCELLED"
+            ],
+            "description": "EXPIRED once a PENDING invitation passes `expires_at`. CANCELLED after `invitations_revoke`."
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role",
+          "status",
+          "expires_at",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "InvitationCreateBodyDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "email": {
+            "type": "string",
+            "description": "The email to invite. Stored in lower case."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "MEMBER"
+            ],
+            "default": "MEMBER",
+            "description": "Nobody is invited above ADMIN."
+          }
+        },
+        "required": [
+          "email"
         ]
       }
     }

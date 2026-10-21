@@ -191,6 +191,10 @@ A key carries scopes, one read and one write per noun:
 | `agents:write` | change a phone agent's draft, turn a subagent on or off, publish a draft and roll back |
 | `organization:read` | read the organization's settings and the roles whose agent access is off |
 | `organization:write` | change the industry, website and timezone, and turn agent access off or on |
+| `members:read` | read the organization's members |
+| `members:write` | change a member's role, status, agent access, locations, manager powers, access level and SMS setting, and remove a member |
+| `invitations:read` | read the organization's invitations |
+| `invitations:write` | invite a person by email, and revoke an invitation |
 
 Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
 `/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
@@ -525,3 +529,19 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
   `search` (part of an email). Submissions are personal data: quote only what the user asked
   for. A staff member (MEMBER) reads forms but gets 403 `insufficient_role` on submissions: tell the
   user, and do not retry.
+- Members: `members_list`, `members_get`, `members_update_role`, `members_update_status`,
+  `members_update_agent_access`, `members_set_locations`, `members_set_manager_powers`,
+  `members_set_access_level`, `members_set_sms_send`, `members_remove`. A member is a dashboard
+  login, not a team member who takes appointments. Read the member with `members_get` and send
+  its `updated_at` as `expected_updated_at` on the change. A 409 `stale_revision` means it changed
+  after you read it: read it again before you decide. Only an owner or admin changes members, with
+  their own credential: an organization key gets 403 `no_acting_user`, and a staff member 403
+  `insufficient_role`. Nobody changes their own membership, and an admin does not change an
+  owner. Ownership transfer is in the dashboard only. Confirm a role change, a deactivation, an
+  SMS change and a removal with the user first: a demotion, a deactivation and a removal revoke
+  the keys the person created.
+- Invitations: `invitations_list`, `invitations_create`, `invitations_revoke`. Only an owner or
+  admin invites, with their own credential. `invitations_create` emails the person at once, so
+  confirm the email and the role (`ADMIN` or `MEMBER`) with the user first, and send an
+  `idempotency_key`. A 409 `EMAIL_ALREADY_EXISTS` means the person is a member already or has a
+  pending invitation. No response holds the invitation link: the person gets it by email.
