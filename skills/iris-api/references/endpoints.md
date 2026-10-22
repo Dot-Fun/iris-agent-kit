@@ -982,7 +982,7 @@ Create a draft sequence
   - `subject_template` (body, string): Email subject, or the task title. May use `{{variables}}`.
   - `body_template` (body, string): Message body, or the task note. May use `{{variables}}`.
   - `preheader_template` (body, string): Email preview text shown next to the subject in the inbox
-  - `body_document` (body, object): A designed email body (EmailDocument v1), on `email` steps only. At most 60 blocks, counting each block inside columns, and 10000 characters. Omit to keep the stored one. A step that leaves `email` loses it. Null clears it.
+  - `body_document` (body, object): A designed email body (EmailDocument v1), on `email` steps only. At most 60 blocks, counting each block inside columns and sections, 10000 characters, and 40 items in one list. Omit to keep the stored one. A step that leaves `email` loses it. Null clears it.
   - `ai_enabled` (body, boolean): Let AI write the copy from `ai_prompt` at send time
   - `ai_prompt` (body, string): What the AI should write, when `ai_enabled`
 - `exit_conditions` (body, array of SequenceExitConditionInputDto): Replaces the exit conditions. An enrollment stops when any of them is met.
@@ -1190,7 +1190,7 @@ Change a sequence
   - `subject_template` (body, string): Email subject, or the task title. May use `{{variables}}`.
   - `body_template` (body, string): Message body, or the task note. May use `{{variables}}`.
   - `preheader_template` (body, string): Email preview text shown next to the subject in the inbox
-  - `body_document` (body, object): A designed email body (EmailDocument v1), on `email` steps only. At most 60 blocks, counting each block inside columns, and 10000 characters. Omit to keep the stored one. A step that leaves `email` loses it. Null clears it.
+  - `body_document` (body, object): A designed email body (EmailDocument v1), on `email` steps only. At most 60 blocks, counting each block inside columns and sections, 10000 characters, and 40 items in one list. Omit to keep the stored one. A step that leaves `email` loses it. Null clears it.
   - `ai_enabled` (body, boolean): Let AI write the copy from `ai_prompt` at send time
   - `ai_prompt` (body, string): What the AI should write, when `ai_enabled`
 - `exit_conditions` (body, array of SequenceExitConditionInputDto): Replaces the exit conditions. An enrollment stops when any of them is met.
