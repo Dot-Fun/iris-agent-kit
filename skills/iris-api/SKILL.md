@@ -187,6 +187,7 @@ A key carries scopes, one read and one write per noun:
 | `audiences:read` | read and count audiences, and list their contacts |
 | `audiences:write` | create, change, archive and restore audiences, and add and remove members |
 | `forms:read` | read forms, their fields and their submissions |
+| `forms:write` | create, change and delete forms, add, change, reorder and delete their fields, and rotate a form's submission key |
 | `agents:read` | read phone agents, their versions, and whether a draft differs from the live version |
 | `agents:write` | change a phone agent's draft, turn a subagent on or off, publish a draft and roll back |
 | `organization:read` | read the organization's settings and the roles whose agent access is off |
@@ -502,6 +503,24 @@ user, and do not retry.
 
 Every location operation except `locations_list` and `locations_booking_options` needs an owner
 or admin. A MEMBER or MANAGER gets 403 `insufficient_role`: tell the user, and do not retry.
+
+### 18. Build a lead form and publish it
+
+1. Call `forms_create` with `name` and an `idempotency_key`. The new form is a `draft` with no
+   fields. Send `location_id` from `locations_list` to send its leads to one location.
+2. Call `forms_add_field` once for each field, with `type`, `key` and `label`. The `key` names
+   the answer in a submission `payload`: lowercase letters, digits and single underscores. A 409
+   means the form has a field with that `key`. A `select` field takes its choices in `options`.
+3. To change a field, call `forms_update_field` with the values to change. To change the order,
+   call `forms_reorder_fields` with every field id from `forms_get` in the new order.
+4. To publish, call `forms_update` with `status: published` and the form's `updated_at` from
+   `forms_get` as `expected_updated_at`. A field change does not move the form's `updated_at`.
+5. Ask the user before `forms_delete_field`, `forms_delete` or `forms_rotate_submission_key`. A
+   deleted form takes its fields and submissions with it. A rotation answers with the new
+   `submission_key`, and the old key stops taking submissions: tell the user to update the embed.
+
+Every form write needs an owner or admin. A MEMBER or MANAGER gets 403 `insufficient_role`: tell
+the user, and do not retry. No read returns the submission key.
 
 ## Other operations
 

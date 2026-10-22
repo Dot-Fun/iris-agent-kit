@@ -82,6 +82,7 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `audiences:read` | Read audiences |
 | `audiences:write` | Add and remove audience members |
 | `forms:read` | Read forms, their fields and their submissions |
+| `forms:write` | Create, change and delete forms and their fields, reorder the fields, and rotate a form's submission key |
 | `agents:read` | Read phone agents, their versions, and whether a draft differs from the live version |
 | `agents:write` | Change a phone agent's draft, turn a subagent on or off, publish a draft and roll back |
 | `organization:read` | Read the organization's settings and the roles whose agent access is off |

@@ -523,6 +523,63 @@ Send an SMS to a contact who has consented
 
 ## Forms
 
+### forms_add_field
+
+`POST /api/v1/forms/{formId}/fields`. Scope: `forms:write`. Member: `deny`. Changes: `forms`.
+
+Add a field to a form
+
+- `formId` (path, string uuid, required)
+- `type` (body, string, required, one of `text`, `email`, `phone`, `select`, `checkbox`, `hidden`)
+- `key` (body, string, required): The key of this answer in a submission `payload`: lowercase letters, digits and single underscores, starting with a letter. Unique on the form.
+- `label` (body, string, required)
+- `placeholder` (body, string)
+- `required` (body, boolean): A `hidden` field cannot be required.
+- `options` (body, array of FormFieldOptionDto): The choices of a `select` field
+  - `value` (body, string, required)
+  - `label` (body, string, required)
+- `contact_target` (body, string): Where the answer saves on the contact: `none`, `full_name`, `first_name`, `last_name`, `phone`, or `field:<CRM field key>`. Null: by key. An `email` field takes null.
+
+### forms_create
+
+`POST /api/v1/forms`. Scope: `forms:write`. Member: `deny`. Changes: `forms`. Idempotent: send `idempotency_key`.
+
+Create a form
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `name` (body, string, required)
+- `description` (body, string)
+- `status` (body, string, one of `draft`, `published`, `archived`): Only a `published` form takes submissions.
+- `location_id` (body, string uuid): An active location from `locations_list`. Its leads join that location and notify its managers. Null: all locations.
+- `settings` (body, FormSettingsInputDto)
+  - `target_sequence_id` (body, string uuid): Enroll every accepted submitter in this sequence of the organization. Null: none.
+  - `captcha_enabled` (body, boolean): Whether a submission needs a passing captcha
+  - `origin_allowlist` (body, array of string): The website origins whose browsers may submit the form, such as `https://example.com`. Other origins get a 403. Empty: server-to-server calls only.
+  - `appearance` (body, FormEmbedAppearanceInputDto)
+    - `style_mode` (body, string, one of `iris`, `site`)
+    - `accent_color` (body, string): A #RRGGBB hex color. Null: the default.
+    - `submit_label` (body, string)
+    - `success_message` (body, string)
+
+### forms_delete
+
+`DELETE /api/v1/forms/{formId}`. Scope: `forms:write`. Member: `deny`. Confirm: required. Changes: `forms`.
+
+Delete a form
+
+- `formId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
+### forms_delete_field
+
+`DELETE /api/v1/forms/{formId}/fields/{fieldId}`. Scope: `forms:write`. Member: `deny`. Confirm: required. Changes: `forms`.
+
+Delete a field of a form
+
+- `formId` (path, string uuid, required)
+- `fieldId` (path, string uuid, required): A field `id` from `forms_get`
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
 ### forms_get
 
 `GET /api/v1/forms/{formId}`. Scope: `forms:read`. Member: `open`.
@@ -550,6 +607,64 @@ List the submissions of a form
 - `from` (query, string): ISO 8601 datetime with a time part. Only submissions at or after it.
 - `to` (query, string): ISO 8601 datetime with a time part. Only submissions at or before it. At most 366 days after `from`.
 - `search` (query, string): Case-insensitive match on part of the contact's email or the submitted email. At most 320 characters.
+
+### forms_reorder_fields
+
+`PUT /api/v1/forms/{formId}/fields/reorder`. Scope: `forms:write`. Member: `deny`. Changes: `forms`.
+
+Reorder the fields of a form
+
+- `formId` (path, string uuid, required)
+- `field_ids` (body, array of string uuid, required): Every field id of the form, each once, in the new order
+
+### forms_rotate_submission_key
+
+`POST /api/v1/forms/{formId}/submission-key/rotate`. Scope: `forms:write`. Member: `deny`. Confirm: required. Changes: `forms`.
+
+Rotate a form’s submission key
+
+- `formId` (path, string uuid, required)
+
+### forms_update
+
+`PATCH /api/v1/forms/{formId}`. Scope: `forms:write`. Member: `deny`. Changes: `forms`.
+
+Change a form
+
+- `formId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `name` (body, string)
+- `description` (body, string)
+- `status` (body, string, one of `draft`, `published`, `archived`): Only a `published` form takes submissions.
+- `location_id` (body, string uuid): An active location from `locations_list`. Null: all locations.
+- `settings` (body, FormSettingsInputDto)
+  - `target_sequence_id` (body, string uuid): Enroll every accepted submitter in this sequence of the organization. Null: none.
+  - `captcha_enabled` (body, boolean): Whether a submission needs a passing captcha
+  - `origin_allowlist` (body, array of string): The website origins whose browsers may submit the form, such as `https://example.com`. Other origins get a 403. Empty: server-to-server calls only.
+  - `appearance` (body, FormEmbedAppearanceInputDto)
+    - `style_mode` (body, string, one of `iris`, `site`)
+    - `accent_color` (body, string): A #RRGGBB hex color. Null: the default.
+    - `submit_label` (body, string)
+    - `success_message` (body, string)
+
+### forms_update_field
+
+`PATCH /api/v1/forms/{formId}/fields/{fieldId}`. Scope: `forms:write`. Member: `deny`. Changes: `forms`.
+
+Change a field of a form
+
+- `formId` (path, string uuid, required)
+- `fieldId` (path, string uuid, required): A field `id` from `forms_get`
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `type` (body, string, one of `text`, `email`, `phone`, `select`, `checkbox`, `hidden`)
+- `key` (body, string): The key of this answer in a submission `payload`: lowercase letters, digits and single underscores, starting with a letter. Unique on the form.
+- `label` (body, string)
+- `placeholder` (body, string)
+- `required` (body, boolean): A `hidden` field cannot be required.
+- `options` (body, array of FormFieldOptionDto): The choices of a `select` field
+  - `value` (body, string, required)
+  - `label` (body, string, required)
+- `contact_target` (body, string): Where the answer saves on the contact: `none`, `full_name`, `first_name`, `last_name`, `phone`, or `field:<CRM field key>`. Null: by key. An `email` field takes null.
 
 ## Invitations
 

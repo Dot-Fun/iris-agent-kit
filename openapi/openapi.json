@@ -5492,11 +5492,132 @@
         ],
         "x-iris-scope": "forms:read",
         "x-member-access": "open"
+      },
+      "post": {
+        "description": "A new form with no fields, `draft` unless `status` says otherwise, and its submission key.\nAdd its fields with `forms_add_field`. Only a `published` form takes submissions.\n`location_id` names an active location from `locations_list`. Leave it out for all locations.",
+        "operationId": "forms_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FormCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or `target_sequence_id` names no sequence of the organization"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `forms:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Location not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Create a form",
+        "tags": [
+          "Forms",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "forms"
+        ],
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "operation": "forms_delete",
+          "args": {
+            "formId": "response.id"
+          },
+          "record": {
+            "operation": "forms_get",
+            "args": {
+              "formId": "response.id"
+            },
+            "watch": [
+              "fields"
+            ]
+          }
+        },
+        "x-iris-scope": "forms:write",
+        "x-member-access": "deny"
       }
     },
     "/api/v1/forms/{formId}": {
       "get": {
-        "description": "The form and its fields in display order. Each field’s `key` is the key of its answer in a submission `payload`. The form’s submission key is never returned.",
+        "description": "The form and its fields in display order. Each field’s `key` is the key of its answer in a submission `payload`. No read returns the form’s submission key: `forms_rotate_submission_key` issues a new one.",
         "operationId": "forms_get",
         "parameters": [
           {
@@ -5573,6 +5694,235 @@
         ],
         "x-iris-scope": "forms:read",
         "x-member-access": "open"
+      },
+      "patch": {
+        "description": "Changes the fields sent and keeps the rest. A setting sent replaces that setting only.\nSet `status` to `published` to take submissions, and to `draft` or `archived` to stop them.\n`expected_updated_at` is the form’s `updated_at` from `forms_get`, also for a field write.\nA field change does not move the form’s `updated_at`.",
+        "operationId": "forms_update",
+        "parameters": [
+          {
+            "name": "formId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FormUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or `target_sequence_id` names no sequence of the organization"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `forms:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such form in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change a form",
+        "tags": [
+          "Forms",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "forms"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "forms_get",
+            "args": {
+              "formId": "request.formId"
+            }
+          }
+        },
+        "x-iris-scope": "forms:write",
+        "x-member-access": "deny"
+      },
+      "delete": {
+        "description": "Deletes the form with its fields, its submission key and every submission it received. It cannot be restored.\nAsk the user first. Its embeds stop taking submissions. A deleted form answers 404, so a repeat changes nothing.\n`expected_updated_at` is the form’s `updated_at` from `forms_get`, also for a field write.\nA field change does not move the form’s `updated_at`.",
+        "operationId": "forms_delete",
+        "parameters": [
+          {
+            "name": "formId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormDeletedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `forms:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such form in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete a form",
+        "tags": [
+          "Forms",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "forms"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A deleted form cannot be restored: its fields, its submission key and every submission it received are deleted with it."
+        },
+        "x-iris-scope": "forms:write",
+        "x-member-access": "deny"
       }
     },
     "/api/v1/forms/{formId}/submissions": {
@@ -5719,6 +6069,559 @@
           "Public API"
         ],
         "x-iris-scope": "forms:read",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/forms/{formId}/fields": {
+      "post": {
+        "description": "Adds the field after the form’s last field. Its `key` names its answer in a submission `payload`, and must be new on the form.\nA `select` field takes its choices in `options`. A `hidden` field cannot be required.\nChange the order with `forms_reorder_fields`.",
+        "operationId": "forms_add_field",
+        "parameters": [
+          {
+            "name": "formId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FormFieldCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormFieldDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body or `contact_target`"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `forms:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such form in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The form has a field with this `key`"
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Add a field to a form",
+        "tags": [
+          "Forms",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "forms"
+        ],
+        "x-iris-reverse": {
+          "operation": "forms_delete_field",
+          "args": {
+            "formId": "request.formId",
+            "fieldId": "response.id"
+          },
+          "record": {
+            "operation": "forms_get",
+            "args": {
+              "formId": "request.formId"
+            },
+            "watch": [
+              "fields"
+            ]
+          }
+        },
+        "x-iris-scope": "forms:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/forms/{formId}/fields/{fieldId}": {
+      "patch": {
+        "description": "Changes the field values sent and keeps the rest. A new `key` changes the payload key of later submissions only.\n`expected_updated_at` is the form’s `updated_at` from `forms_get`, also for a field write.\nA field change does not move the form’s `updated_at`.",
+        "operationId": "forms_update_field",
+        "parameters": [
+          {
+            "name": "formId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "fieldId",
+            "required": true,
+            "in": "path",
+            "description": "A field `id` from `forms_get`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FormFieldUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormFieldDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body or `contact_target`"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `forms:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such form or field in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nThe form has another field with this `key`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change a field of a form",
+        "tags": [
+          "Forms",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "forms"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "Iris cannot read the field’s earlier values back for an undo. Read the form with forms_get first, and send forms_update_field again with the earlier values."
+        },
+        "x-iris-scope": "forms:write",
+        "x-member-access": "deny"
+      },
+      "delete": {
+        "description": "Removes the field from the form. Later submissions no longer ask it, and submissions already received keep its answer.\nAsk the user first.\n`expected_updated_at` is the form’s `updated_at` from `forms_get`, also for a field write.\nA field change does not move the form’s `updated_at`.",
+        "operationId": "forms_delete_field",
+        "parameters": [
+          {
+            "name": "formId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "fieldId",
+            "required": true,
+            "in": "path",
+            "description": "A field `id` from `forms_get`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormFieldDeletedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `forms:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such form or field in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete a field of a form",
+        "tags": [
+          "Forms",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "forms"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A deleted field cannot be restored. Add it again with forms_add_field: answers already received keep its key in their payload."
+        },
+        "x-iris-scope": "forms:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/forms/{formId}/fields/reorder": {
+      "put": {
+        "description": "`field_ids` lists every field id of the form from `forms_get`, each once, in the new order. Answers the fields in that order.",
+        "operationId": "forms_reorder_fields",
+        "parameters": [
+          {
+            "name": "formId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FormFieldReorderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FormFieldDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or `field_ids` is not the form’s fields, each once"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `forms:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such form in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Reorder the fields of a form",
+        "tags": [
+          "Forms",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "forms"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "Iris cannot read the earlier order back for an undo. Read the field order with forms_get first, and send forms_reorder_fields again with it."
+        },
+        "x-iris-scope": "forms:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/forms/{formId}/submission-key/rotate": {
+      "post": {
+        "description": "Issues a new submission key and revokes the old one, so every embed with the old key stops taking submissions.\nAsk the user first. This is the only answer that carries the key: put `submission_key` in the embed.",
+        "operationId": "forms_rotate_submission_key",
+        "parameters": [
+          {
+            "name": "formId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormSubmissionKeyDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `forms:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such form in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Rotate a form’s submission key",
+        "tags": [
+          "Forms",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "forms"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "The old submission key cannot be restored: every embed that uses it stops taking submissions."
+        },
+        "x-iris-scope": "forms:write",
         "x-member-access": "deny"
       }
     },
@@ -11316,6 +12219,7 @@
                 "audiences:read",
                 "audiences:write",
                 "forms:read",
+                "forms:write",
                 "agents:read",
                 "agents:write",
                 "organization:read",
@@ -11416,6 +12320,7 @@
                 "audiences:read",
                 "audiences:write",
                 "forms:read",
+                "forms:write",
                 "agents:read",
                 "agents:write",
                 "organization:read",
@@ -11487,6 +12392,7 @@
               "audiences:read",
               "audiences:write",
               "forms:read",
+              "forms:write",
               "agents:read",
               "agents:write",
               "organization:read",
@@ -13436,6 +14342,36 @@
           "changed"
         ]
       },
+      "FormEmbedAppearanceDto": {
+        "type": "object",
+        "properties": {
+          "style_mode": {
+            "type": "string",
+            "enum": [
+              "iris",
+              "site"
+            ],
+            "description": "`iris`: the Iris look. `site`: the website’s own styles."
+          },
+          "accent_color": {
+            "type": "string",
+            "nullable": true,
+            "description": "A #RRGGBB hex color. Null: the default."
+          },
+          "submit_label": {
+            "type": "string"
+          },
+          "success_message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "style_mode",
+          "accent_color",
+          "submit_label",
+          "success_message"
+        ]
+      },
       "FormSettingsSummaryDto": {
         "type": "object",
         "properties": {
@@ -13448,11 +14384,23 @@
           "captcha_enabled": {
             "type": "boolean",
             "description": "Whether a submission needs a passing captcha"
+          },
+          "origin_allowlist": {
+            "description": "The website origins whose browsers may submit the form. Empty: server-to-server calls only.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "appearance": {
+            "$ref": "#/components/schemas/FormEmbedAppearanceDto"
           }
         },
         "required": [
           "target_sequence_id",
-          "captcha_enabled"
+          "captcha_enabled",
+          "origin_allowlist",
+          "appearance"
         ]
       },
       "FormDto": {
@@ -13748,6 +14696,303 @@
           "total",
           "page",
           "limit"
+        ]
+      },
+      "FormEmbedAppearanceInputDto": {
+        "type": "object",
+        "properties": {
+          "style_mode": {
+            "type": "string",
+            "enum": [
+              "iris",
+              "site"
+            ],
+            "default": "iris"
+          },
+          "accent_color": {
+            "type": "string",
+            "nullable": true,
+            "description": "A #RRGGBB hex color. Null: the default."
+          },
+          "submit_label": {
+            "type": "string",
+            "maxLength": 40,
+            "default": "Submit"
+          },
+          "success_message": {
+            "type": "string",
+            "maxLength": 300,
+            "default": "Thanks, we got your submission."
+          }
+        }
+      },
+      "FormSettingsInputDto": {
+        "type": "object",
+        "properties": {
+          "target_sequence_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "Enroll every accepted submitter in this sequence of the organization. Null: none."
+          },
+          "captcha_enabled": {
+            "type": "boolean",
+            "description": "Whether a submission needs a passing captcha"
+          },
+          "origin_allowlist": {
+            "maxItems": 50,
+            "description": "The website origins whose browsers may submit the form, such as `https://example.com`. Other origins get a 403. Empty: server-to-server calls only.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "appearance": {
+            "$ref": "#/components/schemas/FormEmbedAppearanceInputDto"
+          }
+        }
+      },
+      "FormCreateDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ],
+            "default": "draft",
+            "description": "Only a `published` form takes submissions."
+          },
+          "location_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "An active location from `locations_list`. Its leads join that location and notify its managers. Null: all locations."
+          },
+          "settings": {
+            "$ref": "#/components/schemas/FormSettingsInputDto"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "FormUpdateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ],
+            "description": "Only a `published` form takes submissions."
+          },
+          "location_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "An active location from `locations_list`. Null: all locations."
+          },
+          "settings": {
+            "$ref": "#/components/schemas/FormSettingsInputDto"
+          }
+        }
+      },
+      "FormDeletedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deleted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "deleted"
+        ]
+      },
+      "FormFieldCreateDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "email",
+              "phone",
+              "select",
+              "checkbox",
+              "hidden"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "The key of this answer in a submission `payload`: lowercase letters, digits and single underscores, starting with a letter. Unique on the form."
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "placeholder": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "required": {
+            "type": "boolean",
+            "description": "A `hidden` field cannot be required."
+          },
+          "options": {
+            "maxItems": 100,
+            "description": "The choices of a `select` field",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FormFieldOptionDto"
+            }
+          },
+          "contact_target": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the answer saves on the contact: `none`, `full_name`, `first_name`, `last_name`, `phone`, or `field:<CRM field key>`. Null: by key. An `email` field takes null."
+          }
+        },
+        "required": [
+          "type",
+          "key",
+          "label"
+        ]
+      },
+      "FormFieldUpdateDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "email",
+              "phone",
+              "select",
+              "checkbox",
+              "hidden"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "The key of this answer in a submission `payload`: lowercase letters, digits and single underscores, starting with a letter. Unique on the form."
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "placeholder": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "required": {
+            "type": "boolean",
+            "description": "A `hidden` field cannot be required."
+          },
+          "options": {
+            "maxItems": 100,
+            "description": "The choices of a `select` field",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FormFieldOptionDto"
+            }
+          },
+          "contact_target": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the answer saves on the contact: `none`, `full_name`, `first_name`, `last_name`, `phone`, or `field:<CRM field key>`. Null: by key. An `email` field takes null."
+          }
+        }
+      },
+      "FormFieldDeletedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deleted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "deleted"
+        ]
+      },
+      "FormFieldReorderDto": {
+        "type": "object",
+        "properties": {
+          "field_ids": {
+            "description": "Every field id of the form, each once, in the new order",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "field_ids"
+        ]
+      },
+      "FormSubmissionKeyDto": {
+        "type": "object",
+        "properties": {
+          "submission_key": {
+            "type": "string",
+            "description": "The form’s new publishable key. Put it in the embed in place of the old one, which no longer takes submissions."
+          },
+          "issued_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "submission_key",
+          "issued_at"
         ]
       },
       "SequenceCapabilitiesDto": {
