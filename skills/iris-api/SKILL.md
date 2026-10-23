@@ -198,6 +198,8 @@ A key carries scopes, one read and one write per noun:
 | `invitations:write` | invite a person by email, and revoke an invitation |
 | `locations:read` | read one location, a draft included, and what each location write can do now |
 | `locations:write` | create and delete location drafts, activate and deactivate locations, and choose the default |
+| `table_views:read` | read the saved views of a dashboard table, and your own table state and default view |
+| `table_views:write` | save, change and delete views of a dashboard table, and set your own table state and default view |
 
 Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
 `/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
@@ -521,6 +523,25 @@ or admin. A MEMBER or MANAGER gets 403 `insufficient_role`: tell the user, and d
 
 Every form write needs an owner or admin. A MEMBER or MANAGER gets 403 `insufficient_role`: tell
 the user, and do not retry. No read returns the submission key.
+
+### 19. Save a view of a dashboard table and open the table with it
+
+1. Call `table_views_list` with the `tableId`, such as `crm.contacts`, to see the shared views and
+   your own private ones. Read one with `table_views_get`.
+2. Call `table_views_create` with a `name`, `visibility` (`shared` by default, or `private`), the
+   whole `state` (all seven keys: `search`, `sorting`, `filters`, `columnSizing`, `columnOrder`,
+   `columnVisibility` and `pageSize`) and an `idempotency_key`. Use the table's own column ids.
+3. To change it, call `table_views_update` with `name`, the whole `state`, and its `updated_at` as
+   `expected_updated_at`. Only its creator, an owner or an admin changes a shared view: anyone else
+   gets 403, so tell the user.
+4. To open the table with it, read `table_views_get_preferences`, then call
+   `table_views_set_preferences` with a `state` and the view's `id` as `default_view_id`. Send the
+   preferences' `updated_at` as `expected_updated_at` when there are some.
+5. To remove a view, ask the user, then call `table_views_delete` with its `updated_at` as
+   `expected_updated_at`. It cannot be restored.
+
+Every table views operation acts as a person. An organization key gets 403 `no_acting_user`: tell
+the user to use a personal key or an agent connection.
 
 ## Other operations
 

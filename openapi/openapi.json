@@ -11102,6 +11102,782 @@
         "x-member-access": "deny"
       }
     },
+    "/api/v1/table-views/{tableId}": {
+      "get": {
+        "description": "The shared views of the table and your own private views, by name. A view’s `id` is the\n`viewId` of the other table views operations, and the `default_view_id` of `table_views_set_preferences`.\nViews and preferences belong to a person, so it runs as the person behind the credential, and any member may call it.\nAn organization key gets 403 `no_acting_user`: it has no person.\n`tableId` names a dashboard table, such as `crm.contacts`. A platform admin table (`admin.*`) answers 400.",
+        "operationId": "table_views_list",
+        "parameters": [
+          {
+            "name": "tableId",
+            "required": true,
+            "in": "path",
+            "description": "The dashboard table, such as `crm.contacts`.",
+            "schema": {
+              "example": "crm.contacts",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicTableViewDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key, which has no person to act as.\n\nThe key does not carry the `table_views:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such path. Any one-segment `tableId` reaches this operation, with no views for a table that has none",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the saved views of a dashboard table",
+        "tags": [
+          "Table views",
+          "Public API"
+        ],
+        "x-iris-scope": "table_views:read",
+        "x-member-access": "open"
+      },
+      "post": {
+        "description": "Saves a named view, shared with the organization (the default) or private to you. Retry with the\nsame `idempotency_key` to get the first view back rather than a second one.\n`state` is the table’s search, sort, filters, column widths, order and visibility, and page size, as the dashboard saves them. Send all seven keys. Column and filter ids are the table’s own. An invalid state answers 400 `Invalid table state`.\nViews and preferences belong to a person, so it runs as the person behind the credential, and any member may call it.\nAn organization key gets 403 `no_acting_user`: it has no person.\n`tableId` names a dashboard table, such as `crm.contacts`. A platform admin table (`admin.*`) answers 400.",
+        "operationId": "table_views_create",
+        "parameters": [
+          {
+            "name": "tableId",
+            "required": true,
+            "in": "path",
+            "description": "The dashboard table, such as `crm.contacts`.",
+            "schema": {
+              "example": "crm.contacts",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicTableViewCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicTableViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "An invalid name, visibility or state, or an `admin.*` table"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key, which has no person to act as.\n\nThe key does not carry the `table_views:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such path. Any one-segment `tableId` reaches this operation, with no views for a table that has none",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Save a new view of a dashboard table",
+        "tags": [
+          "Table views",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "table_views"
+        ],
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "operation": "table_views_delete",
+          "args": {
+            "tableId": "request.tableId",
+            "viewId": "response.id"
+          },
+          "record": {
+            "operation": "table_views_get",
+            "args": {
+              "tableId": "request.tableId",
+              "viewId": "response.id"
+            }
+          }
+        },
+        "x-iris-scope": "table_views:write",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/table-views/{tableId}/preferences": {
+      "get": {
+        "description": "The table state you last left, and the view the table opens with. null when you have saved none.\nIts `updated_at` is the `expected_updated_at` of `table_views_set_preferences`.\nViews and preferences belong to a person, so it runs as the person behind the credential, and any member may call it.\nAn organization key gets 403 `no_acting_user`: it has no person.\n`tableId` names a dashboard table, such as `crm.contacts`. A platform admin table (`admin.*`) answers 400.",
+        "operationId": "table_views_get_preferences",
+        "parameters": [
+          {
+            "name": "tableId",
+            "required": true,
+            "in": "path",
+            "description": "The dashboard table, such as `crm.contacts`.",
+            "schema": {
+              "example": "crm.contacts",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "null when you have saved none",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PublicTablePreferencesDto"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key, which has no person to act as.\n\nThe key does not carry the `table_views:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such path. Any one-segment `tableId` reaches this operation, with no views for a table that has none",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Read your own state and default view of a dashboard table",
+        "tags": [
+          "Table views",
+          "Public API"
+        ],
+        "x-iris-scope": "table_views:read",
+        "x-member-access": "open"
+      },
+      "put": {
+        "description": "Replaces your table state, and sets the view the table opens with in the dashboard. Only you see it.\n`default_view_id` is a view from `table_views_list`. null or left out means no default view. A view you\ncannot see answers 400 `Default view unavailable`. A first save has no undo.\nSend `expected_updated_at` from `table_views_get_preferences` once preferences exist. Sent while none\nexist, it answers 409 `stale_revision`.\n`state` is the table’s search, sort, filters, column widths, order and visibility, and page size, as the dashboard saves them. Send all seven keys. Column and filter ids are the table’s own. An invalid state answers 400 `Invalid table state`.\nViews and preferences belong to a person, so it runs as the person behind the credential, and any member may call it.\nAn organization key gets 403 `no_acting_user`: it has no person.\n`tableId` names a dashboard table, such as `crm.contacts`. A platform admin table (`admin.*`) answers 400.",
+        "operationId": "table_views_set_preferences",
+        "parameters": [
+          {
+            "name": "tableId",
+            "required": true,
+            "in": "path",
+            "description": "The dashboard table, such as `crm.contacts`.",
+            "schema": {
+              "example": "crm.contacts",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicTablePreferencesBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicTablePreferencesDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "An invalid state, or a default view you cannot see"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key, which has no person to act as.\n\nThe key does not carry the `table_views:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such path. Any one-segment `tableId` reaches this operation, with no views for a table that has none",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nPreferences changed while this call ran. Read them again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Set your own state and default view of a dashboard table",
+        "tags": [
+          "Table views",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "table_views"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "table_views_get_preferences",
+            "args": {
+              "tableId": "request.tableId"
+            }
+          },
+          "together": [
+            [
+              "state",
+              "default_view_id"
+            ]
+          ]
+        },
+        "x-iris-scope": "table_views:write",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/table-views/{tableId}/{viewId}": {
+      "get": {
+        "description": "One view, as `table_views_list` shows it. Another person’s private view answers 404.\nIts `updated_at` is the `expected_updated_at` of `table_views_update` and `table_views_delete`.\nViews and preferences belong to a person, so it runs as the person behind the credential, and any member may call it.\nAn organization key gets 403 `no_acting_user`: it has no person.\n`tableId` names a dashboard table, such as `crm.contacts`. A platform admin table (`admin.*`) answers 400.",
+        "operationId": "table_views_get",
+        "parameters": [
+          {
+            "name": "tableId",
+            "required": true,
+            "in": "path",
+            "description": "The dashboard table, such as `crm.contacts`.",
+            "schema": {
+              "example": "crm.contacts",
+              "type": "string"
+            }
+          },
+          {
+            "name": "viewId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicTableViewDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key, which has no person to act as.\n\nThe key does not carry the `table_views:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such saved view in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Read one saved view of a dashboard table",
+        "tags": [
+          "Table views",
+          "Public API"
+        ],
+        "x-iris-scope": "table_views:read",
+        "x-member-access": "open"
+      },
+      "patch": {
+        "description": "Renames the view and replaces its state. Send `name` and the whole `state` every time, from\n`table_views_get` for what you do not change. Left out, `visibility` stays as it is.\nOnly the view’s creator, an OWNER or an ADMIN changes a shared view: anyone else gets 403.\n`state` is the table’s search, sort, filters, column widths, order and visibility, and page size, as the dashboard saves them. Send all seven keys. Column and filter ids are the table’s own. An invalid state answers 400 `Invalid table state`.\nViews and preferences belong to a person, so it runs as the person behind the credential, and any member may call it.\nAn organization key gets 403 `no_acting_user`: it has no person.\n`tableId` names a dashboard table, such as `crm.contacts`. A platform admin table (`admin.*`) answers 400.",
+        "operationId": "table_views_update",
+        "parameters": [
+          {
+            "name": "tableId",
+            "required": true,
+            "in": "path",
+            "description": "The dashboard table, such as `crm.contacts`.",
+            "schema": {
+              "example": "crm.contacts",
+              "type": "string"
+            }
+          },
+          {
+            "name": "viewId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicTableViewUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicTableViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "An invalid name, visibility or state"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key, which has no person to act as. Or another person’s shared view, without an OWNER or ADMIN role.\n\nThe key does not carry the `table_views:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such saved view in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nThe view changed while this call ran. Read it again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change a saved view of a dashboard table",
+        "tags": [
+          "Table views",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "table_views"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "table_views_get",
+            "args": {
+              "tableId": "request.tableId",
+              "viewId": "request.viewId"
+            }
+          }
+        },
+        "x-iris-scope": "table_views:write",
+        "x-member-access": "open"
+      },
+      "delete": {
+        "description": "The view is gone for everyone who saw it, and a default view it was becomes none. It cannot be\nrestored. Ask the user first. Only the view’s creator, an OWNER or an ADMIN deletes a shared view:\nanyone else gets 403.\nViews and preferences belong to a person, so it runs as the person behind the credential, and any member may call it.\nAn organization key gets 403 `no_acting_user`: it has no person.\n`tableId` names a dashboard table, such as `crm.contacts`. A platform admin table (`admin.*`) answers 400.",
+        "operationId": "table_views_delete",
+        "parameters": [
+          {
+            "name": "tableId",
+            "required": true,
+            "in": "path",
+            "description": "The dashboard table, such as `crm.contacts`.",
+            "schema": {
+              "example": "crm.contacts",
+              "type": "string"
+            }
+          },
+          {
+            "name": "viewId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicTableViewDeletedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key, which has no person to act as. Or another person’s shared view, without an OWNER or ADMIN role.\n\nThe key does not carry the `table_views:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such saved view in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nThe view changed while this call ran. Read it again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete a saved view of a dashboard table",
+        "tags": [
+          "Table views",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "table_views"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A deleted view is gone. table_views_create can save a new one with the same name and state."
+        },
+        "x-iris-scope": "table_views:write",
+        "x-member-access": "open"
+      }
+    },
     "/api/v1/mcp": {
       "post": {
         "description": "The Iris MCP server, over stateless Streamable HTTP. Point an MCP client at this URL with\nthe key as a bearer token. Every other operation in this document is a tool named by its\noperationId, and `tools/list` shows only the tools the key’s scopes allow (and, for a\nmember’s credential, only the tools a member may call). A tool call runs\nthe REST operation, so it answers what the REST call answers. A failing call has\n`isError: true` and the REST error body as its text. Send\n`Accept: application/json, text/event-stream`. Answers 404 while the organization does\nnot have the MCP server turned on.",
@@ -12229,7 +13005,9 @@
                 "invitations:read",
                 "invitations:write",
                 "locations:read",
-                "locations:write"
+                "locations:write",
+                "table_views:read",
+                "table_views:write"
               ]
             }
           },
@@ -12330,7 +13108,9 @@
                 "invitations:read",
                 "invitations:write",
                 "locations:read",
-                "locations:write"
+                "locations:write",
+                "table_views:read",
+                "table_views:write"
               ]
             }
           }
@@ -12402,7 +13182,9 @@
               "invitations:read",
               "invitations:write",
               "locations:read",
-              "locations:write"
+              "locations:write",
+              "table_views:read",
+              "table_views:write"
             ]
           },
           "label": {
@@ -17516,6 +18298,336 @@
         },
         "required": [
           "email"
+        ]
+      },
+      "PublicTableStateDto": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "The search box text. Empty for none."
+          },
+          "sorting": {
+            "type": "array",
+            "maxItems": 20,
+            "description": "Sort columns, first one first. `id` is a column id of the table. Empty for the default order.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "desc"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "desc": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "filters": {
+            "type": "array",
+            "maxItems": 50,
+            "description": "`between` takes a two-value list, and `last_days` and `not_last_days` a whole number of days from 1 to 36500.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "operator"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "operator": {
+                  "type": "string",
+                  "enum": [
+                    "eq",
+                    "neq",
+                    "contains",
+                    "not_contains",
+                    "starts_with",
+                    "ends_with",
+                    "gt",
+                    "gte",
+                    "lt",
+                    "lte",
+                    "in",
+                    "not_in",
+                    "exists",
+                    "not_exists",
+                    "between",
+                    "last_days",
+                    "not_last_days"
+                  ]
+                },
+                "value": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 1000
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "array",
+                      "maxItems": 100,
+                      "items": {
+                        "oneOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 1000
+                          },
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "boolean"
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "columnSizing": {
+            "type": "object",
+            "maxProperties": 200,
+            "additionalProperties": {
+              "type": "number",
+              "minimum": 24,
+              "maximum": 4000
+            },
+            "description": "Column widths in pixels, by column id."
+          },
+          "columnOrder": {
+            "maxItems": 200,
+            "uniqueItems": true,
+            "description": "Column ids in display order.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "columnVisibility": {
+            "type": "object",
+            "maxProperties": 200,
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "description": "false hides a column, by column id."
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          }
+        },
+        "required": [
+          "search",
+          "sorting",
+          "filters",
+          "columnSizing",
+          "columnOrder",
+          "columnVisibility",
+          "pageSize"
+        ]
+      },
+      "PublicTablePreferencesDto": {
+        "type": "object",
+        "properties": {
+          "table_id": {
+            "type": "string",
+            "example": "crm.contacts"
+          },
+          "state": {
+            "$ref": "#/components/schemas/PublicTableStateDto"
+          },
+          "default_view_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The view the table opens with, or null. It becomes null when that view is deleted."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Send it as `expected_updated_at` on `table_views_set_preferences`."
+          }
+        },
+        "required": [
+          "table_id",
+          "state",
+          "default_view_id",
+          "updated_at"
+        ]
+      },
+      "PublicTableViewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The `viewId` of `table_views_get`, `table_views_update` and `table_views_delete`."
+          },
+          "table_id": {
+            "type": "string",
+            "example": "crm.contacts"
+          },
+          "name": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "shared",
+              "private"
+            ],
+            "description": "shared: every member of the organization sees it. private: only its creator does."
+          },
+          "state": {
+            "$ref": "#/components/schemas/PublicTableStateDto"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The login id of the person who created it."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Send it as `expected_updated_at` on a write."
+          }
+        },
+        "required": [
+          "id",
+          "table_id",
+          "name",
+          "visibility",
+          "state",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "PublicTableViewCreateDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Trimmed."
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "shared",
+              "private"
+            ],
+            "default": "shared"
+          },
+          "state": {
+            "$ref": "#/components/schemas/PublicTableStateDto"
+          }
+        },
+        "required": [
+          "name",
+          "state"
+        ]
+      },
+      "PublicTablePreferencesBodyDto": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "description": "The whole state. Required.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicTableStateDto"
+              }
+            ]
+          },
+          "default_view_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "A view of this table that you can see, from `table_views_list`. null or left out: no default view."
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "PublicTableViewUpdateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Trimmed. Required on every update."
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "shared",
+              "private"
+            ],
+            "description": "Left out, the view keeps its visibility."
+          },
+          "state": {
+            "description": "The whole state. Required on every update.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicTableStateDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "state"
+        ]
+      },
+      "PublicTableViewDeletedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deleted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "deleted"
         ]
       }
     }

@@ -1207,6 +1207,100 @@ Change a sequence
   - `start_minute` (body, number, required): Opens at this minute of the day, organization time. 540 is 09:00.
   - `end_minute` (body, number, required): Closes at this minute (exclusive). 1080 is 18:00.
 
+## Table views
+
+### table_views_create
+
+`POST /api/v1/table-views/{tableId}`. Scope: `table_views:write`. Member: `open`. Changes: `table_views`. Idempotent: send `idempotency_key`.
+
+Save a new view of a dashboard table
+
+- `tableId` (path, string, required): The dashboard table, such as `crm.contacts`.
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `name` (body, string, required): Trimmed.
+- `visibility` (body, string, one of `shared`, `private`)
+- `state` (body, PublicTableStateDto, required)
+  - `search` (body, string, required): The search box text. Empty for none.
+  - `sorting` (body, array of object, required): Sort columns, first one first. `id` is a column id of the table. Empty for the default order.
+  - `filters` (body, array of object, required): `between` takes a two-value list, and `last_days` and `not_last_days` a whole number of days from 1 to 36500.
+  - `columnSizing` (body, object, required): Column widths in pixels, by column id.
+  - `columnOrder` (body, array of string, required): Column ids in display order.
+  - `columnVisibility` (body, object, required): false hides a column, by column id.
+  - `pageSize` (body, integer, required)
+
+### table_views_delete
+
+`DELETE /api/v1/table-views/{tableId}/{viewId}`. Scope: `table_views:write`. Member: `open`. Confirm: required. Changes: `table_views`.
+
+Delete a saved view of a dashboard table
+
+- `tableId` (path, string, required): The dashboard table, such as `crm.contacts`.
+- `viewId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
+### table_views_get
+
+`GET /api/v1/table-views/{tableId}/{viewId}`. Scope: `table_views:read`. Member: `open`.
+
+Read one saved view of a dashboard table
+
+- `tableId` (path, string, required): The dashboard table, such as `crm.contacts`.
+- `viewId` (path, string uuid, required)
+
+### table_views_get_preferences
+
+`GET /api/v1/table-views/{tableId}/preferences`. Scope: `table_views:read`. Member: `open`.
+
+Read your own state and default view of a dashboard table
+
+- `tableId` (path, string, required): The dashboard table, such as `crm.contacts`.
+
+### table_views_list
+
+`GET /api/v1/table-views/{tableId}`. Scope: `table_views:read`. Member: `open`.
+
+List the saved views of a dashboard table
+
+- `tableId` (path, string, required): The dashboard table, such as `crm.contacts`.
+
+### table_views_set_preferences
+
+`PUT /api/v1/table-views/{tableId}/preferences`. Scope: `table_views:write`. Member: `open`. Changes: `table_views`.
+
+Set your own state and default view of a dashboard table
+
+- `tableId` (path, string, required): The dashboard table, such as `crm.contacts`.
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `state` (body, PublicTableStateDto, required): The whole state. Required.
+  - `search` (body, string, required): The search box text. Empty for none.
+  - `sorting` (body, array of object, required): Sort columns, first one first. `id` is a column id of the table. Empty for the default order.
+  - `filters` (body, array of object, required): `between` takes a two-value list, and `last_days` and `not_last_days` a whole number of days from 1 to 36500.
+  - `columnSizing` (body, object, required): Column widths in pixels, by column id.
+  - `columnOrder` (body, array of string, required): Column ids in display order.
+  - `columnVisibility` (body, object, required): false hides a column, by column id.
+  - `pageSize` (body, integer, required)
+- `default_view_id` (body, string uuid): A view of this table that you can see, from `table_views_list`. null or left out: no default view.
+
+### table_views_update
+
+`PATCH /api/v1/table-views/{tableId}/{viewId}`. Scope: `table_views:write`. Member: `open`. Changes: `table_views`.
+
+Change a saved view of a dashboard table
+
+- `tableId` (path, string, required): The dashboard table, such as `crm.contacts`.
+- `viewId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `name` (body, string, required): Trimmed. Required on every update.
+- `visibility` (body, string, one of `shared`, `private`): Left out, the view keeps its visibility.
+- `state` (body, PublicTableStateDto, required): The whole state. Required on every update.
+  - `search` (body, string, required): The search box text. Empty for none.
+  - `sorting` (body, array of object, required): Sort columns, first one first. `id` is a column id of the table. Empty for the default order.
+  - `filters` (body, array of object, required): `between` takes a two-value list, and `last_days` and `not_last_days` a whole number of days from 1 to 36500.
+  - `columnSizing` (body, object, required): Column widths in pixels, by column id.
+  - `columnOrder` (body, array of string, required): Column ids in display order.
+  - `columnVisibility` (body, object, required): false hides a column, by column id.
+  - `pageSize` (body, integer, required)
+
 ## Territories
 
 ### territories_list
