@@ -12734,6 +12734,1904 @@
         "x-member-access": "deny"
       }
     },
+    "/api/v1/business-notes": {
+      "get": {
+        "description": "Newest first, one page at a time. Send `next_cursor` back as `cursor` for the next page.",
+        "operationId": "business_notes_list",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "The `next_cursor` of the page before. Leave out for the first page.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessNotePageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query or cursor"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `business_notes:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the organization’s business notes",
+        "tags": [
+          "Business notes",
+          "Public API"
+        ],
+        "x-iris-scope": "business_notes:read",
+        "x-member-access": "deny"
+      },
+      "post": {
+        "description": "A note about the business in plain words, such as its hours or parking. It is written as the user’s own note.\nRun `business_notes_mine` to turn new notes into field and fact suggestions.",
+        "operationId": "business_notes_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusinessNoteCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessNoteDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or a body that is empty after trimming"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `business_notes:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Add a business note",
+        "tags": [
+          "Business notes",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "business_notes"
+        ],
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "operation": "business_notes_delete",
+          "args": {
+            "noteId": "response.id"
+          },
+          "record": {
+            "operation": "business_notes_get",
+            "args": {
+              "noteId": "response.id"
+            }
+          }
+        },
+        "x-iris-scope": "business_notes:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/business-notes/mine": {
+      "post": {
+        "description": "The AI reads every note not mined yet and proposes new custom fields and values for existing fields.\nReview them with `business_notes_list_suggestions` and `business_notes_list_fact_suggestions`.\nEach note read is marked mined and can no longer be edited. `reason` says why nothing was mined.",
+        "operationId": "business_notes_mine",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessNoteMineResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `business_notes:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Mine the new business notes into suggestions",
+        "tags": [
+          "Business notes",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "business_notes"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "Mining marks each note it reads as mined, and a mined note can no longer be edited. Dismiss the suggestions you do not want."
+        },
+        "x-iris-scope": "business_notes:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/business-notes/suggestions": {
+      "get": {
+        "description": "Every field suggestion, or only those with `status`. Accept, reject or dismiss a `pending` one.",
+        "operationId": "business_notes_list_suggestions",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Only suggestions with this review status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "accepted",
+                "rejected",
+                "dismissed"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessNoteFieldSuggestionListDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid `status`"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `business_notes:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the custom field suggestions mined from notes",
+        "tags": [
+          "Business notes",
+          "Public API"
+        ],
+        "x-iris-scope": "business_notes:read",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/business-notes/suggestions/{suggestionId}/accept": {
+      "post": {
+        "description": "Adds the proposed custom field to the organization. Send `label`, `sensitivity` or `enum_values` to change them first.\nThe section and the data type stay as proposed.",
+        "operationId": "business_notes_accept_suggestion",
+        "parameters": [
+          {
+            "name": "suggestionId",
+            "required": true,
+            "in": "path",
+            "description": "A suggestion `id` from `business_notes_list_suggestions`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusinessNoteSuggestionAcceptDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessNoteFieldAddedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or the field cannot be added as proposed"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `business_notes:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such suggestion in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The suggestion was reviewed before: a reviewed suggestion does not go back to pending."
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Accept a custom field suggestion",
+        "tags": [
+          "Business notes",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "business_notes"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "Accepting adds a custom field to the organization. Remove the field in the dashboard. The suggestion stays accepted."
+        },
+        "x-iris-scope": "business_notes:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/business-notes/suggestions/{suggestionId}/reject": {
+      "post": {
+        "description": "Marks the suggestion wrong. Use `business_notes_dismiss_suggestion` for one that is right but not wanted now.",
+        "operationId": "business_notes_reject_suggestion",
+        "parameters": [
+          {
+            "name": "suggestionId",
+            "required": true,
+            "in": "path",
+            "description": "A suggestion `id` from `business_notes_list_suggestions`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessNoteSuggestionReviewedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `business_notes:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such suggestion in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The suggestion was reviewed before: a reviewed suggestion does not go back to pending."
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Reject a custom field suggestion",
+        "tags": [
+          "Business notes",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "business_notes"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "A reviewed suggestion does not go back to pending."
+        },
+        "x-iris-scope": "business_notes:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/business-notes/suggestions/{suggestionId}/dismiss": {
+      "post": {
+        "description": "Sets the suggestion aside for now. It leaves the review queue.",
+        "operationId": "business_notes_dismiss_suggestion",
+        "parameters": [
+          {
+            "name": "suggestionId",
+            "required": true,
+            "in": "path",
+            "description": "A suggestion `id` from `business_notes_list_suggestions`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessNoteSuggestionReviewedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `business_notes:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such suggestion in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The suggestion was reviewed before: a reviewed suggestion does not go back to pending."
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Dismiss a custom field suggestion",
+        "tags": [
+          "Business notes",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "business_notes"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "A reviewed suggestion does not go back to pending."
+        },
+        "x-iris-scope": "business_notes:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/business-notes/fact-suggestions": {
+      "get": {
+        "description": "Values mining read for fields the organization already has. `status` defaults to `pending`, the review queue.",
+        "operationId": "business_notes_list_fact_suggestions",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Only suggestions with this review status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "accepted",
+                "rejected",
+                "dismissed"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessNoteFactSuggestionListDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid `status`"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `business_notes:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the fact suggestions mined from notes",
+        "tags": [
+          "Business notes",
+          "Public API"
+        ],
+        "x-iris-scope": "business_notes:read",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/business-notes/fact-suggestions/{suggestionId}/accept": {
+      "post": {
+        "description": "Writes the suggested values, and makes the record the anchor field names.\nSend `fields` to write other values for some of its `slot_id`s. `failed_slots` lists the values not written.",
+        "operationId": "business_notes_accept_fact_suggestion",
+        "parameters": [
+          {
+            "name": "suggestionId",
+            "required": true,
+            "in": "path",
+            "description": "A fact suggestion `id` from `business_notes_list_fact_suggestions`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusinessNoteFactAcceptDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessNoteFactAcceptedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body or value"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `business_notes:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such fact suggestion in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The suggestion was reviewed before: a reviewed suggestion does not go back to pending."
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Accept a fact suggestion",
+        "tags": [
+          "Business notes",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "business_notes"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "Accepting writes the values to the business’s records. Change them in the dashboard. The suggestion stays accepted."
+        },
+        "x-iris-scope": "business_notes:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/business-notes/fact-suggestions/{suggestionId}/dismiss": {
+      "post": {
+        "description": "Sets the values aside without writing them. It leaves the review queue.",
+        "operationId": "business_notes_dismiss_fact_suggestion",
+        "parameters": [
+          {
+            "name": "suggestionId",
+            "required": true,
+            "in": "path",
+            "description": "A fact suggestion `id` from `business_notes_list_fact_suggestions`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessNoteSuggestionReviewedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `business_notes:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such fact suggestion in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The suggestion was reviewed before: a reviewed suggestion does not go back to pending."
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Dismiss a fact suggestion",
+        "tags": [
+          "Business notes",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "business_notes"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "A reviewed suggestion does not go back to pending."
+        },
+        "x-iris-scope": "business_notes:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/business-notes/{noteId}": {
+      "get": {
+        "description": "The note with its `updated_at`, which `business_notes_update` and `business_notes_delete` take as `expected_updated_at`.",
+        "operationId": "business_notes_get",
+        "parameters": [
+          {
+            "name": "noteId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessNoteDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `business_notes:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such business note in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get one business note",
+        "tags": [
+          "Business notes",
+          "Public API"
+        ],
+        "x-iris-scope": "business_notes:read",
+        "x-member-access": "deny"
+      },
+      "patch": {
+        "description": "Replaces the note’s body. Only a note not mined yet can change: a mined note answers 409.",
+        "operationId": "business_notes_update",
+        "parameters": [
+          {
+            "name": "noteId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusinessNoteUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessNoteDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or a body that is empty after trimming"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `business_notes:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such business note in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nThe note was mined, and a mined note can no longer be edited. Without `expected_updated_at`, a note of another organization also answers this 409.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change the text of a business note",
+        "tags": [
+          "Business notes",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "business_notes"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "business_notes_get",
+            "args": {
+              "noteId": "request.noteId"
+            }
+          }
+        },
+        "x-iris-scope": "business_notes:write",
+        "x-member-access": "deny"
+      },
+      "delete": {
+        "description": "Deletes the note. It cannot be restored. The suggestions mined from it stay.\nAsk the user first. A deleted note answers 404, so a repeat changes nothing.",
+        "operationId": "business_notes_delete",
+        "parameters": [
+          {
+            "name": "noteId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessNoteDeletedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `business_notes:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such business note in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete a business note",
+        "tags": [
+          "Business notes",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "business_notes"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A deleted note cannot be restored. Add it again with business_notes_create."
+        },
+        "x-iris-scope": "business_notes:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/agents/{agentId}/knowledge-base": {
+      "get": {
+        "description": "Every document the agent answers from, with the status of the job that sends it to the agent. A deleted document is not listed.",
+        "operationId": "knowledge_base_list",
+        "parameters": [
+          {
+            "name": "agentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentKnowledgeDocumentListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `knowledge_base:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such agent in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the documents of an agent’s knowledge base",
+        "tags": [
+          "Knowledge base",
+          "Public API"
+        ],
+        "x-iris-scope": "knowledge_base:read",
+        "x-member-access": "open"
+      },
+      "post": {
+        "description": "A `text` document with its `text`, or a `url` document the agent reads from a public web page.\nA background job sends it to the agent: `knowledge_base_list` shows its status.\nThe public API does not take files. Send the text of a file as a `text` document.",
+        "operationId": "knowledge_base_create",
+        "parameters": [
+          {
+            "name": "agentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentKnowledgeDocumentCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentKnowledgeDocumentCreatedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, a `type` other than `text` or `url`, or a private or local `url`"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `knowledge_base:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such agent in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Add a document to an agent’s knowledge base",
+        "tags": [
+          "Knowledge base",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "knowledge_base"
+        ],
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "A background job sends the document to the agent after this call, so rewind cannot undo it. Delete it with knowledge_base_delete."
+        },
+        "x-iris-scope": "knowledge_base:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/agents/{agentId}/knowledge-base/suggestions": {
+      "get": {
+        "description": "The latest suggestions, most important first by `priority`. Empty until `knowledge_base_generate_suggestions` runs.",
+        "operationId": "knowledge_base_get_suggestions",
+        "parameters": [
+          {
+            "name": "agentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentKnowledgeSuggestionsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `knowledge_base:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such agent in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get the documents the AI suggests for an agent",
+        "tags": [
+          "Knowledge base",
+          "Public API"
+        ],
+        "x-iris-scope": "knowledge_base:read",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/agents/{agentId}/knowledge-base/suggestions/generate": {
+      "post": {
+        "description": "A background job writes new suggestions in place of the earlier ones. Read them with `knowledge_base_get_suggestions`.",
+        "operationId": "knowledge_base_generate_suggestions",
+        "parameters": [
+          {
+            "name": "agentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentKnowledgeJobDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `knowledge_base:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such agent in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Generate new document suggestions for an agent",
+        "tags": [
+          "Knowledge base",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "knowledge_base"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "New suggestions replace the earlier ones."
+        },
+        "x-iris-scope": "knowledge_base:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/agents/{agentId}/knowledge-base/{documentId}": {
+      "delete": {
+        "description": "Removes the document, and a background job removes it from the agent. It cannot be restored.\nAsk the user first. A repeat is safe: it starts the removal again.",
+        "operationId": "knowledge_base_delete",
+        "parameters": [
+          {
+            "name": "agentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "documentId",
+            "required": true,
+            "in": "path",
+            "description": "A document `id` from `knowledge_base_list`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentKnowledgeDocumentDeletedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `knowledge_base:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such agent in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete a document from an agent’s knowledge base",
+        "tags": [
+          "Knowledge base",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "knowledge_base"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A deleted document cannot be restored. Add it again with knowledge_base_create."
+        },
+        "x-iris-scope": "knowledge_base:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/business-data/rescrape-website": {
+      "post": {
+        "description": "A background job reads the website again and replaces the stored business data. Ask the user first.\nFollow it with `business_data_get_job`. Change the website with `organization_update` first if it moved.",
+        "operationId": "business_data_rescrape_website",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessDataJobStartedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The organization has no website"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `business_data:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Re-scrape the organization’s website",
+        "tags": [
+          "Business data",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "business_data"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "The re-scrape replaces the stored business data with what the website says now. The earlier data is not kept."
+        },
+        "x-iris-scope": "business_data:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/business-data/resync": {
+      "post": {
+        "description": "A background job updates every agent of the organization with the current business data, live agents included.\nAsk the user first. Follow it with `business_data_get_job`.",
+        "operationId": "business_data_resync",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessDataJobStartedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `business_data:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Send the business data to every phone agent",
+        "tags": [
+          "Business data",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "business_data",
+          "agents"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A background job updates every agent after this call, and live agents answer callers with the new data at once. Rewind cannot undo it."
+        },
+        "x-iris-scope": "business_data:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/business-data/jobs/{jobId}": {
+      "get": {
+        "description": "Read it again until `status` is `completed` or `failed`. `completed_at` is set then.",
+        "operationId": "business_data_get_job",
+        "parameters": [
+          {
+            "name": "jobId",
+            "required": true,
+            "in": "path",
+            "description": "The `job_id` of `business_data_rescrape_website` or `business_data_resync`",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessDataJobDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `business_data:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such job in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get the status of a re-scrape or a resync",
+        "tags": [
+          "Business data",
+          "Public API"
+        ],
+        "x-iris-scope": "business_data:read",
+        "x-member-access": "open"
+      }
+    },
     "/api/v1/mcp": {
       "post": {
         "description": "The Iris MCP server, over stateless Streamable HTTP. Point an MCP client at this URL with\nthe key as a bearer token. Every other operation in this document is a tool named by its\noperationId, and `tools/list` shows only the tools the key’s scopes allow (and, for a\nmember’s credential, only the tools a member may call). A tool call runs\nthe REST operation, so it answers what the REST call answers. A failing call has\n`isError: true` and the REST error body as its text. Send\n`Accept: application/json, text/event-stream`. Answers 404 while the organization does\nnot have the MCP server turned on.",
@@ -13869,7 +15767,13 @@
                 "booking_widgets:read",
                 "booking_widgets:write",
                 "chat_widget:read",
-                "chat_widget:write"
+                "chat_widget:write",
+                "business_notes:read",
+                "business_notes:write",
+                "knowledge_base:read",
+                "knowledge_base:write",
+                "business_data:read",
+                "business_data:write"
               ]
             }
           },
@@ -13978,7 +15882,13 @@
                 "booking_widgets:read",
                 "booking_widgets:write",
                 "chat_widget:read",
-                "chat_widget:write"
+                "chat_widget:write",
+                "business_notes:read",
+                "business_notes:write",
+                "knowledge_base:read",
+                "knowledge_base:write",
+                "business_data:read",
+                "business_data:write"
               ]
             }
           }
@@ -14058,7 +15968,13 @@
               "booking_widgets:read",
               "booking_widgets:write",
               "chat_widget:read",
-              "chat_widget:write"
+              "chat_widget:write",
+              "business_notes:read",
+              "business_notes:write",
+              "knowledge_base:read",
+              "knowledge_base:write",
+              "business_data:read",
+              "business_data:write"
             ]
           },
           "label": {
@@ -20120,6 +22036,828 @@
             ]
           }
         }
+      },
+      "BusinessNoteDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "body": {
+            "type": "string"
+          },
+          "author_kind": {
+            "type": "string",
+            "enum": [
+              "user",
+              "discovery",
+              "assistant"
+            ],
+            "description": "Who wrote the note"
+          },
+          "mined_at": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "When mining read the note. Null: not mined yet. A mined note cannot be edited."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "body",
+          "author_kind",
+          "mined_at",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "BusinessNotePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessNoteDto"
+            }
+          },
+          "next_cursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Send it as `cursor` for the next page. Null: the last page."
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ]
+      },
+      "BusinessNoteCreateDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000,
+            "description": "The note text"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "description": "A short title, such as \"Hours\""
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "BusinessNoteFieldSuggestionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "accepted",
+              "rejected",
+              "dismissed"
+            ]
+          },
+          "proposed_label": {
+            "type": "string"
+          },
+          "proposed_entity_type_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The section the field describes, such as `location`"
+          },
+          "proposed_data_type": {
+            "type": "string"
+          },
+          "proposed_sensitivity": {
+            "type": "string"
+          },
+          "proposed_enum_values": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why mining proposed the field"
+          },
+          "confidence": {
+            "type": "number",
+            "nullable": true
+          },
+          "source_note_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "graduated_slot_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The `slot_id` of the field its acceptance added"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "proposed_label",
+          "proposed_entity_type_id",
+          "proposed_data_type",
+          "proposed_sensitivity",
+          "proposed_enum_values",
+          "rationale",
+          "confidence",
+          "source_note_id",
+          "graduated_slot_id",
+          "created_at"
+        ]
+      },
+      "BusinessNoteFactValueDto": {
+        "type": "object",
+        "properties": {
+          "slot_id": {
+            "type": "string",
+            "description": "The existing field the value fills, such as `faq.question`"
+          },
+          "value": {
+            "type": "object",
+            "description": "The value, in the field’s data type"
+          }
+        },
+        "required": [
+          "slot_id",
+          "value"
+        ]
+      },
+      "BusinessNoteFactSuggestionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "accepted",
+              "rejected",
+              "dismissed"
+            ]
+          },
+          "entity_type_id": {
+            "type": "string",
+            "description": "The kind of record the values make, such as `faq`"
+          },
+          "anchor_slot_id": {
+            "type": "string",
+            "description": "The field that names the record, such as `faq.question`"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessNoteFactValueDto"
+            }
+          },
+          "rationale": {
+            "type": "string",
+            "nullable": true
+          },
+          "confidence": {
+            "type": "number",
+            "nullable": true
+          },
+          "source_note_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "source_ref": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where a value from a call or chat came from"
+          },
+          "graduated_entity_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The record its acceptance wrote"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "entity_type_id",
+          "anchor_slot_id",
+          "fields",
+          "rationale",
+          "confidence",
+          "source_note_id",
+          "source_ref",
+          "graduated_entity_id",
+          "created_at"
+        ]
+      },
+      "BusinessNoteMineResultDto": {
+        "type": "object",
+        "properties": {
+          "notes_mined": {
+            "type": "number",
+            "description": "How many notes this run read"
+          },
+          "suggestions_created": {
+            "type": "number"
+          },
+          "suggestions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessNoteFieldSuggestionDto"
+            }
+          },
+          "fact_suggestions_created": {
+            "type": "number"
+          },
+          "fact_suggestions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessNoteFactSuggestionDto"
+            }
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "unavailable",
+              "no_notes"
+            ],
+            "description": "Why nothing was mined: `no_notes`, no note is new, or `unavailable`, the AI could not run."
+          }
+        },
+        "required": [
+          "notes_mined",
+          "suggestions_created",
+          "suggestions",
+          "fact_suggestions_created",
+          "fact_suggestions"
+        ]
+      },
+      "BusinessNoteFieldSuggestionListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessNoteFieldSuggestionDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "BusinessNoteSuggestionAcceptDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 60,
+            "description": "The field label. Blank: the proposed label."
+          },
+          "sensitivity": {
+            "type": "string",
+            "description": "The data classification tier, such as `internal`"
+          },
+          "enum_values": {
+            "nullable": true,
+            "maxItems": 50,
+            "description": "The options of an enum field",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "BusinessNoteCustomFieldDto": {
+        "type": "object",
+        "properties": {
+          "slot_id": {
+            "type": "string",
+            "description": "The field’s id, `custom.<organization>.<slug>`"
+          },
+          "domain_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "entity_type_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "label": {
+            "type": "string"
+          },
+          "data_type": {
+            "type": "string"
+          },
+          "sensitivity": {
+            "type": "string"
+          },
+          "enum_values": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "slot_id",
+          "domain_id",
+          "entity_type_id",
+          "label",
+          "data_type",
+          "sensitivity",
+          "enum_values"
+        ]
+      },
+      "BusinessNoteFieldAddedDto": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "description": "The custom field the acceptance added",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BusinessNoteCustomFieldDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
+      "BusinessNoteSuggestionReviewedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "rejected",
+              "dismissed"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ]
+      },
+      "BusinessNoteFactSuggestionListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessNoteFactSuggestionDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "BusinessNoteFactOverrideDto": {
+        "type": "object",
+        "properties": {
+          "slot_id": {
+            "type": "string",
+            "description": "A `slot_id` of the suggestion’s `fields`"
+          },
+          "value": {
+            "type": "object",
+            "description": "The value to write in its place"
+          }
+        },
+        "required": [
+          "slot_id",
+          "value"
+        ]
+      },
+      "BusinessNoteFactAcceptDto": {
+        "type": "object",
+        "properties": {
+          "fields": {
+            "description": "Values to write in place of the suggested ones. A `slot_id` the suggestion lacks changes nothing.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessNoteFactOverrideDto"
+            }
+          }
+        }
+      },
+      "BusinessNoteFactAcceptedDto": {
+        "type": "object",
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "description": "The record the values went to"
+          },
+          "fact_suggestion": {
+            "$ref": "#/components/schemas/BusinessNoteFactSuggestionDto"
+          },
+          "failed_slots": {
+            "description": "The `slot_id`s whose value was not written. The record still exists.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "entity_id",
+          "fact_suggestion",
+          "failed_slots"
+        ]
+      },
+      "BusinessNoteUpdateDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000,
+            "description": "The new note text"
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "BusinessNoteDeletedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deleted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "deleted"
+        ]
+      },
+      "AgentKnowledgeDocumentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "file",
+              "url",
+              "text"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processing",
+              "active",
+              "failed"
+            ],
+            "description": "Where the background job that sends the document to the agent is with it. `active`: the agent answers from it."
+          },
+          "source_url": {
+            "type": "string",
+            "nullable": true,
+            "description": "The web page of a `url` document"
+          },
+          "file_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The file name of a `file` document"
+          },
+          "last_error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the document failed"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "status",
+          "source_url",
+          "file_name",
+          "last_error",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "AgentKnowledgeDocumentListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentKnowledgeDocumentDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "AgentKnowledgeDocumentCreateDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "name": {
+            "type": "string",
+            "description": "The document name the agent and the dashboard show"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "url"
+            ],
+            "description": "`text`: the document is `text`. `url`: the agent reads the web page at `url`. To add a file, send its text."
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 300000,
+            "description": "The document text. Required when `type` is `text`."
+          },
+          "url": {
+            "type": "string",
+            "description": "A public web page. Required when `type` is `url`. A private or local address answers 400."
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ]
+      },
+      "AgentKnowledgeDocumentCreatedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The new document"
+          },
+          "job_id": {
+            "type": "string",
+            "description": "The background job that sends the document to the agent"
+          }
+        },
+        "required": [
+          "id",
+          "job_id"
+        ]
+      },
+      "AgentKnowledgeSuggestionDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "document_type": {
+            "type": "string",
+            "enum": [
+              "file",
+              "url"
+            ]
+          },
+          "priority": {
+            "type": "number",
+            "description": "1 is the most important"
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "document_type",
+          "priority"
+        ]
+      },
+      "AgentKnowledgeSuggestionsDto": {
+        "type": "object",
+        "properties": {
+          "suggestions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentKnowledgeSuggestionDto"
+            }
+          },
+          "generated_at": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Null: none generated yet"
+          }
+        },
+        "required": [
+          "suggestions",
+          "generated_at"
+        ]
+      },
+      "AgentKnowledgeJobDto": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "description": "The background job that generates the suggestions"
+          }
+        },
+        "required": [
+          "job_id"
+        ]
+      },
+      "AgentKnowledgeDocumentDeletedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deleted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "deleted"
+        ]
+      },
+      "BusinessDataJobStartedDto": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "description": "The background job. Follow it with `business_data_get_job`."
+          }
+        },
+        "required": [
+          "job_id"
+        ]
+      },
+      "BusinessDataJobCountsDto": {
+        "type": "object",
+        "properties": {
+          "written": {
+            "type": "number",
+            "description": "How many business details the re-scrape wrote"
+          }
+        },
+        "required": [
+          "written"
+        ]
+      },
+      "BusinessDataJobDto": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string"
+          },
+          "job_type": {
+            "type": "string",
+            "enum": [
+              "site_scraper_rescrape",
+              "update_all_agents"
+            ],
+            "description": "`site_scraper_rescrape`: a website re-scrape. `update_all_agents`: a resync."
+          },
+          "status": {
+            "type": "string",
+            "description": "Such as `pending`, `processing`, `completed` or `failed`"
+          },
+          "phase": {
+            "type": "string",
+            "nullable": true,
+            "description": "The re-scrape’s current step. Null for a resync."
+          },
+          "progress": {
+            "type": "number",
+            "nullable": true,
+            "description": "The re-scrape’s progress, 0 to 100. Null for a resync."
+          },
+          "counts": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BusinessDataJobCountsDto"
+              }
+            ]
+          },
+          "last_synced_at": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "When the website data last finished syncing"
+          },
+          "warning": {
+            "type": "string",
+            "nullable": true,
+            "description": "A failure after the website data itself was refreshed"
+          },
+          "last_error": {
+            "type": "string",
+            "nullable": true
+          },
+          "completed_at": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Null until the job ends"
+          }
+        },
+        "required": [
+          "job_id",
+          "job_type",
+          "status",
+          "phase",
+          "progress",
+          "counts",
+          "last_synced_at",
+          "warning",
+          "last_error",
+          "completed_at"
+        ]
       }
     }
   }

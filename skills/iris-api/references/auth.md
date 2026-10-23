@@ -101,6 +101,12 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `booking_widgets:write` | Change a location's booking widget settings and replace its layout |
 | `chat_widget:read` | Read the organization's web chat widget |
 | `chat_widget:write` | Turn the chat widget on or off, and change its origins and appearance |
+| `business_notes:read` | Read business notes and their field and fact suggestions |
+| `business_notes:write` | Add, edit, delete and mine business notes, and review their suggestions |
+| `knowledge_base:read` | Read a phone agent's knowledge base documents and suggestions |
+| `knowledge_base:write` | Add and delete knowledge base documents, and generate suggestions |
+| `business_data:read` | Read the status of a website re-scrape or an agent resync |
+| `business_data:write` | Re-scrape the website, and resync the business data to every phone agent |
 
 `me_get` returns the live catalog. When this table and `me_get` differ, trust `me_get`.
 

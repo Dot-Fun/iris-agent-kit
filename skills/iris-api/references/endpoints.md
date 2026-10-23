@@ -344,6 +344,144 @@ Create or replace the booking widget settings of a location
 - `enabled_weekdays` (body, array of number, required): Unique days, 0 (Sunday) to 6
 - `google_integration_id` (body, string uuid, required): A Google Calendar connected at this location. Null: the Iris calendar.
 
+## Business data
+
+### business_data_get_job
+
+`GET /api/v1/business-data/jobs/{jobId}`. Scope: `business_data:read`. Member: `open`.
+
+Get the status of a re-scrape or a resync
+
+- `jobId` (path, string, required): The `job_id` of `business_data_rescrape_website` or `business_data_resync`
+
+### business_data_rescrape_website
+
+`POST /api/v1/business-data/rescrape-website`. Scope: `business_data:write`. Member: `deny`. Confirm: required. Changes: `business_data`.
+
+Re-scrape the organization’s website
+
+### business_data_resync
+
+`POST /api/v1/business-data/resync`. Scope: `business_data:write`. Member: `deny`. Confirm: required. Changes: `business_data`, `agents`.
+
+Send the business data to every phone agent
+
+## Business notes
+
+### business_notes_accept_fact_suggestion
+
+`POST /api/v1/business-notes/fact-suggestions/{suggestionId}/accept`. Scope: `business_notes:write`. Member: `deny`. Changes: `business_notes`.
+
+Accept a fact suggestion
+
+- `suggestionId` (path, string uuid, required): A fact suggestion `id` from `business_notes_list_fact_suggestions`
+- `fields` (body, array of BusinessNoteFactOverrideDto): Values to write in place of the suggested ones. A `slot_id` the suggestion lacks changes nothing.
+  - `slot_id` (body, string, required): A `slot_id` of the suggestion’s `fields`
+  - `value` (body, object, required): The value to write in its place
+
+### business_notes_accept_suggestion
+
+`POST /api/v1/business-notes/suggestions/{suggestionId}/accept`. Scope: `business_notes:write`. Member: `deny`. Changes: `business_notes`.
+
+Accept a custom field suggestion
+
+- `suggestionId` (path, string uuid, required): A suggestion `id` from `business_notes_list_suggestions`
+- `label` (body, string): The field label. Blank: the proposed label.
+- `sensitivity` (body, string): The data classification tier, such as `internal`
+- `enum_values` (body, array of string): The options of an enum field
+
+### business_notes_create
+
+`POST /api/v1/business-notes`. Scope: `business_notes:write`. Member: `deny`. Changes: `business_notes`. Idempotent: send `idempotency_key`.
+
+Add a business note
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `body` (body, string, required): The note text
+- `title` (body, string): A short title, such as "Hours"
+
+### business_notes_delete
+
+`DELETE /api/v1/business-notes/{noteId}`. Scope: `business_notes:write`. Member: `deny`. Confirm: required. Changes: `business_notes`.
+
+Delete a business note
+
+- `noteId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
+### business_notes_dismiss_fact_suggestion
+
+`POST /api/v1/business-notes/fact-suggestions/{suggestionId}/dismiss`. Scope: `business_notes:write`. Member: `deny`. Changes: `business_notes`.
+
+Dismiss a fact suggestion
+
+- `suggestionId` (path, string uuid, required): A fact suggestion `id` from `business_notes_list_fact_suggestions`
+
+### business_notes_dismiss_suggestion
+
+`POST /api/v1/business-notes/suggestions/{suggestionId}/dismiss`. Scope: `business_notes:write`. Member: `deny`. Changes: `business_notes`.
+
+Dismiss a custom field suggestion
+
+- `suggestionId` (path, string uuid, required): A suggestion `id` from `business_notes_list_suggestions`
+
+### business_notes_get
+
+`GET /api/v1/business-notes/{noteId}`. Scope: `business_notes:read`. Member: `deny`.
+
+Get one business note
+
+- `noteId` (path, string uuid, required)
+
+### business_notes_list
+
+`GET /api/v1/business-notes`. Scope: `business_notes:read`. Member: `deny`.
+
+List the organization’s business notes
+
+- `cursor` (query, string): The `next_cursor` of the page before. Leave out for the first page.
+- `limit` (query, number)
+
+### business_notes_list_fact_suggestions
+
+`GET /api/v1/business-notes/fact-suggestions`. Scope: `business_notes:read`. Member: `deny`.
+
+List the fact suggestions mined from notes
+
+- `status` (query, string, one of `pending`, `accepted`, `rejected`, `dismissed`): Only suggestions with this review status
+
+### business_notes_list_suggestions
+
+`GET /api/v1/business-notes/suggestions`. Scope: `business_notes:read`. Member: `deny`.
+
+List the custom field suggestions mined from notes
+
+- `status` (query, string, one of `pending`, `accepted`, `rejected`, `dismissed`): Only suggestions with this review status
+
+### business_notes_mine
+
+`POST /api/v1/business-notes/mine`. Scope: `business_notes:write`. Member: `deny`. Changes: `business_notes`.
+
+Mine the new business notes into suggestions
+
+### business_notes_reject_suggestion
+
+`POST /api/v1/business-notes/suggestions/{suggestionId}/reject`. Scope: `business_notes:write`. Member: `deny`. Changes: `business_notes`.
+
+Reject a custom field suggestion
+
+- `suggestionId` (path, string uuid, required): A suggestion `id` from `business_notes_list_suggestions`
+
+### business_notes_update
+
+`PATCH /api/v1/business-notes/{noteId}`. Scope: `business_notes:write`. Member: `deny`. Changes: `business_notes`.
+
+Change the text of a business note
+
+- `noteId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `body` (body, string, required): The new note text
+
 ## Calendars
 
 ### calendars_list
@@ -804,6 +942,54 @@ List the organization’s invitations
 Revoke an invitation
 
 - `invitationId` (path, string uuid, required)
+
+## Knowledge base
+
+### knowledge_base_create
+
+`POST /api/v1/agents/{agentId}/knowledge-base`. Scope: `knowledge_base:write`. Member: `deny`. Changes: `knowledge_base`. Idempotent: send `idempotency_key`.
+
+Add a document to an agent’s knowledge base
+
+- `agentId` (path, string uuid, required)
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `name` (body, string, required): The document name the agent and the dashboard show
+- `type` (body, string, required, one of `text`, `url`): `text`: the document is `text`. `url`: the agent reads the web page at `url`. To add a file, send its text.
+- `text` (body, string): The document text. Required when `type` is `text`.
+- `url` (body, string): A public web page. Required when `type` is `url`. A private or local address answers 400.
+
+### knowledge_base_delete
+
+`DELETE /api/v1/agents/{agentId}/knowledge-base/{documentId}`. Scope: `knowledge_base:write`. Member: `deny`. Confirm: required. Changes: `knowledge_base`.
+
+Delete a document from an agent’s knowledge base
+
+- `agentId` (path, string uuid, required)
+- `documentId` (path, string uuid, required): A document `id` from `knowledge_base_list`
+
+### knowledge_base_generate_suggestions
+
+`POST /api/v1/agents/{agentId}/knowledge-base/suggestions/generate`. Scope: `knowledge_base:write`. Member: `deny`. Changes: `knowledge_base`.
+
+Generate new document suggestions for an agent
+
+- `agentId` (path, string uuid, required)
+
+### knowledge_base_get_suggestions
+
+`GET /api/v1/agents/{agentId}/knowledge-base/suggestions`. Scope: `knowledge_base:read`. Member: `open`.
+
+Get the documents the AI suggests for an agent
+
+- `agentId` (path, string uuid, required)
+
+### knowledge_base_list
+
+`GET /api/v1/agents/{agentId}/knowledge-base`. Scope: `knowledge_base:read`. Member: `open`.
+
+List the documents of an agent’s knowledge base
+
+- `agentId` (path, string uuid, required)
 
 ## Locations
 

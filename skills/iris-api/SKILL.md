@@ -206,6 +206,12 @@ A key carries scopes, one read and one write per noun:
 | `booking_widgets:write` | change a location's booking widget settings and replace its layout |
 | `chat_widget:read` | read the organization's web chat widget |
 | `chat_widget:write` | turn the chat widget on or off, and change its origins and appearance |
+| `business_notes:read` | read business notes and the field and fact suggestions mined from them |
+| `business_notes:write` | add, edit and delete business notes, mine them, and accept, reject or dismiss their suggestions |
+| `knowledge_base:read` | read a phone agent's knowledge base documents and its document suggestions |
+| `knowledge_base:write` | add a text or web page document to a phone agent's knowledge base, delete one, and generate suggestions |
+| `business_data:read` | read the status of a website re-scrape or an agent resync |
+| `business_data:write` | re-scrape the organization's website, and resync the business data to every phone agent |
 
 Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
 `/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
@@ -588,6 +594,40 @@ the user to use a personal key or an agent connection.
 The booking widget needs an owner or admin, or a manager with the location settings power at their
 own location. Only an owner or admin changes the chat widget. Any other caller gets 403
 `insufficient_role`: tell the user, and do not retry.
+
+### 22. Teach the business from a note
+
+1. Call `business_notes_create` with `body`, an optional `title` and an `idempotency_key`.
+2. To find a note, call `business_notes_list`, or `business_notes_get` with its id. To fix a
+   note, call `business_notes_update` with the new `body` and the note's `updated_at` as
+   `expected_updated_at`. A 409 means the note is mined, or it changed since you read it.
+3. Call `business_notes_mine`. It reads every note not yet mined and answers the new suggestions.
+   A mined note can no longer be edited.
+4. Show the user `business_notes_list_suggestions` and `business_notes_list_fact_suggestions`. On
+   the user's choice, review each field suggestion with `business_notes_accept_suggestion`,
+   `business_notes_reject_suggestion` or `business_notes_dismiss_suggestion`, and each fact
+   suggestion with `business_notes_accept_fact_suggestion` or
+   `business_notes_dismiss_fact_suggestion`. Accepting a field suggestion adds a custom field.
+   Accepting a fact suggestion writes its values, and `failed_slots` names any it could not write.
+5. Ask the user before `business_notes_delete`. A deleted note cannot be restored.
+
+Every business note operation needs an owner or admin. A MEMBER or MANAGER gets 403
+`insufficient_role`: tell the user, and do not retry.
+
+### 23. Add a document to a phone agent's knowledge base
+
+1. Find the agent with `agents_list`.
+2. Call `knowledge_base_create` with `name`, `type` and an `idempotency_key`. Send `text` for a
+   `text` document or `url` for a public web page. To add a file, send its text.
+3. A background job sends the document to the agent. Call `knowledge_base_list` until its
+   `status` is `active` or `failed`. `last_error` says why a document failed.
+4. Ask the user before `knowledge_base_delete`. A deleted document cannot be restored.
+5. To find what the agent still lacks, call `knowledge_base_generate_suggestions`, then read the
+   result with `knowledge_base_get_suggestions`. New suggestions replace the earlier ones.
+
+After the user changes the website, call `business_data_rescrape_website`, then
+`business_data_resync` to update every agent. Ask the user first: each one replaces data. Both
+answer a `job_id`: read its progress with `business_data_get_job`.
 
 ## Other operations
 
