@@ -97,6 +97,10 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `table_views:write` | Save, change and delete views of a dashboard table, and set your own table state and default view |
 | `crm_fields:read` | Read the custom contact fields and the pipeline stage setup |
 | `crm_fields:write` | Replace the custom contact fields, and set the pipeline stage field and the stages a call outcome moves a contact to |
+| `booking_widgets:read` | Read a location's booking widget settings, layout and the style visitors see |
+| `booking_widgets:write` | Change a location's booking widget settings and replace its layout |
+| `chat_widget:read` | Read the organization's web chat widget |
+| `chat_widget:write` | Turn the chat widget on or off, and change its origins and appearance |
 
 `me_get` returns the live catalog. When this table and `me_get` differ, trust `me_get`.
 

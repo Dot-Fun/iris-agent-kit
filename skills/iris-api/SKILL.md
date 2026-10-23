@@ -202,6 +202,10 @@ A key carries scopes, one read and one write per noun:
 | `table_views:write` | save, change and delete views of a dashboard table, and set your own table state and default view |
 | `crm_fields:read` | read the custom contact fields and the pipeline stage setup |
 | `crm_fields:write` | replace the custom contact fields, and set the pipeline stage field and the stages a call outcome moves a contact to |
+| `booking_widgets:read` | read a location's booking widget settings, layout and the style visitors see |
+| `booking_widgets:write` | change a location's booking widget settings and replace its layout |
+| `chat_widget:read` | read the organization's web chat widget |
+| `chat_widget:write` | turn the chat widget on or off, and change its origins and appearance |
 
 Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
 `/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
@@ -562,6 +566,28 @@ the user to use a personal key or an agent connection.
    not an enum field that is on, or a stage id is not one of its options.
 5. Call `contacts_list_stages` to read the stages back. Both writes need an owner or admin: a
    staff member gets 403 `insufficient_role`. Tell the user, and do not retry.
+
+### 21. Set up the booking page and the web chat widget
+
+1. Call `locations_list` and take the location `id`. Call `booking_widgets_get` with it. A 404
+   means the location has no booking widget yet.
+2. Call `booking_widgets_update` with every setting: `slug`, `title`, `enabled`,
+   `allowed_origins`, `timezone`, `duration_minutes`, the availability window,
+   `enabled_weekdays` and `google_integration_id` (null for none). Send the `updated_at` from
+   `booking_widgets_get` as `expected_updated_at` when the widget exists. A 409 on a new widget
+   means the slug is taken: ask the user for another one.
+3. To change the sections or the questions, take `layout` from `booking_widgets_get`, change it,
+   and send it whole to `booking_widgets_replace_layout`. Keep `name` and `email` as required
+   fields. Read `effective_style` and `fallback_reason` back: a style can show as `sections`
+   until its needs are met.
+4. For the chat widget, call `chat_widget_get` to read it, then `chat_widget_update` with only
+   the fields to change. Send its `updated_at` as `expected_updated_at`. A null or empty
+   `greeting`, `widget_title` or `accent_color` restores the default. Each origin is a scheme and
+   a host, such as `https://www.example.com`.
+
+The booking widget needs an owner or admin, or a manager with the location settings power at their
+own location. Only an owner or admin changes the chat widget. Any other caller gets 403
+`insufficient_role`: tell the user, and do not retry.
 
 ## Other operations
 

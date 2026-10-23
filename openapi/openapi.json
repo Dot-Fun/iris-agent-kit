@@ -12229,6 +12229,511 @@
         "x-member-access": "deny"
       }
     },
+    "/api/v1/booking-widgets/{locationId}": {
+      "get": {
+        "description": "The booking page settings, its layout, the style visitors see and `updated_at`.\nA location with no booking widget yet answers 404: `booking_widgets_update` creates it.",
+        "operationId": "booking_widgets_get",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "A location `id` from `locations_list`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingWidgetDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `booking_widgets:read` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `location_settings` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Location not found: not a location of this organization that the credential reaches, or no booking widget there yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get the booking widget of a location",
+        "tags": [
+          "Booking widgets",
+          "Public API"
+        ],
+        "x-iris-scope": "booking_widgets:read",
+        "x-manager-power": "location_settings",
+        "x-member-access": "deny"
+      },
+      "put": {
+        "description": "Send every setting: the call replaces them all. The layout stays as it is.\nThe first call at a location creates its booking widget with the default layout.\nIris adds its own app origin to `allowed_origins`, as the dashboard does, so the hosted booking link works.\nThe list holds at most 25 origins, the Iris app origin included, so at most 24 others.\nThe slug is unique across Iris.\nA MANAGER with the location settings power may call it at their own locations.",
+        "operationId": "booking_widgets_update",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "A location `id` from `locations_list`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingWidgetUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingWidgetDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, origin, timezone, availability window or weekdays, or a Google Calendar not at this location"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `booking_widgets:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `location_settings` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Location not found: not a location of this organization that the credential reaches",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nThe slug is taken by another booking widget. With `expected_updated_at` and no widget yet, `stale_revision`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Create or replace the booking widget settings of a location",
+        "tags": [
+          "Booking widgets",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "booking_widgets"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "booking_widgets_get",
+            "args": {
+              "locationId": "request.locationId"
+            }
+          },
+          "together": [
+            [
+              "slug",
+              "description",
+              "google_integration_id"
+            ]
+          ]
+        },
+        "x-iris-scope": "booking_widgets:write",
+        "x-manager-power": "location_settings",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/booking-widgets/{locationId}/layout": {
+      "put": {
+        "description": "Replaces the sections and the questions the booking page shows. Send the whole layout:\n`booking_widgets_get` returns it in the same shape. Each field at most once, and `name` and\n`email` always, required. A `crm` field must be an enabled CRM field of the organization.\nSave the booking widget with `booking_widgets_update` first.",
+        "operationId": "booking_widgets_replace_layout",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "A location `id` from `locations_list`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingWidgetLayoutReplaceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingWidgetDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid sections, a duplicate field, or an unknown CRM field"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `booking_widgets:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `location_settings` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Location not found: not a location of this organization that the credential reaches, or no booking widget there yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nWith `expected_updated_at` and no widget yet, `stale_revision`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Replace the layout of a location’s booking widget",
+        "tags": [
+          "Booking widgets",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "booking_widgets"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "booking_widgets_get",
+            "args": {
+              "locationId": "request.locationId"
+            }
+          }
+        },
+        "x-iris-scope": "booking_widgets:write",
+        "x-manager-power": "location_settings",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/chat-widget": {
+      "get": {
+        "description": "Whether it is on, the origins that may embed it, its greeting, title, accent color and launcher corner, and `updated_at`. An organization that never saved it reads the defaults with a null `updated_at`.",
+        "operationId": "chat_widget_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatWidgetDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `chat_widget:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get the organization’s web chat widget",
+        "tags": [
+          "Chat widget",
+          "Public API"
+        ],
+        "x-iris-scope": "chat_widget:read",
+        "x-member-access": "open"
+      },
+      "patch": {
+        "description": "Changes only the fields sent. Null or blank clears the greeting, the title or the accent color,\nand the widget shows its default. `enabled`, `allowed_origins` and `launcher_position` cannot be null.\nAn enabled widget answers only on its allowed origins.",
+        "operationId": "chat_widget_update",
+        "parameters": [
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatWidgetUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatWidgetDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, origin or color, or null on a field that cannot be null"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `chat_widget:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nWith `expected_updated_at` and no saved widget yet, `stale_revision`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change the organization’s web chat widget",
+        "tags": [
+          "Chat widget",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "chat_widget"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "chat_widget_get",
+            "args": {}
+          }
+        },
+        "x-iris-scope": "chat_widget:write",
+        "x-member-access": "deny"
+      }
+    },
     "/api/v1/mcp": {
       "post": {
         "description": "The Iris MCP server, over stateless Streamable HTTP. Point an MCP client at this URL with\nthe key as a bearer token. Every other operation in this document is a tool named by its\noperationId, and `tools/list` shows only the tools the key’s scopes allow (and, for a\nmember’s credential, only the tools a member may call). A tool call runs\nthe REST operation, so it answers what the REST call answers. A failing call has\n`isError: true` and the REST error body as its text. Send\n`Accept: application/json, text/event-stream`. Answers 404 while the organization does\nnot have the MCP server turned on.",
@@ -13360,7 +13865,11 @@
                 "table_views:read",
                 "table_views:write",
                 "crm_fields:read",
-                "crm_fields:write"
+                "crm_fields:write",
+                "booking_widgets:read",
+                "booking_widgets:write",
+                "chat_widget:read",
+                "chat_widget:write"
               ]
             }
           },
@@ -13465,7 +13974,11 @@
                 "table_views:read",
                 "table_views:write",
                 "crm_fields:read",
-                "crm_fields:write"
+                "crm_fields:write",
+                "booking_widgets:read",
+                "booking_widgets:write",
+                "chat_widget:read",
+                "chat_widget:write"
               ]
             }
           }
@@ -13541,7 +14054,11 @@
               "table_views:read",
               "table_views:write",
               "crm_fields:read",
-              "crm_fields:write"
+              "crm_fields:write",
+              "booking_widgets:read",
+              "booking_widgets:write",
+              "chat_widget:read",
+              "chat_widget:write"
             ]
           },
           "label": {
@@ -19212,6 +19729,397 @@
         "required": [
           "stage_field"
         ]
+      },
+      "PublicBookingWidgetLayoutFieldDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "builtin",
+              "crm"
+            ],
+            "description": "`builtin` for name, email, phone or industry. `crm` for a CRM field of the organization."
+          },
+          "key": {
+            "type": "string",
+            "example": "phone",
+            "description": "The builtin field, or the CRM field key"
+          },
+          "required": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kind",
+          "key",
+          "required"
+        ]
+      },
+      "PublicBookingWidgetLayoutDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "enum": [
+              1,
+              2
+            ],
+            "description": "Version 2 adds `style`, the optional sections and `offering_order`."
+          },
+          "style": {
+            "type": "string",
+            "enum": [
+              "sections",
+              "steps",
+              "time_first"
+            ],
+            "description": "Version 2 only. Leave it out for `sections`."
+          },
+          "sections": {
+            "type": "array",
+            "description": "`calendar`, `times` and `details` always. Version 2 may add `address`, `offering` and `team_member`, each once, `team_member` after `offering`.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "address",
+                "offering",
+                "team_member",
+                "calendar",
+                "times",
+                "details"
+              ]
+            }
+          },
+          "fields": {
+            "description": "Each field at most once. `name` and `email` are always there and required.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicBookingWidgetLayoutFieldDto"
+            }
+          },
+          "offering_order": {
+            "description": "Version 2 only: the order of the services in the service section",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "version",
+          "sections",
+          "fields"
+        ]
+      },
+      "BookingWidgetDto": {
+        "type": "object",
+        "properties": {
+          "location_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string",
+            "description": "The page address: lowercase letters, digits and single dashes"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether visitors can book on it"
+          },
+          "allowed_origins": {
+            "description": "The website origins that may embed the widget",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "timezone": {
+            "type": "string",
+            "example": "America/Chicago",
+            "description": "IANA timezone"
+          },
+          "duration_minutes": {
+            "type": "number",
+            "minimum": 15,
+            "maximum": 240
+          },
+          "availability_start_time": {
+            "type": "string",
+            "example": "09:00"
+          },
+          "availability_end_time": {
+            "type": "string",
+            "example": "17:00"
+          },
+          "enabled_weekdays": {
+            "example": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "description": "0 is Sunday, 6 is Saturday",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "google_integration_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The Google Calendar the bookings go to. Null: the Iris calendar."
+          },
+          "layout": {
+            "$ref": "#/components/schemas/PublicBookingWidgetLayoutDto"
+          },
+          "effective_style": {
+            "type": "string",
+            "enum": [
+              "sections",
+              "steps",
+              "time_first"
+            ],
+            "description": "The style visitors see. A stored style whose requirement lapsed shows as `sections`."
+          },
+          "fallback_reason": {
+            "type": "string",
+            "enum": [
+              "team_scheduling_off",
+              "no_service",
+              "no_team_member"
+            ],
+            "nullable": true,
+            "description": "Why visitors see `sections` and not the stored style. Null when they see the stored style."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "location_id",
+          "slug",
+          "title",
+          "description",
+          "enabled",
+          "allowed_origins",
+          "timezone",
+          "duration_minutes",
+          "availability_start_time",
+          "availability_end_time",
+          "enabled_weekdays",
+          "google_integration_id",
+          "layout",
+          "effective_style",
+          "fallback_reason",
+          "updated_at"
+        ]
+      },
+      "BookingWidgetUpdateDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "maxLength": 80,
+            "example": "acme-consultation",
+            "description": "Unique across Iris"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "An enabled widget needs at least one allowed origin."
+          },
+          "allowed_origins": {
+            "maxItems": 25,
+            "example": [
+              "https://www.example.com"
+            ],
+            "description": "At most 25, the Iris app origin included, so at most 24 others. Iris adds its own app origin, so the hosted booking link works.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "timezone": {
+            "type": "string",
+            "example": "America/Chicago",
+            "description": "IANA timezone"
+          },
+          "duration_minutes": {
+            "type": "number",
+            "minimum": 15,
+            "maximum": 240
+          },
+          "availability_start_time": {
+            "type": "string",
+            "example": "09:00",
+            "description": "HH:MM"
+          },
+          "availability_end_time": {
+            "type": "string",
+            "example": "17:00",
+            "description": "HH:MM, not equal to the start"
+          },
+          "enabled_weekdays": {
+            "example": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "description": "Unique days, 0 (Sunday) to 6",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "google_integration_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "A Google Calendar connected at this location. Null: the Iris calendar."
+          }
+        },
+        "required": [
+          "slug",
+          "title",
+          "enabled",
+          "allowed_origins",
+          "timezone",
+          "duration_minutes",
+          "availability_start_time",
+          "availability_end_time",
+          "enabled_weekdays",
+          "google_integration_id"
+        ]
+      },
+      "BookingWidgetLayoutReplaceDto": {
+        "type": "object",
+        "properties": {
+          "layout": {
+            "$ref": "#/components/schemas/PublicBookingWidgetLayoutDto"
+          }
+        },
+        "required": [
+          "layout"
+        ]
+      },
+      "ChatWidgetDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the widget answers on the allowed origins"
+          },
+          "allowed_origins": {
+            "description": "The website origins that may embed the widget",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "greeting": {
+            "type": "string",
+            "nullable": true,
+            "description": "The first message. Null: the default greeting."
+          },
+          "widget_title": {
+            "type": "string",
+            "nullable": true,
+            "description": "The header title. Null: the default title."
+          },
+          "accent_color": {
+            "type": "string",
+            "nullable": true,
+            "description": "A #RRGGBB color. Null: the brand color."
+          },
+          "launcher_position": {
+            "type": "string",
+            "enum": [
+              "bottom-right",
+              "bottom-left"
+            ],
+            "description": "The corner of the launcher bubble"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Null while the organization has never saved the widget"
+          }
+        },
+        "required": [
+          "enabled",
+          "allowed_origins",
+          "greeting",
+          "widget_title",
+          "accent_color",
+          "launcher_position",
+          "updated_at"
+        ]
+      },
+      "ChatWidgetUpdateDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Turn the widget on or off. An enabled widget answers only on allowed origins."
+          },
+          "allowed_origins": {
+            "maxItems": 20,
+            "description": "Replaces the whole list. Each entry is an origin such as https://www.example.com.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "greeting": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500,
+            "description": "Null or blank: the default."
+          },
+          "widget_title": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 60,
+            "description": "Null or blank: the default."
+          },
+          "accent_color": {
+            "type": "string",
+            "nullable": true,
+            "example": "#6528F7",
+            "description": "A #RRGGBB color. Null or blank: the brand color."
+          },
+          "launcher_position": {
+            "type": "string",
+            "enum": [
+              "bottom-right",
+              "bottom-left"
+            ]
+          }
+        }
       }
     }
   }

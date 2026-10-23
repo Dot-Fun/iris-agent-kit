@@ -296,6 +296,54 @@ Change an audience
   - `exclude_opted_out` (body, boolean): Stored with the audience. Counts and contact lists do not apply it: opted-out contacts are removed when a message is sent.
 - `is_archived` (body, boolean): `false` restores an archived audience. Archive with `audiences_archive`.
 
+## Booking widgets
+
+### booking_widgets_get
+
+`GET /api/v1/booking-widgets/{locationId}`. Scope: `booking_widgets:read`. Member: `deny`. Manager power: `location_settings`.
+
+Get the booking widget of a location
+
+- `locationId` (path, string uuid, required): A location `id` from `locations_list`
+
+### booking_widgets_replace_layout
+
+`PUT /api/v1/booking-widgets/{locationId}/layout`. Scope: `booking_widgets:write`. Member: `deny`. Manager power: `location_settings`. Changes: `booking_widgets`.
+
+Replace the layout of a location’s booking widget
+
+- `locationId` (path, string uuid, required): A location `id` from `locations_list`
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `layout` (body, PublicBookingWidgetLayoutDto, required)
+  - `version` (body, number, required, one of `1`, `2`): Version 2 adds `style`, the optional sections and `offering_order`.
+  - `style` (body, string, one of `sections`, `steps`, `time_first`): Version 2 only. Leave it out for `sections`.
+  - `sections` (body, array of string, required, one of `address`, `offering`, `team_member`, `calendar`, `times`, `details`): `calendar`, `times` and `details` always. Version 2 may add `address`, `offering` and `team_member`, each once, `team_member` after `offering`.
+  - `fields` (body, array of PublicBookingWidgetLayoutFieldDto, required): Each field at most once. `name` and `email` are always there and required.
+    - `kind` (body, string, required, one of `builtin`, `crm`): `builtin` for name, email, phone or industry. `crm` for a CRM field of the organization.
+    - `key` (body, string, required): The builtin field, or the CRM field key
+    - `required` (body, boolean, required)
+  - `offering_order` (body, array of string uuid): Version 2 only: the order of the services in the service section
+
+### booking_widgets_update
+
+`PUT /api/v1/booking-widgets/{locationId}`. Scope: `booking_widgets:write`. Member: `deny`. Manager power: `location_settings`. Changes: `booking_widgets`.
+
+Create or replace the booking widget settings of a location
+
+- `locationId` (path, string uuid, required): A location `id` from `locations_list`
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `slug` (body, string, required): Unique across Iris
+- `title` (body, string, required)
+- `description` (body, string)
+- `enabled` (body, boolean, required): An enabled widget needs at least one allowed origin.
+- `allowed_origins` (body, array of string, required): At most 25, the Iris app origin included, so at most 24 others. Iris adds its own app origin, so the hosted booking link works.
+- `timezone` (body, string, required): IANA timezone
+- `duration_minutes` (body, number, required)
+- `availability_start_time` (body, string, required): HH:MM
+- `availability_end_time` (body, string, required): HH:MM, not equal to the start
+- `enabled_weekdays` (body, array of number, required): Unique days, 0 (Sunday) to 6
+- `google_integration_id` (body, string uuid, required): A Google Calendar connected at this location. Null: the Iris calendar.
+
 ## Calendars
 
 ### calendars_list
@@ -325,6 +373,28 @@ List calls
 - `contact_id` (query, string uuid): Only calls to or from this contact’s phone number
 - `from` (query, string date-time): Only calls that started at or after this time
 - `to` (query, string date-time): Only calls that started at or before this time
+
+## Chat widget
+
+### chat_widget_get
+
+`GET /api/v1/chat-widget`. Scope: `chat_widget:read`. Member: `open`.
+
+Get the organization’s web chat widget
+
+### chat_widget_update
+
+`PATCH /api/v1/chat-widget`. Scope: `chat_widget:write`. Member: `deny`. Changes: `chat_widget`.
+
+Change the organization’s web chat widget
+
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `enabled` (body, boolean): Turn the widget on or off. An enabled widget answers only on allowed origins.
+- `allowed_origins` (body, array of string): Replaces the whole list. Each entry is an origin such as https://www.example.com.
+- `greeting` (body, string): Null or blank: the default.
+- `widget_title` (body, string): Null or blank: the default.
+- `accent_color` (body, string): A #RRGGBB color. Null or blank: the brand color.
+- `launcher_position` (body, string, one of `bottom-right`, `bottom-left`)
 
 ## Contacts
 
