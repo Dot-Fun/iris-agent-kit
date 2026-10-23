@@ -95,6 +95,8 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `locations:write` | Create and delete location drafts, activate and deactivate locations, and choose the default |
 | `table_views:read` | Read the saved views of a dashboard table, and your own table state and default view |
 | `table_views:write` | Save, change and delete views of a dashboard table, and set your own table state and default view |
+| `crm_fields:read` | Read the custom contact fields and the pipeline stage setup |
+| `crm_fields:write` | Replace the custom contact fields, and set the pipeline stage field and the stages a call outcome moves a contact to |
 
 `me_get` returns the live catalog. When this table and `me_get` differ, trust `me_get`.
 

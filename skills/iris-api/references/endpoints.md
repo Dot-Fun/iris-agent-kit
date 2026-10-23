@@ -521,6 +521,49 @@ Send an SMS to a contact who has consented
 - `phone` (body, string): Send to this number, with its country code
 - `body` (body, string, required)
 
+## CRM fields
+
+### crm_fields_get_stage_config
+
+`GET /api/v1/crm-fields/stage-config`. Scope: `crm_fields:read`. Member: `open`.
+
+Read the pipeline stage setup
+
+### crm_fields_list
+
+`GET /api/v1/crm-fields`. Scope: `crm_fields:read`. Member: `open`.
+
+List the organization’s custom contact fields
+
+### crm_fields_set
+
+`PUT /api/v1/crm-fields`. Scope: `crm_fields:write`. Member: `deny`. Confirm: required. Changes: `crm_fields`.
+
+Replace the organization’s custom contact fields
+
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `fields` (body, array of CrmFieldInputV1Dto, required): Every field that stays on, in order. Each `field_name` once.
+  - `field_name` (body, string, required): The key a contact’s `custom_fields` holds this field’s value under
+  - `field_type` (body, string, required, one of `text`, `number`, `enum`, `boolean`, `date`, `datetime`, `email`, `phone`, `currency`, `url`, `multi_select_enum`, `long_text`)
+  - `field_label` (body, string, required): The name people see
+  - `description` (body, string): What the field holds. Phone agents read it. Empty when left out.
+  - `is_required` (body, boolean, required): Whether phone agents must collect it
+  - `enum_options` (body, array of CrmFieldOptionV1Dto, required): The choices of an `enum` or `multi_select_enum` field, in order. `[]` for any other type.
+    - `value` (body, string, required): The stored value. On the stage field it is the stage id.
+    - `label` (body, string, required): The name people see
+  - `sync_to_calendar` (body, boolean, required): Whether a `date` or `datetime` value goes on the calendar
+
+### crm_fields_set_stage_config
+
+`PUT /api/v1/crm-fields/stage-config`. Scope: `crm_fields:write`. Member: `deny`. Changes: `crm_fields`.
+
+Set the pipeline stage field and the stages a call outcome moves a contact to
+
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `stage_field` (body, string, required): The `field_name` of an enum field that is on. null turns the pipeline off and clears both stage ids.
+- `booking_stage_id` (body, string): One of the stage field’s option values, or null. Left out, it is cleared.
+- `no_booking_stage_id` (body, string): One of the stage field’s option values, or null. Left out, it is cleared.
+
 ## Forms
 
 ### forms_add_field

@@ -200,6 +200,8 @@ A key carries scopes, one read and one write per noun:
 | `locations:write` | create and delete location drafts, activate and deactivate locations, and choose the default |
 | `table_views:read` | read the saved views of a dashboard table, and your own table state and default view |
 | `table_views:write` | save, change and delete views of a dashboard table, and set your own table state and default view |
+| `crm_fields:read` | read the custom contact fields and the pipeline stage setup |
+| `crm_fields:write` | replace the custom contact fields, and set the pipeline stage field and the stages a call outcome moves a contact to |
 
 Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
 `/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
@@ -542,6 +544,24 @@ the user, and do not retry. No read returns the submission key.
 
 Every table views operation acts as a person. An organization key gets 403 `no_acting_user`: tell
 the user to use a personal key or an agent connection.
+
+### 20. Set up the pipeline stages
+
+1. Call `crm_fields_list` for the custom fields that are on, and `crm_fields_get_stage_config` for
+   the field that holds the stage. Keep both `updated_at` values.
+2. To change the stages, edit the `enum_options` of the stage field. Each option's `value` is the
+   stage id that `contacts_update` takes as `stage_id`, and its `label` is the name people see.
+   Do not change the `value` of a stage contacts are on: they stay on the old id.
+3. Call `crm_fields_set` with every field from step 1, in order, and the edited stage field. It
+   replaces the whole list: a field you leave out is turned off. Ask the user first. Send the
+   list's `updated_at` as `expected_updated_at`. A 409 `stale_revision` means someone changed the
+   fields: start again from step 1.
+4. Call `crm_fields_set_stage_config` with `stage_field`, and the `booking_stage_id` and
+   `no_booking_stage_id` a call moves its contact to, or null. A stage id you leave out is cleared,
+   so send both. Send the stage setup's `updated_at` as `expected_updated_at`. A 400 means the field is
+   not an enum field that is on, or a stage id is not one of its options.
+5. Call `contacts_list_stages` to read the stages back. Both writes need an owner or admin: a
+   staff member gets 403 `insufficient_role`. Tell the user, and do not retry.
 
 ## Other operations
 

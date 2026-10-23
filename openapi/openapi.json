@@ -11878,6 +11878,357 @@
         "x-member-access": "open"
       }
     },
+    "/api/v1/crm-fields": {
+      "get": {
+        "description": "The custom fields that are on, in the order the dashboard shows them. A contact holds their\nvalues in `custom_fields`, by `field_name`. The enum field `crm_fields_get_stage_config` names\nis the pipeline: its option values are the stage ids of `contacts_list_stages`.",
+        "operationId": "crm_fields_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrmFieldListV1Dto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `crm_fields:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the organization’s custom contact fields",
+        "tags": [
+          "CRM fields",
+          "Public API"
+        ],
+        "x-iris-scope": "crm_fields:read",
+        "x-member-access": "open"
+      },
+      "put": {
+        "description": "Replaces the whole list: send every field that stays on, in order. A field left out is turned\noff, and contacts keep its stored values. Every phone agent’s prompt is refreshed with the new\nlist. On an enum field the option `value`s are ids: on the stage field they are the stage ids\n`contacts_list_stages` lists and `contacts_update` takes as `stage_id`. Answers the new list.",
+        "operationId": "crm_fields_set",
+        "parameters": [
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrmFieldsSetV1Dto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrmFieldListV1Dto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "An invalid field, or a `field_name` sent twice",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `crm_fields:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Replace the organization’s custom contact fields",
+        "tags": [
+          "CRM fields",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "crm_fields"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "crm_fields_list",
+            "args": {}
+          },
+          "fields": {
+            "fields": "items"
+          }
+        },
+        "x-iris-scope": "crm_fields:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/crm-fields/stage-config": {
+      "get": {
+        "description": "Which enum field holds the pipeline stage, and the stages a call moves its contact to when it\nbooks and when it does not. A null stage id moves no one. `stage_field: null` means the\norganization has no pipeline.",
+        "operationId": "crm_fields_get_stage_config",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrmStageConfigV1Dto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `crm_fields:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Read the pipeline stage setup",
+        "tags": [
+          "CRM fields",
+          "Public API"
+        ],
+        "x-iris-scope": "crm_fields:read",
+        "x-member-access": "open"
+      },
+      "put": {
+        "description": "Names the enum field that holds the pipeline stage, and the stages a call moves its contact to\nwhen it books and when it does not. A stage id left out or null is cleared. `stage_field: null`\nturns the pipeline off. A new stage field refreshes every phone agent’s prompt.",
+        "operationId": "crm_fields_set_stage_config",
+        "parameters": [
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrmStageConfigSetV1Dto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrmStageConfigV1Dto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The stage field is not an enum field that is on, or a stage id is not one of its options",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `crm_fields:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Set the pipeline stage field and the stages a call outcome moves a contact to",
+        "tags": [
+          "CRM fields",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "crm_fields"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "crm_fields_get_stage_config",
+            "args": {}
+          },
+          "together": [
+            [
+              "stage_field",
+              "booking_stage_id",
+              "no_booking_stage_id"
+            ]
+          ]
+        },
+        "x-iris-scope": "crm_fields:write",
+        "x-member-access": "deny"
+      }
+    },
     "/api/v1/mcp": {
       "post": {
         "description": "The Iris MCP server, over stateless Streamable HTTP. Point an MCP client at this URL with\nthe key as a bearer token. Every other operation in this document is a tool named by its\noperationId, and `tools/list` shows only the tools the key’s scopes allow (and, for a\nmember’s credential, only the tools a member may call). A tool call runs\nthe REST operation, so it answers what the REST call answers. A failing call has\n`isError: true` and the REST error body as its text. Send\n`Accept: application/json, text/event-stream`. Answers 404 while the organization does\nnot have the MCP server turned on.",
@@ -13007,7 +13358,9 @@
                 "locations:read",
                 "locations:write",
                 "table_views:read",
-                "table_views:write"
+                "table_views:write",
+                "crm_fields:read",
+                "crm_fields:write"
               ]
             }
           },
@@ -13110,7 +13463,9 @@
                 "locations:read",
                 "locations:write",
                 "table_views:read",
-                "table_views:write"
+                "table_views:write",
+                "crm_fields:read",
+                "crm_fields:write"
               ]
             }
           }
@@ -13184,7 +13539,9 @@
               "locations:read",
               "locations:write",
               "table_views:read",
-              "table_views:write"
+              "table_views:write",
+              "crm_fields:read",
+              "crm_fields:write"
             ]
           },
           "label": {
@@ -18628,6 +18985,232 @@
         "required": [
           "id",
           "deleted"
+        ]
+      },
+      "CrmFieldOptionV1Dto": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "The stored value. On the stage field it is the stage id."
+          },
+          "label": {
+            "type": "string",
+            "description": "The name people see"
+          }
+        },
+        "required": [
+          "value",
+          "label"
+        ]
+      },
+      "CrmFieldV1Dto": {
+        "type": "object",
+        "properties": {
+          "field_name": {
+            "type": "string"
+          },
+          "field_type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "number",
+              "enum",
+              "boolean",
+              "date",
+              "datetime",
+              "email",
+              "phone",
+              "currency",
+              "url",
+              "multi_select_enum",
+              "long_text"
+            ]
+          },
+          "field_label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "is_required": {
+            "type": "boolean"
+          },
+          "enum_options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CrmFieldOptionV1Dto"
+            }
+          },
+          "sync_to_calendar": {
+            "type": "boolean"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "ai_generated"
+            ],
+            "description": "Whether a person or Iris made the field"
+          }
+        },
+        "required": [
+          "field_name",
+          "field_type",
+          "field_label",
+          "description",
+          "is_required",
+          "enum_options",
+          "sync_to_calendar",
+          "source"
+        ]
+      },
+      "CrmFieldListV1Dto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "The fields that are on, in the order the dashboard shows them",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CrmFieldV1Dto"
+            }
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the list last changed. Send it as `expected_updated_at` to `crm_fields_set`. null with no field."
+          }
+        },
+        "required": [
+          "items",
+          "updated_at"
+        ]
+      },
+      "CrmFieldInputV1Dto": {
+        "type": "object",
+        "properties": {
+          "field_name": {
+            "type": "string",
+            "description": "The key a contact’s `custom_fields` holds this field’s value under"
+          },
+          "field_type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "number",
+              "enum",
+              "boolean",
+              "date",
+              "datetime",
+              "email",
+              "phone",
+              "currency",
+              "url",
+              "multi_select_enum",
+              "long_text"
+            ]
+          },
+          "field_label": {
+            "type": "string",
+            "description": "The name people see"
+          },
+          "description": {
+            "type": "string",
+            "description": "What the field holds. Phone agents read it. Empty when left out."
+          },
+          "is_required": {
+            "type": "boolean",
+            "description": "Whether phone agents must collect it"
+          },
+          "enum_options": {
+            "description": "The choices of an `enum` or `multi_select_enum` field, in order. `[]` for any other type.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CrmFieldOptionV1Dto"
+            }
+          },
+          "sync_to_calendar": {
+            "type": "boolean",
+            "description": "Whether a `date` or `datetime` value goes on the calendar"
+          }
+        },
+        "required": [
+          "field_name",
+          "field_type",
+          "field_label",
+          "is_required",
+          "enum_options",
+          "sync_to_calendar"
+        ]
+      },
+      "CrmFieldsSetV1Dto": {
+        "type": "object",
+        "properties": {
+          "fields": {
+            "description": "Every field that stays on, in order. Each `field_name` once.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CrmFieldInputV1Dto"
+            }
+          }
+        },
+        "required": [
+          "fields"
+        ]
+      },
+      "CrmStageConfigV1Dto": {
+        "type": "object",
+        "properties": {
+          "stage_field": {
+            "type": "string",
+            "nullable": true,
+            "description": "The `field_name` of the enum field that holds the pipeline stage. null: no pipeline."
+          },
+          "booking_stage_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The stage a contact moves to when a call books"
+          },
+          "no_booking_stage_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The stage a contact moves to when a call does not book"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the organization last changed. Send it as `expected_updated_at` to `crm_fields_set_stage_config`."
+          }
+        },
+        "required": [
+          "stage_field",
+          "booking_stage_id",
+          "no_booking_stage_id",
+          "updated_at"
+        ]
+      },
+      "CrmStageConfigSetV1Dto": {
+        "type": "object",
+        "properties": {
+          "stage_field": {
+            "type": "string",
+            "nullable": true,
+            "description": "The `field_name` of an enum field that is on. null turns the pipeline off and clears both stage ids."
+          },
+          "booking_stage_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "One of the stage field’s option values, or null. Left out, it is cleared."
+          },
+          "no_booking_stage_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "One of the stage field’s option values, or null. Left out, it is cleared."
+          }
+        },
+        "required": [
+          "stage_field"
         ]
       }
     }
