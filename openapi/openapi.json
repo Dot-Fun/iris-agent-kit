@@ -15661,7 +15661,7 @@
             "type": "object",
             "additionalProperties": true,
             "nullable": true,
-            "description": "A designed email body (EmailDocument v1), on `email` steps only. At most 60 blocks, counting each block inside columns and sections, 10000 characters, and 40 items in one list. Omit to keep the stored one. A step that leaves `email` loses it. Null clears it."
+            "description": "A designed email body (EmailDocument v1), on `email` steps only. At most 60 blocks, counting each block inside columns and sections, 10000 characters, and 40 items in one list. An optional `meta.templateName` (at most 120 characters, other `meta` keys dropped) names the template the email was started from. It is informational only and is never rendered. A heading, text block or list item that still reads its new-block placeholder (\"Your heading\", \"Write something…\", \"First point\") is dropped. Omit to keep the stored one. A step that leaves `email` loses it. Null clears it."
           },
           "ai_enabled": {
             "type": "boolean",
