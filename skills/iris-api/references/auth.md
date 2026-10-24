@@ -75,7 +75,7 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `sequences:read` | Read sequences, enrollments, send logs and totals, and a broadcast's schedule and runs |
 | `sequences:write` | Author, activate, pause, resume and duplicate sequences, enroll and cancel, and set, start and pause a broadcast's schedule and cancel one run |
 | `appointments:read` | Read appointments, open slots, calendars, locations, booking options and territories |
-| `appointments:write` | Book, change, reschedule and cancel appointments, including attendee details |
+| `appointments:write` | Book, change, reschedule and cancel appointments, including attendee details, and get or reset an appointment’s self-service link |
 | `conversations:read` | Read conversations and messages |
 | `conversations:write` | Send an SMS, reply in a conversation, and hold or resume its AI. A staff member acts only for their own clients, while their SMS setting is on |
 | `calls:read` | Read calls and transcripts |
@@ -83,6 +83,8 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `audiences:write` | Add and remove audience members |
 | `forms:read` | Read forms, their fields and their submissions |
 | `forms:write` | Create, change and delete forms and their fields, reorder the fields, and rotate a form's submission key |
+| `calendar:read` | Read the calendar settings, saved views, feeds and view links |
+| `calendar:write` | Change the calendar settings and a location's schedule, save and assign views, and mint and revoke feeds and view links |
 | `agents:read` | Read phone agents, their versions, and whether a draft differs from the live version |
 | `agents:write` | Change a phone agent's draft, turn a subagent on or off, publish a draft and roll back |
 | `organization:read` | Read the organization's settings and the roles whose agent access is off |

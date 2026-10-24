@@ -2624,6 +2624,1738 @@
         "x-member-access": "scoped"
       }
     },
+    "/api/v1/calendar/settings": {
+      "get": {
+        "description": "Whether the agents may book, the Google calendar status, the time zone, and the organization’s\nself-service link and feed contact-details toggles. With `location_id`, also that location’s\nbooking hours and closure dates, and `updated_at` is the location’s revision.",
+        "operationId": "calendar_settings_get",
+        "parameters": [
+          {
+            "name": "location_id",
+            "required": false,
+            "in": "query",
+            "description": "A location from `locations_list`. With it, the answer adds that location’s booking schedule.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCalendarSettingsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calendar:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Location not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Read the calendar settings",
+        "tags": [
+          "Calendar",
+          "Public API"
+        ],
+        "x-iris-scope": "calendar:read",
+        "x-member-access": "scoped"
+      },
+      "patch": {
+        "description": "Without `location_id`: `calendar_tool_enabled` only, which an OWNER’s or ADMIN’s credential or an\norganization key with no role changes. With `location_id`: `booking_hours_override` and\n`closure_dates` only. Each replaces\nwhat it names, and a field left out keeps its value. Answers the settings as\n`calendar_settings_get` reads them with the same `location_id`.\nSend `expected_updated_at`, `updated_at` from `calendar_settings_get` with the same\n`location_id`, to refuse the write with 409 `stale_revision` when the record changed after you read it.",
+        "operationId": "calendar_settings_update",
+        "parameters": [
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "location_id",
+            "required": false,
+            "in": "query",
+            "description": "The location whose booking schedule changes. Leave it out to change `calendar_tool_enabled`, which is organization-wide.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicCalendarSettingsUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCalendarSettingsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No setting sent, `calendar_tool_enabled` with `location_id`, a schedule field without it, or invalid hours or dates"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calendar:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `location_settings` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Location not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Turn agent booking on or off, or change a location’s booking schedule",
+        "tags": [
+          "Calendar",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "calendar"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "calendar_settings_get",
+            "args": {
+              "location_id": "request.location_id"
+            }
+          }
+        },
+        "x-iris-scope": "calendar:write",
+        "x-manager-power": "location_settings",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/calendar/feeds/settings": {
+      "patch": {
+        "description": "On: every feed carries the customer’s phone, email, notes and service address. Turning it on\nneeds team scheduling. Turning it off is always allowed. Answers `calendar_settings_get`.\nSend `expected_updated_at`, `updated_at` from `calendar_settings_get` without `location_id`, to\nrefuse the write with 409 `stale_revision` when the organization changed after you read it.",
+        "operationId": "calendar_feeds_update_settings",
+        "parameters": [
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicCalendarFeedSettingsUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCalendarSettingsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calendar:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nTeam scheduling is not available to the organization yet: views, feeds and view links answer 409 until it is.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Turn customer contact details in calendar feeds on or off",
+        "tags": [
+          "Calendar",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "calendar"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "calendar_settings_get",
+            "args": {}
+          }
+        },
+        "x-iris-scope": "calendar:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/calendar/self-service-links/settings": {
+      "patch": {
+        "description": "Off: every self-service link answers 404 and messages carry none, until it is on again. No link\nis reset, so the same links work again when it is on. Answers `calendar_settings_get`.\nSend `expected_updated_at`, `updated_at` from `calendar_settings_get` without `location_id`, to\nrefuse the write with 409 `stale_revision` when the organization changed after you read it.",
+        "operationId": "calendar_self_service_links_update_settings",
+        "parameters": [
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicSelfServiceLinkSettingsUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCalendarSettingsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calendar:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Turn customers’ self-service appointment links on or off",
+        "tags": [
+          "Calendar",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "calendar"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "calendar_settings_get",
+            "args": {}
+          }
+        },
+        "x-iris-scope": "calendar:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/calendar/views": {
+      "get": {
+        "description": "Your personal views, then the organization views you may see. A view is a filter set, never a\ndate range. Empty when team scheduling is not available. An organization key has no person, so it answers 403 `no_acting_user`.",
+        "operationId": "calendar_views_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCalendarViewListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calendar:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the saved calendar views",
+        "tags": [
+          "Calendar",
+          "Public API"
+        ],
+        "x-iris-scope": "calendar:read",
+        "x-member-access": "open"
+      },
+      "post": {
+        "description": "A named set of calendar sidebar filters. `personal` only you see. `org` the organization sees,\nand only an OWNER’s or ADMIN’s credential saves it. An organization key has no person, so it answers 403 `no_acting_user`.",
+        "operationId": "calendar_views_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicCalendarViewCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCalendarViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid name, filters or visibility, or a date range in the filters"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calendar:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Team scheduling is not available to the organization yet: views, feeds and view links answer 409 until it is.\n\n`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Save a calendar view",
+        "tags": [
+          "Calendar",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "calendar"
+        ],
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "operation": "calendar_views_delete",
+          "args": {
+            "viewId": "response.id"
+          },
+          "record": {
+            "operation": "calendar_views_get",
+            "args": {
+              "viewId": "response.id"
+            }
+          }
+        },
+        "x-iris-scope": "calendar:write",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/calendar/views/{viewId}": {
+      "get": {
+        "description": "Its name, filters, visibility, the team members it is assigned to, and `updated_at`. An organization key has no person, so it answers 403 `no_acting_user`.",
+        "operationId": "calendar_views_get",
+        "parameters": [
+          {
+            "name": "viewId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCalendarViewDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calendar:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such view in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Read one saved calendar view",
+        "tags": [
+          "Calendar",
+          "Public API"
+        ],
+        "x-iris-scope": "calendar:read",
+        "x-member-access": "open"
+      },
+      "patch": {
+        "description": "A field left out keeps its value. Filters sent replace the whole filter set.\nSend `expected_updated_at`, the view’s `updated_at` from `calendar_views_get`, to refuse the\nwrite with 409 `stale_revision` when the view changed after you read it.",
+        "operationId": "calendar_views_update",
+        "parameters": [
+          {
+            "name": "viewId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicCalendarViewUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCalendarViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid name or filters"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calendar:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such view in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nTeam scheduling is not available to the organization yet: views, feeds and view links answer 409 until it is.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Rename a saved calendar view or change its filters",
+        "tags": [
+          "Calendar",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "calendar"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "calendar_views_get",
+            "args": {
+              "viewId": "request.viewId"
+            }
+          }
+        },
+        "x-iris-scope": "calendar:write",
+        "x-member-access": "open"
+      },
+      "delete": {
+        "description": "Deletes the view with its assignments, and every view link issued from it stops working. It\ncannot be restored. Ask the user first.\nSend `expected_updated_at`, the view’s `updated_at` from `calendar_views_get`, to refuse the\nwrite with 409 `stale_revision` when the view changed after you read it.",
+        "operationId": "calendar_views_delete",
+        "parameters": [
+          {
+            "name": "viewId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCalendarViewDeletedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calendar:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such view in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nTeam scheduling is not available to the organization yet: views, feeds and view links answer 409 until it is.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete a saved calendar view",
+        "tags": [
+          "Calendar",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "calendar"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A deleted view cannot be restored: its assignments and the view links issued from it go with it."
+        },
+        "x-iris-scope": "calendar:write",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/calendar/views/{viewId}/assignments": {
+      "put": {
+        "description": "Replaces the team members the view is assigned to. Empty unassigns it from everyone. Only an\norganization view is assigned. A MANAGER assigns it only to staff in reach.\nSend `expected_updated_at`, the view’s `updated_at` from `calendar_views_get`, to refuse the\nwrite with 409 `stale_revision` when the view changed after you read it.",
+        "operationId": "calendar_views_set_assignments",
+        "parameters": [
+          {
+            "name": "viewId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicCalendarViewAssignmentsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCalendarViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid team member ids"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calendar:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `staff` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such view in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nTeam scheduling is not available to the organization yet: views, feeds and view links answer 409 until it is.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Assign an organization view to team members",
+        "tags": [
+          "Calendar",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "calendar"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "calendar_views_get",
+            "args": {
+              "viewId": "request.viewId"
+            }
+          },
+          "fields": {
+            "team_member_ids": "assigned_team_member_ids"
+          }
+        },
+        "x-iris-scope": "calendar:write",
+        "x-manager-power": "staff",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/calendar/feeds": {
+      "get": {
+        "description": "The live calendar subscription feeds this credential may see: an OWNER’s or ADMIN’s sees every\nfeed, any other sees its own. No feed link is returned: only `calendar_feeds_mint` answers with it.",
+        "operationId": "calendar_feeds_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCalendarFeedListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calendar:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the calendar feeds",
+        "tags": [
+          "Calendar",
+          "Public API"
+        ],
+        "x-iris-scope": "calendar:read",
+        "x-member-access": "open"
+      },
+      "post": {
+        "description": "A feed of one team member’s or one location’s appointments, which a calendar app subscribes to.\nAnswers the link once: it cannot be read again. A live feed for the same subject stops working.\nAsk the user first. Anyone with the link reads the appointments, so share it only with them.",
+        "operationId": "calendar_feeds_mint",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicCalendarFeedMintDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCalendarFeedMintedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid kind, or the subject id its kind needs is missing"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calendar:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Location not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Team scheduling is not available to the organization yet: views, feeds and view links answer 409 until it is.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Mint a calendar subscription feed",
+        "tags": [
+          "Calendar",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "calendar"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A minted feed replaces the live feed for the same subject, which stops working."
+        },
+        "x-iris-scope": "calendar:write",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/calendar/feeds/{feedId}": {
+      "delete": {
+        "description": "The feed link stops working for every calendar app subscribed to it. `revoked` is false when it was revoked already.",
+        "operationId": "calendar_feeds_revoke",
+        "parameters": [
+          {
+            "name": "feedId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCalendarRevokedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calendar:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such feed in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Revoke a calendar feed",
+        "tags": [
+          "Calendar",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "calendar"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A revoked feed stops working. Mint a new one, with a new link."
+        },
+        "x-iris-scope": "calendar:write",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/calendar/view-links": {
+      "get": {
+        "description": "Live links first, then revoked ones. No link URL is returned: only `calendar_view_links_issue`\nanswers with it. An organization key has no person, so it answers 403 `no_acting_user`.",
+        "operationId": "calendar_view_links_list",
+        "parameters": [
+          {
+            "name": "team_member_id",
+            "required": false,
+            "in": "query",
+            "description": "Only the links issued to this team member.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCalendarViewLinkListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calendar:read` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `staff` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the view links issued to team members",
+        "tags": [
+          "Calendar",
+          "Public API"
+        ],
+        "x-iris-scope": "calendar:read",
+        "x-manager-power": "staff",
+        "x-member-access": "deny"
+      },
+      "post": {
+        "description": "A personal link to the view’s appointments: a calendar feed, a read-only web page, or both.\nAnswers the links once: they cannot be read again. A live link for the same view and team\nmember stops working. Ask the user first. An organization key has no person, so it answers 403 `no_acting_user`.",
+        "operationId": "calendar_view_links_issue",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicCalendarViewLinkIssueDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCalendarViewLinkIssuedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or neither feed nor page"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calendar:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `staff` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Team scheduling is not available to the organization yet: views, feeds and view links answer 409 until it is.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Issue an organization view to a team member as a link",
+        "tags": [
+          "Calendar",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "calendar"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "An issued link replaces the live link for the same view and team member, which stops working."
+        },
+        "x-iris-scope": "calendar:write",
+        "x-manager-power": "staff",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/calendar/view-links/{linkId}": {
+      "delete": {
+        "description": "The link stops working. `revoked` is false when it was revoked already. An organization key has no person, so it answers 403 `no_acting_user`.",
+        "operationId": "calendar_view_links_revoke",
+        "parameters": [
+          {
+            "name": "linkId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCalendarRevokedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calendar:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `staff` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such view link in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Revoke a view link",
+        "tags": [
+          "Calendar",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "calendar"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A revoked view link stops working. Issue a new one, with a new link."
+        },
+        "x-iris-scope": "calendar:write",
+        "x-manager-power": "staff",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/appointments/{appointmentId}/self-service-link": {
+      "post": {
+        "description": "The page where the customer confirms, reschedules or cancels this appointment: the same link\nits messages carry. Minted on the first call, the same link after. Anyone with it can change the\nappointment, so send it only to the customer. While self-service links are off, the link answers 404.",
+        "operationId": "appointments_get_self_service_link",
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicSelfServiceLinkDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `appointments:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such appointment in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "This appointment cannot have a self-service link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Self-service links are not configured on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get the self-service link of an appointment",
+        "tags": [
+          "Appointments",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "appointments"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "A minted self-service link stays live until it is reset."
+        },
+        "x-iris-scope": "appointments:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/appointments/{appointmentId}/self-service-link/reset": {
+      "post": {
+        "description": "The old link stops working, and the answer is a new one. Use it when the link reached someone\nit should not have. Ask the user first: a link the customer already has stops working.",
+        "operationId": "appointments_reset_self_service_link",
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicSelfServiceLinkDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `appointments:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such appointment in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "This appointment cannot have a self-service link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Self-service links are not configured on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Reset the self-service link of an appointment",
+        "tags": [
+          "Appointments",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "appointments"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "The old self-service link stops working for good."
+        },
+        "x-iris-scope": "appointments:write",
+        "x-member-access": "deny"
+      }
+    },
     "/api/v1/locations": {
       "get": {
         "description": "Every active location with its time zone. A member’s credential lists its own locations only.\n`staffed: true` means the location books by team member: call `locations_booking_options`,\nthen book with `location_id`. A location that is not staffed can also be booked on its calendar\nfrom `calendars_list`.",
@@ -22714,6 +24446,8 @@
                 "audiences:write",
                 "forms:read",
                 "forms:write",
+                "calendar:read",
+                "calendar:write",
                 "agents:read",
                 "agents:write",
                 "organization:read",
@@ -22835,6 +24569,8 @@
                 "audiences:write",
                 "forms:read",
                 "forms:write",
+                "calendar:read",
+                "calendar:write",
                 "agents:read",
                 "agents:write",
                 "organization:read",
@@ -22927,6 +24663,8 @@
               "audiences:write",
               "forms:read",
               "forms:write",
+              "calendar:read",
+              "calendar:write",
               "agents:read",
               "agents:write",
               "organization:read",
@@ -23501,6 +25239,655 @@
           "id",
           "location_id",
           "name"
+        ]
+      },
+      "PublicCalendarSettingsDto": {
+        "type": "object",
+        "properties": {
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "With `location_id` only. The location the schedule is for."
+          },
+          "calendar_tool_enabled": {
+            "type": "boolean",
+            "description": "Whether the phone and chat agents may book: the stored choice."
+          },
+          "calendar_tool_effective": {
+            "type": "boolean",
+            "description": "Whether agents get the tool now: enabled and the Google calendar is not in error."
+          },
+          "integration_status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "disconnected",
+              "error",
+              "paused"
+            ],
+            "nullable": true,
+            "description": "The status of the organization’s Google calendar connection, null when there is none."
+          },
+          "time_zone": {
+            "type": "string",
+            "nullable": true,
+            "description": "The IANA time zone of the organization, or of the location."
+          },
+          "booking_hours_override": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "With `location_id` only. The location’s booking hours. `{ \"weekly\": {}, \"dates\": {} }` when it books its normal hours. `weekly` maps a weekday (`monday` … `sunday`) and `dates` maps a `YYYY-MM-DD` date to null (closed), one `{ start_time, end_time }` window in `HH:MM`, or a list of 1 to 6 windows. A weekday or date left out keeps the location’s hours."
+          },
+          "closure_dates": {
+            "description": "With `location_id` only. Dates the location takes no bookings.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "self_service_links_enabled": {
+            "type": "boolean",
+            "description": "Whether customers get self-service links to their appointments."
+          },
+          "feed_contact_details_enabled": {
+            "type": "boolean",
+            "description": "Whether calendar feeds carry customer phone, email, notes and service address."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The location’s revision with `location_id`, else the organization’s. Send it as `expected_updated_at` on the write that changes the same record."
+          }
+        },
+        "required": [
+          "calendar_tool_enabled",
+          "calendar_tool_effective",
+          "integration_status",
+          "time_zone",
+          "self_service_links_enabled",
+          "feed_contact_details_enabled",
+          "updated_at"
+        ]
+      },
+      "PublicCalendarSettingsUpdateDto": {
+        "type": "object",
+        "properties": {
+          "calendar_tool_enabled": {
+            "type": "boolean",
+            "description": "Turn the agents’ booking tool on or off for the organization. Without `location_id` only, and an OWNER’s or ADMIN’s credential only."
+          },
+          "booking_hours_override": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "With `location_id` only. Replaces the location’s booking hours. `{ \"weekly\": {}, \"dates\": {} }` keeps its normal hours. `weekly` maps a weekday (`monday` … `sunday`) and `dates` maps a `YYYY-MM-DD` date to null (closed), one `{ start_time, end_time }` window in `HH:MM`, or a list of 1 to 6 windows. A weekday or date left out keeps the location’s hours."
+          },
+          "closure_dates": {
+            "description": "With `location_id` only. Replaces the dates the location takes no bookings, as unique `YYYY-MM-DD`.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PublicCalendarFeedSettingsUpdateDto": {
+        "type": "object",
+        "properties": {
+          "feed_contact_details_enabled": {
+            "type": "boolean",
+            "description": "Whether every calendar feed carries customer phone, email, notes and service address. Turning it on needs team scheduling."
+          }
+        },
+        "required": [
+          "feed_contact_details_enabled"
+        ]
+      },
+      "PublicSelfServiceLinkSettingsUpdateDto": {
+        "type": "object",
+        "properties": {
+          "self_service_links_enabled": {
+            "type": "boolean",
+            "description": "False makes every self-service link answer 404 until it is on again. No link is reset."
+          }
+        },
+        "required": [
+          "self_service_links_enabled"
+        ]
+      },
+      "PublicCalendarViewFiltersDto": {
+        "type": "object",
+        "properties": {
+          "team_member_ids": {
+            "nullable": true,
+            "description": "Team members shown, null for everyone.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "offering_ids": {
+            "nullable": true,
+            "description": "Services shown, null for every service.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "booked_via": {
+            "type": "array",
+            "nullable": true,
+            "description": "Booking channels shown, null for every channel.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "widget",
+                "agent",
+                "dashboard",
+                "self_service_link"
+              ]
+            }
+          },
+          "tentative_only": {
+            "type": "boolean"
+          },
+          "show_google_busy": {
+            "type": "boolean"
+          },
+          "show_cancelled": {
+            "type": "boolean"
+          },
+          "only_conflicted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PublicCalendarViewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "filters": {
+            "$ref": "#/components/schemas/PublicCalendarViewFiltersDto"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "personal",
+              "org"
+            ],
+            "description": "personal: only its owner sees it. org: the organization’s."
+          },
+          "owner_membership_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The membership that saved it."
+          },
+          "assigned_team_member_ids": {
+            "description": "The team members it is assigned to. Empty for a MEMBER’s credential.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "assigned_to_me": {
+            "type": "boolean",
+            "description": "An organization view assigned to the person behind this credential."
+          },
+          "can_edit": {
+            "type": "boolean",
+            "description": "Whether this credential may rename, change or delete it."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Send it as `expected_updated_at` on a write to this view."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "filters",
+          "visibility",
+          "owner_membership_id",
+          "assigned_team_member_ids",
+          "assigned_to_me",
+          "can_edit",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "PublicCalendarViewListDto": {
+        "type": "object",
+        "properties": {
+          "management_mode": {
+            "type": "string",
+            "enum": [
+              "released",
+              "hidden"
+            ],
+            "description": "hidden when team scheduling is not available to the organization: `views` is then empty."
+          },
+          "views": {
+            "description": "Your personal views, then the organization views.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicCalendarViewDto"
+            }
+          }
+        },
+        "required": [
+          "management_mode",
+          "views"
+        ]
+      },
+      "PublicCalendarViewCreateDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "description": "The name shown in the calendar sidebar."
+          },
+          "filters": {
+            "description": "The sidebar filters. A filter left out reads as its default. A date range is refused.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicCalendarViewFiltersDto"
+              }
+            ]
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "personal",
+              "org"
+            ],
+            "description": "personal: only you. org: the organization’s, which only an OWNER or ADMIN saves."
+          }
+        },
+        "required": [
+          "name",
+          "filters",
+          "visibility"
+        ]
+      },
+      "PublicCalendarViewUpdateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "description": "A new name. Left out keeps the name."
+          },
+          "filters": {
+            "description": "The new filter set, which replaces the old one. Left out keeps the filters.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicCalendarViewFiltersDto"
+              }
+            ]
+          }
+        }
+      },
+      "PublicCalendarViewDeletedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deleted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "deleted"
+        ]
+      },
+      "PublicCalendarViewAssignmentsDto": {
+        "type": "object",
+        "properties": {
+          "team_member_ids": {
+            "description": "Every team member the view is assigned to. Replaces the list. Empty unassigns it from everyone.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "team_member_ids"
+        ]
+      },
+      "PublicCalendarFeedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "team_member",
+              "location"
+            ]
+          },
+          "team_member_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "token_prefix": {
+            "type": "string",
+            "description": "The first 8 characters of the token, the only part ever shown again."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "last_fetched_by": {
+            "type": "string",
+            "nullable": true,
+            "description": "The calendar app of the last fetch, such as \"Apple Calendar\"."
+          },
+          "fetch_count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "team_member_id",
+          "location_id",
+          "token_prefix",
+          "created_at",
+          "last_fetched_at",
+          "last_fetched_by",
+          "fetch_count"
+        ]
+      },
+      "PublicCalendarFeedListDto": {
+        "type": "object",
+        "properties": {
+          "management_mode": {
+            "type": "string",
+            "enum": [
+              "released",
+              "hidden"
+            ],
+            "description": "hidden when team scheduling is not available to the organization: minting is refused."
+          },
+          "feed_contact_details_enabled": {
+            "type": "boolean",
+            "description": "Whether feeds carry customer phone, email, notes and service address."
+          },
+          "feeds": {
+            "description": "The live feeds this credential may see.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicCalendarFeedDto"
+            }
+          }
+        },
+        "required": [
+          "management_mode",
+          "feed_contact_details_enabled",
+          "feeds"
+        ]
+      },
+      "PublicCalendarFeedMintDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "team_member",
+              "location"
+            ],
+            "description": "team_member: one person’s appointments. location: a location’s."
+          },
+          "team_member_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "With `kind: team_member`: the team member."
+          },
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "With `kind: location`: a location from `locations_list`."
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "PublicCalendarFeedMintedDto": {
+        "type": "object",
+        "properties": {
+          "feed": {
+            "$ref": "#/components/schemas/PublicCalendarFeedDto"
+          },
+          "https_url": {
+            "type": "string",
+            "description": "The https subscription link. Shown once: it is not stored and cannot be read again."
+          },
+          "webcal_url": {
+            "type": "string",
+            "description": "The same link as webcal://, which calendar apps open as a subscription."
+          }
+        },
+        "required": [
+          "feed",
+          "https_url",
+          "webcal_url"
+        ]
+      },
+      "PublicCalendarRevokedDto": {
+        "type": "object",
+        "properties": {
+          "revoked": {
+            "type": "boolean",
+            "description": "False when it was revoked already."
+          }
+        },
+        "required": [
+          "revoked"
+        ]
+      },
+      "PublicCalendarViewLinkDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "view_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "view_name": {
+            "type": "string"
+          },
+          "team_member_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The team member who got the link."
+          },
+          "token_prefix": {
+            "type": "string",
+            "description": "The first 8 characters of the token, the only part ever shown again."
+          },
+          "serves_feed": {
+            "type": "boolean",
+            "description": "The link opens the calendar feed."
+          },
+          "serves_page": {
+            "type": "boolean",
+            "description": "The link opens the read-only web page."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_used_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "last_used_by": {
+            "type": "string",
+            "nullable": true
+          },
+          "revoked_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Null while the link is live."
+          },
+          "revoke_reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the link stopped: revoked, regenerated, team_member_deactivated, membership_unlinked, membership_deactivated or issuer_removed."
+          }
+        },
+        "required": [
+          "id",
+          "view_id",
+          "view_name",
+          "team_member_id",
+          "token_prefix",
+          "serves_feed",
+          "serves_page",
+          "created_at",
+          "last_used_at",
+          "last_used_by",
+          "revoked_at",
+          "revoke_reason"
+        ]
+      },
+      "PublicCalendarViewLinkListDto": {
+        "type": "object",
+        "properties": {
+          "management_mode": {
+            "type": "string",
+            "enum": [
+              "released",
+              "hidden"
+            ],
+            "description": "hidden when team scheduling is not available to the organization: issuing is refused."
+          },
+          "links": {
+            "description": "Live links first, then revoked ones.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicCalendarViewLinkDto"
+            }
+          }
+        },
+        "required": [
+          "management_mode",
+          "links"
+        ]
+      },
+      "PublicCalendarViewLinkIssueDto": {
+        "type": "object",
+        "properties": {
+          "view_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "An organization view from `calendar_views_list`."
+          },
+          "team_member_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "An active team member of the organization."
+          },
+          "serves_feed": {
+            "type": "boolean",
+            "description": "The link opens the calendar feed."
+          },
+          "serves_page": {
+            "type": "boolean",
+            "description": "The link opens the read-only web page."
+          }
+        },
+        "required": [
+          "view_id",
+          "team_member_id",
+          "serves_feed",
+          "serves_page"
+        ]
+      },
+      "PublicCalendarViewLinkIssuedDto": {
+        "type": "object",
+        "properties": {
+          "link": {
+            "$ref": "#/components/schemas/PublicCalendarViewLinkDto"
+          },
+          "webcal_url": {
+            "type": "string",
+            "nullable": true,
+            "description": "The webcal:// feed link with `serves_feed`. Shown once."
+          },
+          "https_url": {
+            "type": "string",
+            "nullable": true,
+            "description": "The https feed link with `serves_feed`. Shown once."
+          },
+          "page_url": {
+            "type": "string",
+            "nullable": true,
+            "description": "The read-only page link with `serves_page`. Shown once."
+          }
+        },
+        "required": [
+          "link",
+          "webcal_url",
+          "https_url",
+          "page_url"
+        ]
+      },
+      "PublicSelfServiceLinkDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The page where the customer confirms, reschedules or cancels this appointment. Anyone with it can, so send it only to the customer."
+          }
+        },
+        "required": [
+          "url"
         ]
       },
       "LocationDto": {

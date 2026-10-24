@@ -146,6 +146,14 @@ Get one appointment
 
 - `appointmentId` (path, string uuid, required)
 
+### appointments_get_self_service_link
+
+`POST /api/v1/appointments/{appointmentId}/self-service-link`. Scope: `appointments:write`. Member: `deny`. Changes: `appointments`.
+
+Get the self-service link of an appointment
+
+- `appointmentId` (path, string uuid, required)
+
 ### appointments_list
 
 `GET /api/v1/appointments`. Scope: `appointments:read`. Member: `scoped`.
@@ -167,6 +175,14 @@ Move an appointment to a new time
 - `appointmentId` (path, string uuid, required)
 - `start_time` (body, string date-time, required)
 - `end_time` (body, string date-time, required)
+
+### appointments_reset_self_service_link
+
+`POST /api/v1/appointments/{appointmentId}/self-service-link/reset`. Scope: `appointments:write`. Member: `deny`. Confirm: required. Changes: `appointments`.
+
+Reset the self-service link of an appointment
+
+- `appointmentId` (path, string uuid, required)
 
 ### appointments_update
 
@@ -481,6 +497,166 @@ Change the text of a business note
 - `noteId` (path, string uuid, required)
 - `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
 - `body` (body, string, required): The new note text
+
+## Calendar
+
+### calendar_feeds_list
+
+`GET /api/v1/calendar/feeds`. Scope: `calendar:read`. Member: `open`.
+
+List the calendar feeds
+
+### calendar_feeds_mint
+
+`POST /api/v1/calendar/feeds`. Scope: `calendar:write`. Member: `open`. Confirm: required. Changes: `calendar`.
+
+Mint a calendar subscription feed
+
+- `kind` (body, string, required, one of `team_member`, `location`): team_member: one person’s appointments. location: a location’s.
+- `team_member_id` (body, string uuid): With `kind: team_member`: the team member.
+- `location_id` (body, string uuid): With `kind: location`: a location from `locations_list`.
+
+### calendar_feeds_revoke
+
+`DELETE /api/v1/calendar/feeds/{feedId}`. Scope: `calendar:write`. Member: `open`. Confirm: required. Changes: `calendar`.
+
+Revoke a calendar feed
+
+- `feedId` (path, string uuid, required)
+
+### calendar_feeds_update_settings
+
+`PATCH /api/v1/calendar/feeds/settings`. Scope: `calendar:write`. Member: `deny`. Changes: `calendar`.
+
+Turn customer contact details in calendar feeds on or off
+
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `feed_contact_details_enabled` (body, boolean, required): Whether every calendar feed carries customer phone, email, notes and service address. Turning it on needs team scheduling.
+
+### calendar_self_service_links_update_settings
+
+`PATCH /api/v1/calendar/self-service-links/settings`. Scope: `calendar:write`. Member: `deny`. Changes: `calendar`.
+
+Turn customers’ self-service appointment links on or off
+
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `self_service_links_enabled` (body, boolean, required): False makes every self-service link answer 404 until it is on again. No link is reset.
+
+### calendar_settings_get
+
+`GET /api/v1/calendar/settings`. Scope: `calendar:read`. Member: `scoped`.
+
+Read the calendar settings
+
+- `location_id` (query, string uuid): A location from `locations_list`. With it, the answer adds that location’s booking schedule.
+
+### calendar_settings_update
+
+`PATCH /api/v1/calendar/settings`. Scope: `calendar:write`. Member: `deny`. Manager power: `location_settings`. Changes: `calendar`.
+
+Turn agent booking on or off, or change a location’s booking schedule
+
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `location_id` (query, string uuid): The location whose booking schedule changes. Leave it out to change `calendar_tool_enabled`, which is organization-wide.
+- `calendar_tool_enabled` (body, boolean): Turn the agents’ booking tool on or off for the organization. Without `location_id` only, and an OWNER’s or ADMIN’s credential only.
+- `booking_hours_override` (body, object): With `location_id` only. Replaces the location’s booking hours. `{ "weekly": {}, "dates": {} }` keeps its normal hours. `weekly` maps a weekday (`monday` … `sunday`) and `dates` maps a `YYYY-MM-DD` date to null (closed), one `{ start_time, end_time }` window in `HH:MM`, or a list of 1 to 6 windows. A weekday or date left out keeps the location’s hours.
+- `closure_dates` (body, array of string): With `location_id` only. Replaces the dates the location takes no bookings, as unique `YYYY-MM-DD`.
+
+### calendar_view_links_issue
+
+`POST /api/v1/calendar/view-links`. Scope: `calendar:write`. Member: `deny`. Manager power: `staff`. Confirm: required. Changes: `calendar`.
+
+Issue an organization view to a team member as a link
+
+- `view_id` (body, string uuid, required): An organization view from `calendar_views_list`.
+- `team_member_id` (body, string uuid, required): An active team member of the organization.
+- `serves_feed` (body, boolean, required): The link opens the calendar feed.
+- `serves_page` (body, boolean, required): The link opens the read-only web page.
+
+### calendar_view_links_list
+
+`GET /api/v1/calendar/view-links`. Scope: `calendar:read`. Member: `deny`. Manager power: `staff`.
+
+List the view links issued to team members
+
+- `team_member_id` (query, string uuid): Only the links issued to this team member.
+
+### calendar_view_links_revoke
+
+`DELETE /api/v1/calendar/view-links/{linkId}`. Scope: `calendar:write`. Member: `deny`. Manager power: `staff`. Confirm: required. Changes: `calendar`.
+
+Revoke a view link
+
+- `linkId` (path, string uuid, required)
+
+### calendar_views_create
+
+`POST /api/v1/calendar/views`. Scope: `calendar:write`. Member: `open`. Changes: `calendar`. Idempotent: send `idempotency_key`.
+
+Save a calendar view
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `name` (body, string, required): The name shown in the calendar sidebar.
+- `filters` (body, PublicCalendarViewFiltersDto, required): The sidebar filters. A filter left out reads as its default. A date range is refused.
+  - `team_member_ids` (body, array of string): Team members shown, null for everyone.
+  - `offering_ids` (body, array of string): Services shown, null for every service.
+  - `booked_via` (body, array of string, one of `widget`, `agent`, `dashboard`, `self_service_link`): Booking channels shown, null for every channel.
+  - `tentative_only` (body, boolean)
+  - `show_google_busy` (body, boolean)
+  - `show_cancelled` (body, boolean)
+  - `only_conflicted` (body, boolean)
+- `visibility` (body, string, required, one of `personal`, `org`): personal: only you. org: the organization’s, which only an OWNER or ADMIN saves.
+
+### calendar_views_delete
+
+`DELETE /api/v1/calendar/views/{viewId}`. Scope: `calendar:write`. Member: `open`. Confirm: required. Changes: `calendar`.
+
+Delete a saved calendar view
+
+- `viewId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
+### calendar_views_get
+
+`GET /api/v1/calendar/views/{viewId}`. Scope: `calendar:read`. Member: `open`.
+
+Read one saved calendar view
+
+- `viewId` (path, string uuid, required)
+
+### calendar_views_list
+
+`GET /api/v1/calendar/views`. Scope: `calendar:read`. Member: `open`.
+
+List the saved calendar views
+
+### calendar_views_set_assignments
+
+`PUT /api/v1/calendar/views/{viewId}/assignments`. Scope: `calendar:write`. Member: `deny`. Manager power: `staff`. Changes: `calendar`.
+
+Assign an organization view to team members
+
+- `viewId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `team_member_ids` (body, array of string uuid, required): Every team member the view is assigned to. Replaces the list. Empty unassigns it from everyone.
+
+### calendar_views_update
+
+`PATCH /api/v1/calendar/views/{viewId}`. Scope: `calendar:write`. Member: `open`. Changes: `calendar`.
+
+Rename a saved calendar view or change its filters
+
+- `viewId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `name` (body, string): A new name. Left out keeps the name.
+- `filters` (body, PublicCalendarViewFiltersDto): The new filter set, which replaces the old one. Left out keeps the filters.
+  - `team_member_ids` (body, array of string): Team members shown, null for everyone.
+  - `offering_ids` (body, array of string): Services shown, null for every service.
+  - `booked_via` (body, array of string, one of `widget`, `agent`, `dashboard`, `self_service_link`): Booking channels shown, null for every channel.
+  - `tentative_only` (body, boolean)
+  - `show_google_busy` (body, boolean)
+  - `show_cancelled` (body, boolean)
+  - `only_conflicted` (body, boolean)
 
 ## Calendars
 

@@ -188,6 +188,8 @@ A key carries scopes, one read and one write per noun:
 | `audiences:write` | create, change, archive and restore audiences, and add and remove members |
 | `forms:read` | read forms, their fields and their submissions |
 | `forms:write` | create, change and delete forms, add, change, reorder and delete their fields, and rotate a form's submission key |
+| `calendar:read` | read the calendar settings, a location's schedule, saved views, feeds and view links |
+| `calendar:write` | change the calendar settings and a location's schedule, save and assign views, mint and revoke feeds and view links |
 | `agents:read` | read phone agents, their versions, and whether a draft differs from the live version |
 | `agents:write` | change a phone agent's draft, turn a subagent on or off, publish a draft and roll back |
 | `organization:read` | read the organization's settings and the roles whose agent access is off |
@@ -694,6 +696,45 @@ again. The appointment settings carry no revision, so `ghl_update_appointment_se
 Phone numbers start with `+` and the country code. Any member reads both nouns. Only an owner or
 admin changes them. Any other caller gets 403 `insufficient_role`: tell the user, and do not retry.
 
+### 26. Change a location's booking schedule
+
+1. Call `calendar_settings_get` with `location_id` from `locations_list`. Keep its `updated_at`.
+2. Call `calendar_settings_update` with the same `location_id`, the `updated_at` as
+   `expected_updated_at`, and `booking_hours_override`, `closure_dates` or both. Each replaces what
+   it names. A day in `weekly` or `dates` is null (closed), one `{ start_time, end_time }` window
+   in `HH:MM`, or a list of windows.
+3. To turn the agents' booking tool on or off, call `calendar_settings_update` without
+   `location_id`, with `calendar_tool_enabled` only. Take `expected_updated_at` from
+   `calendar_settings_get` without `location_id`.
+
+A 409 `stale_revision` means the record changed: read it again before you retry. A MANAGER with
+the `location_settings` power changes the schedule at their locations only.
+
+### 27. Share a calendar with a team member
+
+1. Call `calendar_views_list`. With `management_mode: hidden`, team scheduling is not available:
+   tell the user, and stop.
+2. Save the view with `calendar_views_create`: `name`, `filters` and `visibility: org`.
+3. Ask the user, then call `calendar_view_links_issue` with `view_id`, `team_member_id`,
+   `serves_feed` and `serves_page`. The answer carries `https_url`, `webcal_url` and `page_url`
+   once. Give them to the user to pass on. They cannot be read again.
+4. To stop a link, ask the user, then call `calendar_view_links_revoke`.
+
+To subscribe to one person's or one location's appointments, call `calendar_feeds_mint` with
+`kind` and the subject id instead. Minting again replaces the live feed for that subject.
+
+### 28. Send a customer their self-service link
+
+1. Call `appointments_get_self_service_link` with the appointment id. It answers `url`, the same
+   link each time.
+2. Send the `url` only to the customer of that appointment: anyone with it can reschedule or
+   cancel it.
+3. If the link reached someone else, ask the user, then call
+   `appointments_reset_self_service_link`. The old link stops working.
+
+While `self_service_links_enabled` is false in `calendar_settings_get`, every link answers 404.
+Turn it on with `calendar_self_service_links_update_settings`.
+
 ## Other operations
 
 These follow the same rules. Their parameters are in `references/endpoints.md`.
@@ -730,6 +771,14 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
   another location. Record SMS consent
   with `contacts_record_sms_consent` only when the contact gave it to the user. On 409
   `sms_not_permitted`, do not send, and do not record consent to get past it.
+- Calendar: `calendar_views_get`, `calendar_views_update`, `calendar_views_delete`,
+  `calendar_views_set_assignments`, `calendar_feeds_list`, `calendar_feeds_revoke`,
+  `calendar_feeds_update_settings`, `calendar_view_links_list`. Read a view with
+  `calendar_views_get` and send its `updated_at` as `expected_updated_at` on a change or delete.
+  Ask the user before a delete or a revoke: a deleted view takes its view links with it, and a
+  revoked feed stops working for every calendar app that reads it.
+  `calendar_feeds_update_settings` sets `feed_contact_details_enabled`, with `expected_updated_at`
+  from `calendar_settings_get`. Without team scheduling, view writes answer 409: tell the user.
 - Calls: `calls_list`, `calls_get` (with transcript). Filter `calls_list` with `contact_id` to
   see one contact's calls.
 - Audiences: `audiences_list`, `audiences_add_member`, `audiences_remove_member`. Both member
