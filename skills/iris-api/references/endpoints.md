@@ -1701,6 +1701,220 @@ Change the opportunity, note and task settings of a mapping
 - `mappings` (body, object, required): `version` (the next version), `pipelines` (each `{ irisId, ghlId, stages: [{ irisId, ghlId }] }`) and `owners` (`{ irisId, ghlId }` pairs)
 - `allow_creates` (body, array of string, required, one of `opportunities`, `notes`, `tasks`): The kinds Iris may create in GoHighLevel
 
+### google_calendar_choose_my_calendar
+
+`PUT /api/v1/integrations/google-calendar/me/calendar`. Scope: `integrations:write`. Member: `open`. Changes: `integrations`.
+
+Choose which of your Google calendars Iris reads
+
+- `calendar_id` (body, string, required): The `id` of one of your own calendars from `google_calendar_list_my_calendars`
+
+### google_calendar_disconnect
+
+`DELETE /api/v1/integrations/google-calendar/locations/{locationId}`. Scope: `integrations:write`. Member: `scoped`. Confirm: required. Changes: `integrations`.
+
+Disconnect a location’s Google Calendar
+
+- `locationId` (path, string uuid, required): An Iris location `id`
+
+### google_calendar_disconnect_team_member
+
+`DELETE /api/v1/integrations/google-calendar/team-members/{teamMemberId}`. Scope: `integrations:write`. Member: `open`. Confirm: required. Changes: `integrations`.
+
+Disconnect a team member’s own Google Calendar
+
+- `teamMemberId` (path, string uuid, required): A team member `id` from `locations_booking_options`
+
+### google_calendar_get_status
+
+`GET /api/v1/integrations/google-calendar/locations/{locationId}`. Scope: `integrations:read`. Member: `scoped`.
+
+Get a location’s Google Calendar connection
+
+- `locationId` (path, string uuid, required): An Iris location `id`
+
+### google_calendar_get_team_member
+
+`GET /api/v1/integrations/google-calendar/team-members/{teamMemberId}`. Scope: `integrations:read`. Member: `open`.
+
+Get a team member’s own Google Calendar connection
+
+- `teamMemberId` (path, string uuid, required): A team member `id` from `locations_booking_options`
+
+### google_calendar_list_my_calendars
+
+`GET /api/v1/integrations/google-calendar/me/calendars`. Scope: `integrations:read`. Member: `open`.
+
+List your own Google calendars
+
+### google_calendar_sync
+
+`POST /api/v1/integrations/google-calendar/locations/{locationId}/sync`. Scope: `integrations:write`. Member: `scoped`. Changes: `integrations`, `calendar`. Idempotent: send `idempotency_key`.
+
+Sync a location’s Google Calendar now
+
+- `locationId` (path, string uuid, required): An Iris location `id`
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+
+### hubspot_approve_locations
+
+`PUT /api/v1/integrations/hubspot/locations`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Choose the locations whose contacts sync with HubSpot
+
+- `location_ids` (body, array of string uuid, required): The active Iris locations whose contacts sync
+
+### hubspot_disconnect
+
+`DELETE /api/v1/integrations/hubspot/connection`. Scope: `integrations:write`. Member: `deny`. Confirm: required. Changes: `integrations`.
+
+Disconnect HubSpot
+
+### hubspot_get_mapping_catalog
+
+`GET /api/v1/integrations/hubspot/mappings/catalog`. Scope: `integrations:read`. Member: `deny`.
+
+List the fields a HubSpot contact mapping may pair
+
+### hubspot_get_status
+
+`GET /api/v1/integrations/hubspot/status`. Scope: `integrations:read`. Member: `deny`.
+
+Get the HubSpot connection and sync status
+
+### hubspot_list_assessment_rows
+
+`GET /api/v1/integrations/hubspot/assessments/{assessmentId}/rows`. Scope: `integrations:read`. Member: `deny`.
+
+List what an assessment found for each contact
+
+- `assessmentId` (path, string uuid, required): The assessment `id` from `hubspot_get_status`
+- `side` (query, string, one of `iris`, `hubspot`): Which contact set to read
+- `cursor` (query, string): The `nextCursor` of the page before
+
+### hubspot_list_issues
+
+`GET /api/v1/integrations/hubspot/issues`. Scope: `integrations:read`. Member: `deny`.
+
+List the HubSpot contact sync issues
+
+- `cursor` (query, string): The `nextCursor` of the page before
+
+### hubspot_pause_sync
+
+`POST /api/v1/integrations/hubspot/sync/pause`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Pause the HubSpot contact sync
+
+### hubspot_resolve_issue
+
+`POST /api/v1/integrations/hubspot/issues/{issueId}/resolve`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`, `contacts`.
+
+Resolve a HubSpot contact sync issue
+
+- `issueId` (path, string uuid, required): An issue `id` from `hubspot_list_issues`
+- `choice` (body, string, required, one of `iris`, `hubspot`, `detach`, `retry`, `link`, `route`): `iris` or `hubspot` keeps that side’s value of a conflict, `detach` unlinks the pair, `retry` tries again, `link` links two records, `route` sends the contact to `location_id`
+- `version` (body, string, required): The issue’s `version` from `hubspot_list_issues`. A changed issue answers 409.
+- `contact_id` (body, string uuid): With `link`: the Iris contact
+- `external_id` (body, string): With `link`: the HubSpot contact id
+- `location_id` (body, string uuid): With `route`: one of the issue’s `locationIds`
+
+### hubspot_resume_sync
+
+`POST /api/v1/integrations/hubspot/sync/resume`. Scope: `integrations:write`. Member: `deny`. Confirm: required. Changes: `integrations`, `contacts`.
+
+Resume the paused HubSpot contact sync
+
+### hubspot_run_assessment
+
+`POST /api/v1/integrations/hubspot/assessments`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`. Idempotent: send `idempotency_key`.
+
+Assess the Iris and HubSpot contacts before a sync
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+
+### hubspot_start_sync
+
+`POST /api/v1/integrations/hubspot/sync/start`. Scope: `integrations:write`. Member: `deny`. Confirm: required. Changes: `integrations`, `contacts`. Idempotent: send `idempotency_key`.
+
+Start the HubSpot contact sync
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `assessment_id` (body, string uuid, required): The `id` of the ready assessment the user reviewed, from `hubspot_get_status`
+
+### hubspot_update_mappings
+
+`PUT /api/v1/integrations/hubspot/mappings`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Save the HubSpot contact field mappings
+
+- `mappings` (body, array of HubSpotContactMappingInputDto, required): Every contact mapping. It replaces the saved set.
+  - `iris` (body, string, required): `email`, `phone_number`, `display_name`, or `field:<key>` for an Iris custom field from `hubspot_get_mapping_catalog`
+  - `hubspot` (body, string, required): The `name` of a HubSpot contact property from `hubspot_get_mapping_catalog`
+  - `type` (body, string, required, one of `text`, `number`, `boolean`, `date`)
+
+### zapier_disconnect
+
+`DELETE /api/v1/integrations/zapier/connection`. Scope: `integrations:write`. Member: `deny`. Confirm: required. Changes: `integrations`.
+
+Disconnect Zapier
+
+### zapier_get_event_catalog
+
+`GET /api/v1/integrations/zapier/event-catalog`. Scope: `integrations:read`. Member: `open`.
+
+List the events Iris can send to Zapier
+
+### zapier_get_event_config
+
+`GET /api/v1/integrations/zapier/event-config`. Scope: `integrations:read`. Member: `open`.
+
+Get which events Zapier gets
+
+### zapier_get_field_mappings
+
+`GET /api/v1/integrations/zapier/field-mappings`. Scope: `integrations:read`. Member: `open`.
+
+Get the fields Zapier gets for each event
+
+### zapier_get_status
+
+`GET /api/v1/integrations/zapier/status`. Scope: `integrations:read`. Member: `open`.
+
+Get the Zapier connection status
+
+### zapier_rotate_signing_secret
+
+`POST /api/v1/integrations/zapier/signing-secret/rotate`. Scope: `integrations:write`. Member: `deny`. Confirm: required. Changes: `integrations`.
+
+Replace the Zapier signing secret
+
+### zapier_send_test_event
+
+`POST /api/v1/integrations/zapier/test-events`. Scope: `integrations:write`. Member: `deny`. Confirm: required. Changes: `integrations`. Idempotent: send `idempotency_key`.
+
+Send a test event to Zapier
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `event_key` (body, string, required, one of `crm.contact.created`, `crm.lead.created`, `crm.contact.updated`, `crm.contact.stage_changed`, `crm.contact.deleted`, `crm.interaction.completed`, `crm.note.added`, `crm.contact.tag_added`, `crm.contact.tag_removed`, `appointment.created`, `appointment.rescheduled`, `appointment.cancelled`, `sms.message.received`, `sms.message.sent`, `sms.message.delivered`, `sms.message.failed`, `sms.contact.opted_out`, `sms.contact.opted_in`, `call.completed`, `call.transcript_ready`, `phone_line.connected`, `phone_line.disconnected`, `conversation.started`, `conversation.human_takeover_started`, `conversation.human_takeover_ended`, `webchat.session_started`, `agent.went_live`, `sequence.enrollment_created`, `sequence.step_sent`, `sequence.completed`, `sequence.stopped`, `email.delivered`, `email.bounced`, `email.opened`, `email.clicked`, `audience.member_added`, `audience.member_removed`, `form.submitted`): An event `key` from `zapier_get_event_catalog`
+- `payload` (body, object): The payload to send. Leave it out to send the event’s `samplePayload`.
+
+### zapier_update_event_config
+
+`PUT /api/v1/integrations/zapier/event-config`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Turn Zapier events on or off
+
+- `disabled_events` (body, array of string, required): The event keys Zapier stops getting. It replaces the saved set: send `[]` to turn every event on.
+
+### zapier_update_field_mappings
+
+`PUT /api/v1/integrations/zapier/field-mappings`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Choose the fields Zapier gets for each event
+
+- `mappings` (body, object, required): The mappings by event key. It replaces the saved set: an event left out has no mapping. A field must be one of the event’s `availableFields`.
+
 ## Invitations
 
 ### invitations_create

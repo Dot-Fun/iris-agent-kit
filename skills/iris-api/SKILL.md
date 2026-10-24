@@ -214,8 +214,8 @@ A key carries scopes, one read and one write per noun:
 | `knowledge_base:write` | add a text or web page document to a phone agent's knowledge base, delete one, and generate suggestions |
 | `business_data:read` | read the status of a website re-scrape or an agent resync |
 | `business_data:write` | re-scrape the organization's website, and resync the business data to every phone agent |
-| `integrations:read` | read the GoHighLevel connection: location pairs, sync status, conflicts, transfer runs, held work and what each pair syncs |
-| `integrations:write` | run the GoHighLevel connection: pair a location, start, pause, reconnect or disconnect its sync, change what it syncs, settle conflicts and held work, and run a migration cutover |
+| `integrations:read` | read the GoHighLevel connection (location pairs, sync status, conflicts, transfer runs, held work and what each pair syncs), the HubSpot sync, the Zapier settings and the Google Calendar connections |
+| `integrations:write` | run the GoHighLevel connection (pair a location, start, pause, reconnect or disconnect its sync, change what it syncs, settle conflicts and held work, and run a migration cutover), run the HubSpot sync, change the Zapier settings, and sync or disconnect a Google calendar |
 | `phone_lines:read` | read the organization's phone lines and the locations each one answers for |
 | `phone_lines:write` | add a Twilio or SIP trunk line, route a line to locations, and disconnect, reconnect, retry or delete a line |
 | `call_forwarding:read` | read the numbers the phone agents may transfer a call to |
@@ -763,6 +763,27 @@ means your login is linked to no staff member. Tell the user, and do not retry.
 
 Both act as the person behind the credential: an organization key gets 403 `no_acting_user`.
 
+### 31. Run the HubSpot contact sync
+
+1. Call `hubspot_get_status`. When HubSpot is not connected, tell the user to connect it in the
+   dashboard. You cannot connect it.
+2. Call `hubspot_approve_locations` with the `location_ids` whose contacts sync. Read the choices
+   with `hubspot_get_mapping_catalog`, then save the field pairs with `hubspot_update_mappings`.
+   Each write replaces the saved set.
+3. Call `hubspot_run_assessment` with an `idempotency_key`. It changes no contact. Call
+   `hubspot_get_status` until `assessment.stage` is `ready`.
+4. Show the user `hubspot_list_assessment_rows` for each `side`. Ask the user, then call
+   `hubspot_start_sync` with the `assessment_id` and an `idempotency_key`. The sync writes
+   contacts in Iris and HubSpot.
+5. Call `hubspot_pause_sync` to stop the writes, and ask the user before `hubspot_resume_sync`.
+6. Read problems with `hubspot_list_issues`, and settle one with `hubspot_resolve_issue` and its
+   `version`. A 409 means the issue changed: read it again.
+7. Ask the user before `hubspot_disconnect`. Only they can connect HubSpot again.
+
+Rewind cannot undo a HubSpot write. Only an owner or admin calls these, and a MEMBER or MANAGER
+gets 403 `insufficient_role`. An organization key gets 403 `no_acting_user` on
+`hubspot_approve_locations` and `hubspot_resolve_issue`.
+
 ## Other operations
 
 These follow the same rules. Their parameters are in `references/endpoints.md`.
@@ -807,6 +828,22 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
   revoked feed stops working for every calendar app that reads it.
   `calendar_feeds_update_settings` sets `feed_contact_details_enabled`, with `expected_updated_at`
   from `calendar_settings_get`. Without team scheduling, view writes answer 409: tell the user.
+- Zapier: `zapier_get_status`, `zapier_get_event_catalog`, `zapier_get_event_config`,
+  `zapier_update_event_config`, `zapier_get_field_mappings`, `zapier_update_field_mappings`,
+  `zapier_send_test_event`, `zapier_rotate_signing_secret`, `zapier_disconnect`. The user
+  connects Zapier from Zapier. Read a setting before you change it: each write replaces the whole
+  set, and rewind cannot undo it. A rotation and the settings writes need an active connection and
+  answer 404 without one. With no connection, a test event reaches no Zap. Ask the user before a test event, which runs the subscribed Zaps, before a rotation, which
+  stops the old secret at once, and before a disconnect. Any role reads. Only an owner or admin
+  writes.
+- Google Calendar: `google_calendar_get_status`, `google_calendar_sync` and
+  `google_calendar_disconnect` for a location's calendar. `google_calendar_get_team_member`,
+  `google_calendar_list_my_calendars`, `google_calendar_choose_my_calendar` and
+  `google_calendar_disconnect_team_member` for a team member's own calendar. The user connects a
+  calendar in the dashboard. `google_calendar_sync` answers `success: false` when the location has
+  no calendar. Only the person lists or chooses their own calendars. The person, or an owner or
+  admin, disconnects one. Ask the user before a disconnect: rewind cannot undo it. An
+  organization key gets 403 `no_acting_user` on the disconnects and the team member operations.
 - Calls: `calls_list`, `calls_get` (with transcript). Filter `calls_list` with `contact_id` to
   see one contact's calls.
 - Audiences: `audiences_list`, `audiences_add_member`, `audiences_remove_member`. Both member

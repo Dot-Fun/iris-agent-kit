@@ -21845,6 +21845,2185 @@
         "x-member-access": "deny"
       }
     },
+    "/api/v1/integrations/hubspot/status": {
+      "get": {
+        "description": "Whether HubSpot is connected, the approved locations, the contact mappings, the latest assessment and the sync state.\nStart here: `locationApproval` and `assessment.stage` say what the sync needs next. A `ready` assessment `id` starts the sync.",
+        "operationId": "hubspot_get_status",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicHubSpotStatusDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get the HubSpot connection and sync status",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-scope": "integrations:read",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/integrations/hubspot/locations": {
+      "put": {
+        "description": "Replaces the approved Iris locations. Iris then needs a new assessment before the sync may start.\nRead `approvedLocationIds` with `hubspot_get_status` first. Run `hubspot_run_assessment` after.",
+        "operationId": "hubspot_approve_locations",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HubSpotLocationsInputDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicHubSpotStatusDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Choose the locations whose contacts sync with HubSpot",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "integrations"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "The settings answer no updated_at for an undo to check. Read them with hubspot_get_status first, and send hubspot_approve_locations again with the earlier values."
+        },
+        "x-iris-scope": "integrations:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/integrations/hubspot/mappings/catalog": {
+      "get": {
+        "description": "The Iris contact fields and the HubSpot contact properties. A mapping in `hubspot_update_mappings` pairs one of each.",
+        "operationId": "hubspot_get_mapping_catalog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicHubSpotCatalogDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the fields a HubSpot contact mapping may pair",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-scope": "integrations:read",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/integrations/hubspot/mappings": {
+      "put": {
+        "description": "Replaces the contact mappings: which Iris field syncs with which HubSpot property. Iris then needs a new assessment.\nRead the saved `mappings` with `hubspot_get_status` and the choices with `hubspot_get_mapping_catalog` first.",
+        "operationId": "hubspot_update_mappings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HubSpotMappingsInputDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicHubSpotStatusDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Save the HubSpot contact field mappings",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "integrations"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "The settings answer no updated_at for an undo to check. Read them with hubspot_get_status first, and send hubspot_update_mappings again with the earlier values."
+        },
+        "x-iris-scope": "integrations:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/integrations/hubspot/assessments": {
+      "post": {
+        "description": "Starts an assessment: Iris reads both contact sets and works out what the sync would change. It changes no contact.\nApprove locations and save mappings first. Follow `assessment.stage` with `hubspot_get_status` until `ready`.",
+        "operationId": "hubspot_run_assessment",
+        "parameters": [],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdempotencyKeyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicHubSpotAssessmentDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Assess the Iris and HubSpot contacts before a sync",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "integrations"
+        ],
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "An assessment changes no contact, and Iris keeps every assessment. Run hubspot_run_assessment again for a new one."
+        },
+        "x-iris-scope": "integrations:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/integrations/hubspot/assessments/{assessmentId}/rows": {
+      "get": {
+        "description": "One page of an assessment’s contacts on one side, each with what the sync would do. Show it to the user before `hubspot_start_sync`.",
+        "operationId": "hubspot_list_assessment_rows",
+        "parameters": [
+          {
+            "name": "assessmentId",
+            "required": true,
+            "in": "path",
+            "description": "The assessment `id` from `hubspot_get_status`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "side",
+            "required": false,
+            "in": "query",
+            "description": "Which contact set to read",
+            "schema": {
+              "default": "hubspot",
+              "type": "string",
+              "enum": [
+                "iris",
+                "hubspot"
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "The `nextCursor` of the page before",
+            "schema": {
+              "pattern": "^(0|[1-9][0-9]*)$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicHubSpotAssessmentRowsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such assessment in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List what an assessment found for each contact",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-scope": "integrations:read",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/integrations/hubspot/sync/start": {
+      "post": {
+        "description": "Turns on contact imports and exports from the ready assessment the user reviewed. It writes contacts on both sides.\nShow the user `hubspot_list_assessment_rows` first, and ask before you start.",
+        "operationId": "hubspot_start_sync",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HubSpotStartInputDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicHubSpotStatusDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Start the HubSpot contact sync",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "integrations",
+          "contacts"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "The sync writes contacts into Iris and HubSpot, and Iris cannot take them back. Stop further writes with hubspot_pause_sync."
+        },
+        "x-iris-scope": "integrations:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/integrations/hubspot/sync/pause": {
+      "post": {
+        "description": "Stops contact writes on both sides and keeps the sync state. Read `paused` with `hubspot_get_status` first.",
+        "operationId": "hubspot_pause_sync",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicHubSpotStatusDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Pause the HubSpot contact sync",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "integrations"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "Pausing keeps the sync state, so nothing is lost. To undo it, resume the sync with hubspot_resume_sync."
+        },
+        "x-iris-scope": "integrations:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/integrations/hubspot/sync/resume": {
+      "post": {
+        "description": "Turns contact writes back on and catches up on the changes made while paused. Read `paused` with `hubspot_get_status` first.",
+        "operationId": "hubspot_resume_sync",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicHubSpotStatusDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Resume the paused HubSpot contact sync",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "integrations",
+          "contacts"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "The sync writes contacts into Iris and HubSpot, and Iris cannot take them back. Stop further writes with hubspot_pause_sync."
+        },
+        "x-iris-scope": "integrations:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/integrations/hubspot/connection": {
+      "delete": {
+        "description": "Ends the HubSpot connection and drops its pending work. Contacts and their links stay.\nRead `hubspot_get_status` first, and ask the user: only they can connect HubSpot again, in the dashboard.",
+        "operationId": "hubspot_disconnect",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicHubSpotStatusDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Disconnect HubSpot",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "integrations"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Iris cannot reconnect HubSpot for the user. They connect it again in the dashboard. Contacts and their links stay."
+        },
+        "x-iris-scope": "integrations:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/integrations/hubspot/issues": {
+      "get": {
+        "description": "One page of the conflicts, exclusions and failures the sync found. Resolve one with `hubspot_resolve_issue`, sending its `version`.",
+        "operationId": "hubspot_list_issues",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "The `nextCursor` of the page before",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicHubSpotIssuePageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the HubSpot contact sync issues",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-scope": "integrations:read",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/integrations/hubspot/issues/{issueId}/resolve": {
+      "post": {
+        "description": "Applies one choice to an issue from `hubspot_list_issues`: keep one side’s value, link, unlink, route or retry.\nSend the issue’s `version`. A changed issue answers 409: read it again. Answers the sync status after the change.",
+        "operationId": "hubspot_resolve_issue",
+        "parameters": [
+          {
+            "name": "issueId",
+            "required": true,
+            "in": "path",
+            "description": "An issue `id` from `hubspot_list_issues`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HubSpotResolveIssueInputDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicHubSpotStatusDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such issue in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Resolve a HubSpot contact sync issue",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "integrations",
+          "contacts"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "A resolution writes the chosen values or link, and Iris keeps no earlier state to put back. Read the issue with hubspot_list_issues first."
+        },
+        "x-iris-scope": "integrations:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/integrations/zapier/status": {
+      "get": {
+        "description": "Whether Zapier is connected, when it was authorized, and whether a signing secret is set. Start here: every other Zapier write needs an active connection.",
+        "operationId": "zapier_get_status",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicZapierStatusDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get the Zapier connection status",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-scope": "integrations:read",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/integrations/zapier/connection": {
+      "delete": {
+        "description": "Revokes the Zapier connection and its subscriptions, so Zapier gets no more events. Disconnecting with no connection changes nothing.\nRead `zapier_get_status` first, and ask the user: only they can connect Zapier again, from Zapier.",
+        "operationId": "zapier_disconnect",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicZapierStatusDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Disconnect Zapier",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "integrations"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Iris cannot reconnect Zapier for the user. They connect it again from Zapier, and turn their Zaps back on there."
+        },
+        "x-iris-scope": "integrations:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/integrations/zapier/signing-secret/rotate": {
+      "post": {
+        "description": "Makes a new signing secret and answers it once. The old secret stops working at once.\nRead `signingSecretConfigured` with `zapier_get_status` first, and ask the user. Answers 404 with no active connection.",
+        "operationId": "zapier_rotate_signing_secret",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicZapierSigningSecretDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Replace the Zapier signing secret",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "integrations"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Iris keeps no earlier secret to put back, and webhooks signed with the old one stop verifying. Give the new secret to the user to store."
+        },
+        "x-iris-scope": "integrations:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/integrations/zapier/event-catalog": {
+      "get": {
+        "description": "Every event key with its name, description and a sample payload. `zapier_send_test_event` and `zapier_update_event_config` take these keys.",
+        "operationId": "zapier_get_event_catalog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicZapierEventCatalogDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the events Iris can send to Zapier",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-scope": "integrations:read",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/integrations/zapier/test-events": {
+      "post": {
+        "description": "Sends one event to every Zap subscribed to it, with `iris.test` set to true. Zaps that act on it run for real.\nPick the key from `zapier_get_event_catalog`, and ask the user before you send.",
+        "operationId": "zapier_send_test_event",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZapierTestEventInputDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicZapierTestEventDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Send a test event to Zapier",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "integrations"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "Iris cannot take back an event it sent to Zapier. Zapier marks it as a test: `iris.test` is true in the payload."
+        },
+        "x-iris-scope": "integrations:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/integrations/zapier/field-mappings": {
+      "get": {
+        "description": "The saved renames and exclusions per event key, and the fields each event may rename or exclude. Read it before `zapier_update_field_mappings`.",
+        "operationId": "zapier_get_field_mappings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicZapierFieldMappingsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get the fields Zapier gets for each event",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-scope": "integrations:read",
+        "x-member-access": "open"
+      },
+      "put": {
+        "description": "Replaces the saved renames and exclusions. It changes the webhook body Zapier gets, not the events Iris stores.\nRead `zapier_get_field_mappings` first. Answers 404 with no active connection, and 400 for a field the event does not have.",
+        "operationId": "zapier_update_field_mappings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZapierFieldMappingsInputDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicZapierFieldMappingsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Choose the fields Zapier gets for each event",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "integrations"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "The settings answer no updated_at for an undo to check. Read them with zapier_get_field_mappings first, and send zapier_update_field_mappings again with the earlier values."
+        },
+        "x-iris-scope": "integrations:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/integrations/zapier/event-config": {
+      "get": {
+        "description": "The event keys turned off, and every event key. An event not in `disabledEvents` is on. Read it before `zapier_update_event_config`.",
+        "operationId": "zapier_get_event_config",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicZapierEventConfigDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get which events Zapier gets",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-scope": "integrations:read",
+        "x-member-access": "open"
+      },
+      "put": {
+        "description": "Replaces the set of event keys Zapier stops getting. Send `[]` to turn every event on. Iris still records each event.\nRead `zapier_get_event_config` first. Answers 404 with no active connection, and 400 for a key not in the catalog.",
+        "operationId": "zapier_update_event_config",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZapierEventConfigInputDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicZapierEventConfigDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Turn Zapier events on or off",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "integrations"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "The settings answer no updated_at for an undo to check. Read them with zapier_get_event_config first, and send zapier_update_event_config again with the earlier values."
+        },
+        "x-iris-scope": "integrations:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/integrations/google-calendar/locations/{locationId}": {
+      "get": {
+        "description": "Whether the location reads and writes a Google calendar, which one, and its last sync and error. Read it before `google_calendar_sync` or `google_calendar_disconnect`.",
+        "operationId": "google_calendar_get_status",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "An Iris location `id`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicGoogleCalendarStatusDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A location the credential may not reach. An unknown location reads as one with no Google calendar, as on the dashboard.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get a location’s Google Calendar connection",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-scope": "integrations:read",
+        "x-member-access": "scoped"
+      },
+      "delete": {
+        "description": "Ends the location’s Google calendar connection: Iris stops reading and writing it. Answers the status after the change.\nRead `google_calendar_get_status` first, and ask the user: only they can connect it again, in the dashboard.",
+        "operationId": "google_calendar_disconnect",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "An Iris location `id`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicGoogleCalendarStatusDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A location the credential may not reach. An unknown location reads as one with no Google calendar, as on the dashboard.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Disconnect a location’s Google Calendar",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "integrations"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Iris cannot reconnect Google Calendar for the user. They connect it again in the dashboard’s calendar settings."
+        },
+        "x-iris-scope": "integrations:write",
+        "x-member-access": "scoped"
+      }
+    },
+    "/api/v1/integrations/google-calendar/locations/{locationId}/sync": {
+      "post": {
+        "description": "Copies the calendar changes since the last sync, at once rather than on the schedule. Answers how many events changed.\n`success` is false when the location has no Google calendar: read `google_calendar_get_status` first.",
+        "operationId": "google_calendar_sync",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "An Iris location `id`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdempotencyKeyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicGoogleCalendarSyncDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A location the credential may not reach. An unknown location reads as one with no Google calendar, as on the dashboard.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Sync a location’s Google Calendar now",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "integrations",
+          "calendar"
+        ],
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "A sync copies changes between Iris and Google, and Iris keeps no earlier state to put back. Change an event itself to undo it."
+        },
+        "x-iris-scope": "integrations:write",
+        "x-member-access": "scoped"
+      }
+    },
+    "/api/v1/integrations/google-calendar/me/calendars": {
+      "get": {
+        "description": "The calendars in your own connected Google account. Send one `id` to `google_calendar_choose_my_calendar`. Answers 403 when you are not a bookable team member.",
+        "operationId": "google_calendar_list_my_calendars",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicGoogleCalendarListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List your own Google calendars",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-scope": "integrations:read",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/integrations/google-calendar/me/calendar": {
+      "put": {
+        "description": "Iris reads your busy times from this calendar instead. Only you choose your own.\nRead your current `calendarId` with `google_calendar_get_team_member` and the choices with `google_calendar_list_my_calendars` first.",
+        "operationId": "google_calendar_choose_my_calendar",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleCalendarChoiceInputDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicGoogleTeamMemberCalendarDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Choose which of your Google calendars Iris reads",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "integrations"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "The calendar answers no updated_at for an undo to check. Read calendarId with google_calendar_get_team_member first, and choose it again."
+        },
+        "x-iris-scope": "integrations:write",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/integrations/google-calendar/team-members/{teamMemberId}": {
+      "get": {
+        "description": "Whether the team member connected their own calendar, its last error, and what you may do with it. A MEMBER reads only their own.",
+        "operationId": "google_calendar_get_team_member",
+        "parameters": [
+          {
+            "name": "teamMemberId",
+            "required": true,
+            "in": "path",
+            "description": "A team member `id` from `locations_booking_options`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicGoogleTeamMemberCalendarDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not answered for an unknown team member: it reads as one with no Google calendar, as on the dashboard.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get a team member’s own Google Calendar connection",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-scope": "integrations:read",
+        "x-member-access": "open"
+      },
+      "delete": {
+        "description": "Ends the connection and deletes the busy times Iris read from it. The person, or an OWNER or ADMIN, may do it.\nRead `canDisconnect` with `google_calendar_get_team_member` first, and ask the user. Answers the status after the change.",
+        "operationId": "google_calendar_disconnect_team_member",
+        "parameters": [
+          {
+            "name": "teamMemberId",
+            "required": true,
+            "in": "path",
+            "description": "A team member `id` from `locations_booking_options`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicGoogleTeamMemberCalendarDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `integrations:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not answered for an unknown team member: it reads as one with no Google calendar, as on the dashboard.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Disconnect a team member’s own Google Calendar",
+        "tags": [
+          "Integrations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "integrations"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Iris cannot reconnect a person’s calendar. Only that person connects it again, in the dashboard."
+        },
+        "x-iris-scope": "integrations:write",
+        "x-member-access": "open"
+      }
+    },
     "/api/v1/phone-lines": {
       "get": {
         "description": "Every line that is not deleted, with its status and the locations it answers for.",
@@ -35636,6 +37815,882 @@
         },
         "required": [
           "cutover_id"
+        ]
+      },
+      "PublicHubSpotContactMappingDto": {
+        "type": "object",
+        "properties": {
+          "iris": {
+            "type": "string"
+          },
+          "hubspot": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "number",
+              "boolean",
+              "date"
+            ]
+          }
+        },
+        "required": [
+          "iris",
+          "hubspot",
+          "type"
+        ]
+      },
+      "PublicHubSpotAssessmentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "hubspot",
+              "iris",
+              "classify_hubspot",
+              "classify_iris",
+              "ready",
+              "failed"
+            ]
+          },
+          "counts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "completedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "stage",
+          "counts",
+          "errorCode",
+          "createdAt",
+          "completedAt"
+        ]
+      },
+      "PublicHubSpotStatusDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "hubspot"
+            ]
+          },
+          "available": {
+            "type": "boolean",
+            "description": "Whether HubSpot is open to this organization"
+          },
+          "environment": {
+            "type": "string"
+          },
+          "connectionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "portalId": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "disconnected",
+              "connected",
+              "syncing",
+              "paused",
+              "needs_attention",
+              "reconnect_required"
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "paused": {
+            "type": "boolean"
+          },
+          "approvedLocationIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "locationApproval": {
+            "type": "string",
+            "enum": [
+              "required",
+              "approved",
+              "revoked",
+              "inactive"
+            ]
+          },
+          "mappingVersion": {
+            "type": "number"
+          },
+          "mappings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicHubSpotContactMappingDto"
+            }
+          },
+          "lastSyncedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastError": {
+            "type": "string",
+            "nullable": true
+          },
+          "importJobId": {
+            "type": "string",
+            "nullable": true
+          },
+          "counts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          },
+          "assessment": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicHubSpotAssessmentDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "provider",
+          "available",
+          "environment",
+          "connectionId",
+          "portalId",
+          "status",
+          "enabled",
+          "paused",
+          "approvedLocationIds",
+          "locationApproval",
+          "mappingVersion",
+          "mappings",
+          "lastSyncedAt",
+          "lastError",
+          "importJobId",
+          "counts",
+          "assessment"
+        ]
+      },
+      "HubSpotLocationsInputDto": {
+        "type": "object",
+        "properties": {
+          "location_ids": {
+            "description": "The active Iris locations whose contacts sync",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "location_ids"
+        ]
+      },
+      "PublicHubSpotCatalogDto": {
+        "type": "object",
+        "properties": {
+          "irisFields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "description": "The Iris contact fields a mapping may name"
+          },
+          "hubspotProperties": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "description": "The HubSpot contact properties a mapping may name"
+          }
+        },
+        "required": [
+          "irisFields",
+          "hubspotProperties"
+        ]
+      },
+      "HubSpotContactMappingInputDto": {
+        "type": "object",
+        "properties": {
+          "iris": {
+            "type": "string",
+            "description": "`email`, `phone_number`, `display_name`, or `field:<key>` for an Iris custom field from `hubspot_get_mapping_catalog`"
+          },
+          "hubspot": {
+            "type": "string",
+            "description": "The `name` of a HubSpot contact property from `hubspot_get_mapping_catalog`"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "number",
+              "boolean",
+              "date"
+            ]
+          }
+        },
+        "required": [
+          "iris",
+          "hubspot",
+          "type"
+        ]
+      },
+      "HubSpotMappingsInputDto": {
+        "type": "object",
+        "properties": {
+          "mappings": {
+            "description": "Every contact mapping. It replaces the saved set.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HubSpotContactMappingInputDto"
+            }
+          }
+        },
+        "required": [
+          "mappings"
+        ]
+      },
+      "PublicHubSpotAssessmentRowsDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "description": "Each contact with its `outcome`, `email`, `phone` and `details`"
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "HubSpotStartInputDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "assessment_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The `id` of the ready assessment the user reviewed, from `hubspot_get_status`"
+          }
+        },
+        "required": [
+          "assessment_id"
+        ]
+      },
+      "PublicHubSpotIssueDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "version": {
+            "type": "string",
+            "description": "Send it to `hubspot_resolve_issue`"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "details",
+          "version"
+        ]
+      },
+      "PublicHubSpotIssuePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicHubSpotIssueDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "HubSpotResolveIssueInputDto": {
+        "type": "object",
+        "properties": {
+          "choice": {
+            "type": "string",
+            "enum": [
+              "iris",
+              "hubspot",
+              "detach",
+              "retry",
+              "link",
+              "route"
+            ],
+            "description": "`iris` or `hubspot` keeps that side’s value of a conflict, `detach` unlinks the pair, `retry` tries again, `link` links two records, `route` sends the contact to `location_id`"
+          },
+          "version": {
+            "type": "string",
+            "description": "The issue’s `version` from `hubspot_list_issues`. A changed issue answers 409."
+          },
+          "contact_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "With `link`: the Iris contact"
+          },
+          "external_id": {
+            "type": "string",
+            "description": "With `link`: the HubSpot contact id"
+          },
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "With `route`: one of the issue’s `locationIds`"
+          }
+        },
+        "required": [
+          "choice",
+          "version"
+        ]
+      },
+      "PublicZapierStatusDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "zapier"
+            ]
+          },
+          "connected": {
+            "type": "boolean",
+            "description": "Whether an active Zapier connection exists"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "revoked",
+              "error",
+              "disconnected"
+            ]
+          },
+          "environment": {
+            "type": "string"
+          },
+          "lastAuthorizedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "revokedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "signingSecretConfigured": {
+            "type": "boolean"
+          },
+          "signingSecretLastRotatedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "provider",
+          "connected",
+          "status",
+          "environment",
+          "lastAuthorizedAt",
+          "revokedAt",
+          "scopes",
+          "signingSecretConfigured",
+          "signingSecretLastRotatedAt"
+        ]
+      },
+      "PublicZapierSigningSecretDto": {
+        "type": "object",
+        "properties": {
+          "signingSecret": {
+            "type": "string",
+            "description": "The new signing secret. Iris shows it this once: give it to the user to store."
+          },
+          "rotatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "signingSecret",
+          "rotatedAt"
+        ]
+      },
+      "PublicZapierEventDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "samplePayload": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "key",
+          "displayName",
+          "description",
+          "samplePayload"
+        ]
+      },
+      "PublicZapierEventCatalogDto": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicZapierEventDto"
+            }
+          }
+        },
+        "required": [
+          "events"
+        ]
+      },
+      "ZapierTestEventInputDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "event_key": {
+            "type": "string",
+            "enum": [
+              "crm.contact.created",
+              "crm.lead.created",
+              "crm.contact.updated",
+              "crm.contact.stage_changed",
+              "crm.contact.deleted",
+              "crm.interaction.completed",
+              "crm.note.added",
+              "crm.contact.tag_added",
+              "crm.contact.tag_removed",
+              "appointment.created",
+              "appointment.rescheduled",
+              "appointment.cancelled",
+              "sms.message.received",
+              "sms.message.sent",
+              "sms.message.delivered",
+              "sms.message.failed",
+              "sms.contact.opted_out",
+              "sms.contact.opted_in",
+              "call.completed",
+              "call.transcript_ready",
+              "phone_line.connected",
+              "phone_line.disconnected",
+              "conversation.started",
+              "conversation.human_takeover_started",
+              "conversation.human_takeover_ended",
+              "webchat.session_started",
+              "agent.went_live",
+              "sequence.enrollment_created",
+              "sequence.step_sent",
+              "sequence.completed",
+              "sequence.stopped",
+              "email.delivered",
+              "email.bounced",
+              "email.opened",
+              "email.clicked",
+              "audience.member_added",
+              "audience.member_removed",
+              "form.submitted"
+            ],
+            "description": "An event `key` from `zapier_get_event_catalog`"
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "The payload to send. Leave it out to send the event’s `samplePayload`."
+          }
+        },
+        "required": [
+          "event_key"
+        ]
+      },
+      "PublicZapierTestEventDto": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string"
+          },
+          "eventKey": {
+            "type": "string"
+          },
+          "deliveryJobCount": {
+            "type": "number",
+            "description": "How many Zapier subscriptions the event went to"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "eventId",
+          "eventKey",
+          "deliveryJobCount",
+          "createdAt"
+        ]
+      },
+      "PublicZapierFieldMappingsDto": {
+        "type": "object",
+        "properties": {
+          "mappings": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "rename": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                "exclude": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "description": "The saved mappings by event key"
+          },
+          "availableFields": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "With the read: the Iris fields each event key may rename or exclude"
+          }
+        },
+        "required": [
+          "mappings"
+        ]
+      },
+      "ZapierFieldMappingsInputDto": {
+        "type": "object",
+        "properties": {
+          "mappings": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "rename": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                "exclude": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "description": "The mappings by event key. It replaces the saved set: an event left out has no mapping. A field must be one of the event’s `availableFields`."
+          }
+        },
+        "required": [
+          "mappings"
+        ]
+      },
+      "PublicZapierEventConfigDto": {
+        "type": "object",
+        "properties": {
+          "disabledEvents": {
+            "description": "The event keys Zapier does not get. Every other event is on.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "allEvents": {
+            "description": "With the read: every event key",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "disabledEvents"
+        ]
+      },
+      "ZapierEventConfigInputDto": {
+        "type": "object",
+        "properties": {
+          "disabled_events": {
+            "description": "The event keys Zapier stops getting. It replaces the saved set: send `[]` to turn every event on.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "disabled_events"
+        ]
+      },
+      "PublicGoogleCalendarStatusDto": {
+        "type": "object",
+        "properties": {
+          "connected": {
+            "type": "boolean"
+          },
+          "calendarId": {
+            "type": "string",
+            "description": "The Google calendar the location reads and writes"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "error",
+              "paused"
+            ]
+          },
+          "lastSynced": {
+            "type": "string"
+          },
+          "lastError": {
+            "type": "string"
+          },
+          "pausedReason": {
+            "type": "string",
+            "enum": [
+              "location_staffed"
+            ],
+            "description": "Why a calendar is paused: the location has bookable team members, whose own calendars are read instead."
+          },
+          "unclassifiedImportCount": {
+            "type": "number",
+            "description": "On a paused calendar: how many older imports Iris cannot tell from an Iris booking. They still block the location."
+          }
+        },
+        "required": [
+          "connected"
+        ]
+      },
+      "PublicGoogleCalendarSyncStatsDto": {
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "number"
+          },
+          "updated": {
+            "type": "number"
+          },
+          "deleted": {
+            "type": "number"
+          },
+          "errors": {
+            "type": "number",
+            "description": "How many events failed to sync"
+          }
+        },
+        "required": [
+          "created",
+          "updated",
+          "deleted",
+          "errors"
+        ]
+      },
+      "PublicGoogleCalendarSyncDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "False when the location has no Google calendar"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/PublicGoogleCalendarSyncStatsDto"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "PublicGoogleCalendarOptionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "primary": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "summary",
+          "primary"
+        ]
+      },
+      "PublicGoogleCalendarListDto": {
+        "type": "object",
+        "properties": {
+          "calendars": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicGoogleCalendarOptionDto"
+            }
+          }
+        },
+        "required": [
+          "calendars"
+        ]
+      },
+      "GoogleCalendarChoiceInputDto": {
+        "type": "object",
+        "properties": {
+          "calendar_id": {
+            "type": "string",
+            "description": "The `id` of one of your own calendars from `google_calendar_list_my_calendars`"
+          }
+        },
+        "required": [
+          "calendar_id"
+        ]
+      },
+      "PublicGoogleTeamMemberCalendarDto": {
+        "type": "object",
+        "properties": {
+          "teamMemberId": {
+            "type": "string"
+          },
+          "connected": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "error"
+            ],
+            "nullable": true
+          },
+          "lastError": {
+            "type": "string",
+            "nullable": true
+          },
+          "calendarId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The person’s own read only"
+          },
+          "lastSynced": {
+            "type": "string",
+            "nullable": true,
+            "description": "The person’s own read only"
+          },
+          "isSelf": {
+            "type": "boolean",
+            "description": "Whether the caller is this team member"
+          },
+          "canConnect": {
+            "type": "boolean",
+            "description": "Only the person connects their own calendar, in the dashboard"
+          },
+          "canDisconnect": {
+            "type": "boolean",
+            "description": "The person, or an owner or admin, may disconnect"
+          },
+          "canChooseCalendar": {
+            "type": "boolean",
+            "description": "Only the person chooses another of their calendars"
+          }
+        },
+        "required": [
+          "teamMemberId",
+          "connected",
+          "status",
+          "lastError",
+          "calendarId",
+          "lastSynced",
+          "isSelf",
+          "canConnect",
+          "canDisconnect",
+          "canChooseCalendar"
         ]
       },
       "PublicPhoneLineLocationDto": {

@@ -109,8 +109,8 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `knowledge_base:write` | Add and delete knowledge base documents, and generate suggestions |
 | `business_data:read` | Read the status of a website re-scrape or an agent resync |
 | `business_data:write` | Re-scrape the website, and resync the business data to every phone agent |
-| `integrations:read` | Read the GoHighLevel integration |
-| `integrations:write` | Run the GoHighLevel integration |
+| `integrations:read` | Read the integrations |
+| `integrations:write` | Run the integrations |
 | `phone_lines:read` | Read the phone lines and the locations each one answers for |
 | `phone_lines:write` | Add, route, disconnect, reconnect, retry and delete phone lines |
 | `call_forwarding:read` | Read the numbers the phone agents may transfer a call to |
