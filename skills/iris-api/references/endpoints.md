@@ -490,6 +490,60 @@ Change the text of a business note
 
 List the calendars appointments can be booked on
 
+## Call forwarding
+
+### call_forwarding_create
+
+`POST /api/v1/call-forwarding`. Scope: `call_forwarding:write`. Member: `deny`. Changes: `call_forwarding`. Idempotent: send `idempotency_key`.
+
+Add a call forwarding number
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `phone_number` (body, string, required): E.164
+- `condition` (body, string, required): When the agent transfers a call here
+- `label` (body, string)
+- `client_message` (body, string): What the agent tells the caller as it transfers
+- `agent_message` (body, string): What the agent tells the person who answers
+- `enabled` (body, boolean)
+
+### call_forwarding_delete
+
+`DELETE /api/v1/call-forwarding/{callForwardingId}`. Scope: `call_forwarding:write`. Member: `deny`. Confirm: required. Changes: `call_forwarding`.
+
+Delete a call forwarding number
+
+- `callForwardingId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
+### call_forwarding_get
+
+`GET /api/v1/call-forwarding/{callForwardingId}`. Scope: `call_forwarding:read`. Member: `open`.
+
+Get one call forwarding number
+
+- `callForwardingId` (path, string uuid, required)
+
+### call_forwarding_list
+
+`GET /api/v1/call-forwarding`. Scope: `call_forwarding:read`. Member: `open`.
+
+List the call forwarding numbers
+
+### call_forwarding_update
+
+`PATCH /api/v1/call-forwarding/{callForwardingId}`. Scope: `call_forwarding:write`. Member: `deny`. Changes: `call_forwarding`.
+
+Change a call forwarding number
+
+- `callForwardingId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `phone_number` (body, string): E.164
+- `condition` (body, string)
+- `label` (body, string)
+- `client_message` (body, string)
+- `agent_message` (body, string)
+- `enabled` (body, boolean)
+
 ## Calls
 
 ### calls_get
@@ -1734,6 +1788,104 @@ Change the organization’s industry, website or timezone
 - `industry` (body, string)
 - `website_url` (body, string): An http or https URL. An empty string clears it.
 - `timezone` (body, string): IANA timezone, such as America/Chicago
+
+## Phone lines
+
+### phone_lines_add_location
+
+`POST /api/v1/phone-lines/{phoneLineId}/locations/{locationId}`. Scope: `phone_lines:write`. Member: `deny`. Changes: `phone_lines`.
+
+Add one location a phone line answers for
+
+- `phoneLineId` (path, string uuid, required)
+- `locationId` (path, string uuid, required): A location `id` from `locations_list`
+
+### phone_lines_create_sip_trunk
+
+`POST /api/v1/phone-lines/sip-trunk`. Scope: `phone_lines:write`. Member: `deny`. Confirm: required. Changes: `phone_lines`. Idempotent: send `idempotency_key`.
+
+Add a phone line from the customer’s SIP trunk
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `phone_number` (body, string, required): A number the SIP trunk carries, in E.164
+- `label` (body, string, required): The name the dashboard shows for the line
+- `auth_method` (body, string, required, one of `ip_allowlist`, `digest`): `ip_allowlist`: calls from `allowed_ip_ranges`. `digest`: a SIP username and password.
+- `sip_username` (body, string): Required for `digest`. Never returned.
+- `sip_password` (body, string): For `digest`, optional. Stored encrypted and never returned.
+- `allowed_ip_ranges` (body, array of string): Required for `ip_allowlist`: the IP addresses or CIDR ranges calls come from.
+- `location_ids` (body, array of string uuid): Location ids from `locations_list`. Required when the organization has more than one active location.
+
+### phone_lines_create_twilio
+
+`POST /api/v1/phone-lines/twilio`. Scope: `phone_lines:write`. Member: `deny`. Confirm: required. Changes: `phone_lines`. Idempotent: send `idempotency_key`.
+
+Add a phone line from the customer’s Twilio account
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `phone_number` (body, string, required): A number the Twilio account owns, in E.164
+- `label` (body, string, required): The name the dashboard shows for the line
+- `account_sid` (body, string, required): The Twilio Account SID: AC and 32 hexadecimal characters
+- `auth_token` (body, string, required): The Twilio auth token. It is stored encrypted and never returned.
+- `location_ids` (body, array of string uuid): Location ids from `locations_list`. Required when the organization has more than one active location.
+
+### phone_lines_delete
+
+`DELETE /api/v1/phone-lines/{phoneLineId}`. Scope: `phone_lines:write`. Member: `deny`. Confirm: required. Changes: `phone_lines`.
+
+Delete a phone line
+
+- `phoneLineId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
+### phone_lines_disconnect
+
+`POST /api/v1/phone-lines/{phoneLineId}/disconnect`. Scope: `phone_lines:write`. Member: `deny`. Confirm: required. Changes: `phone_lines`.
+
+Disconnect a phone line
+
+- `phoneLineId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
+### phone_lines_get
+
+`GET /api/v1/phone-lines/{phoneLineId}`. Scope: `phone_lines:read`. Member: `open`.
+
+Get one phone line
+
+- `phoneLineId` (path, string uuid, required)
+
+### phone_lines_list
+
+`GET /api/v1/phone-lines`. Scope: `phone_lines:read`. Member: `open`.
+
+List the organization’s phone lines
+
+### phone_lines_reconnect
+
+`POST /api/v1/phone-lines/{phoneLineId}/reconnect`. Scope: `phone_lines:write`. Member: `deny`. Changes: `phone_lines`.
+
+Reconnect a disconnected phone line
+
+- `phoneLineId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
+### phone_lines_retry
+
+`POST /api/v1/phone-lines/{phoneLineId}/retry`. Scope: `phone_lines:write`. Member: `deny`. Changes: `phone_lines`.
+
+Retry the import of a failed phone line
+
+- `phoneLineId` (path, string uuid, required)
+
+### phone_lines_set_routing
+
+`PUT /api/v1/phone-lines/{phoneLineId}/routing`. Scope: `phone_lines:write`. Member: `deny`. Changes: `phone_lines`.
+
+Set the locations a phone line answers for
+
+- `phoneLineId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `location_ids` (body, array of string uuid, required): Every location the line answers for, from `locations_list`. Replaces the set. Empty leaves none.
 
 ## Sequences
 

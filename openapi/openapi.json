@@ -20113,6 +20113,1489 @@
         "x-member-access": "deny"
       }
     },
+    "/api/v1/phone-lines": {
+      "get": {
+        "description": "Every line that is not deleted, with its status and the locations it answers for.",
+        "operationId": "phone_lines_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPhoneLineListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `phone_lines:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the organization’s phone lines",
+        "tags": [
+          "Phone lines",
+          "Public API"
+        ],
+        "x-iris-scope": "phone_lines:read",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/phone-lines/{phoneLineId}": {
+      "get": {
+        "description": "The line with its status and the locations it answers for. A deleted line answers 404.",
+        "operationId": "phone_lines_get",
+        "parameters": [
+          {
+            "name": "phoneLineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPhoneLineDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `phone_lines:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such phone line in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get one phone line",
+        "tags": [
+          "Phone lines",
+          "Public API"
+        ],
+        "x-iris-scope": "phone_lines:read",
+        "x-member-access": "open"
+      },
+      "delete": {
+        "description": "Deletes the line. An active line is disconnected from the phone agent first, so the number stops taking calls.\nIt cannot be restored. Ask the user first. A deleted line answers 404, so a repeat changes nothing.",
+        "operationId": "phone_lines_delete",
+        "parameters": [
+          {
+            "name": "phoneLineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPhoneLineDeletedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `phone_lines:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such phone line in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nThe line’s import is still running.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete a phone line",
+        "tags": [
+          "Phone lines",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "phone_lines"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A deleted line cannot be restored. Add the number again with phone_lines_create_twilio or phone_lines_create_sip_trunk."
+        },
+        "x-iris-scope": "phone_lines:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/phone-lines/twilio": {
+      "post": {
+        "description": "Imports a number the customer already owns: nothing is bought. A background job connects it to the phone agent,\nso the line is `pending` until then. `phone_lines_get` shows its `status`, and `last_error` when it failed.\nThe organization needs an active plan and an activated phone agent, and a number already connected answers 400.\nThe phone agent answers the number’s calls once the line is `active`. Ask the user first.",
+        "operationId": "phone_lines_create_twilio",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicPhoneLineTwilioCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPhoneLineCreatedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, a number already connected, no active plan or no activated phone agent"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `phone_lines:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Add a phone line from the customer’s Twilio account",
+        "tags": [
+          "Phone lines",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "phone_lines"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "A background job updates the line after this call, so rewind cannot undo it."
+        },
+        "x-iris-scope": "phone_lines:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/phone-lines/sip-trunk": {
+      "post": {
+        "description": "Imports a number the customer already owns: nothing is bought. A background job connects it to the phone agent,\nso the line is `pending` until then. `phone_lines_get` shows its `status`, and `last_error` when it failed.\nThe organization needs an active plan and an activated phone agent, and a number already connected answers 400.\nThe trunk authenticates by `ip_allowlist` (`allowed_ip_ranges`) or `digest` (`sip_username`). Ask the user first.",
+        "operationId": "phone_lines_create_sip_trunk",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicPhoneLineSipTrunkCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPhoneLineCreatedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body or IP range, a number already connected, no active plan or no activated phone agent"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `phone_lines:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Add a phone line from the customer’s SIP trunk",
+        "tags": [
+          "Phone lines",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "phone_lines"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "A background job updates the line after this call, so rewind cannot undo it."
+        },
+        "x-iris-scope": "phone_lines:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/phone-lines/{phoneLineId}/routing": {
+      "put": {
+        "description": "Replaces the whole set with `location_ids`. An empty list leaves none, and the agent then asks the caller\nacross every active location. This change does not move `updated_at`.",
+        "operationId": "phone_lines_set_routing",
+        "parameters": [
+          {
+            "name": "phoneLineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicPhoneLineRoutingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPhoneLineDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `phone_lines:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such phone line in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nA location is not active in this organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Set the locations a phone line answers for",
+        "tags": [
+          "Phone lines",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "phone_lines"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "phone_lines_get",
+            "args": {
+              "phoneLineId": "request.phoneLineId"
+            },
+            "watch": [
+              "location_ids"
+            ]
+          }
+        },
+        "x-iris-scope": "phone_lines:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/phone-lines/{phoneLineId}/locations/{locationId}": {
+      "post": {
+        "description": "Keeps the line’s other locations. A location the line has already answers the same line.\n`previous_location_ids` holds the set without this location, which an undo restores. This change does not move `updated_at`.",
+        "operationId": "phone_lines_add_location",
+        "parameters": [
+          {
+            "name": "phoneLineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "A location `id` from `locations_list`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPhoneLineLocationAddedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `phone_lines:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such phone line in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The location is not active in this organization."
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Add one location a phone line answers for",
+        "tags": [
+          "Phone lines",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "phone_lines"
+        ],
+        "x-iris-reverse": {
+          "operation": "phone_lines_set_routing",
+          "args": {
+            "phoneLineId": "request.phoneLineId",
+            "location_ids": "response.previous_location_ids"
+          },
+          "record": {
+            "operation": "phone_lines_get",
+            "args": {
+              "phoneLineId": "request.phoneLineId"
+            },
+            "watch": [
+              "location_ids"
+            ]
+          }
+        },
+        "x-iris-scope": "phone_lines:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/phone-lines/{phoneLineId}/disconnect": {
+      "post": {
+        "description": "A background job disconnects the line from the phone agent, and the number stops taking calls.\nThe line is `pending` until the job ends, then `disconnected`. Ask the user first.\n`phone_lines_reconnect` connects it again.",
+        "operationId": "phone_lines_disconnect",
+        "parameters": [
+          {
+            "name": "phoneLineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPhoneLineJobDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The line is already disconnected"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `phone_lines:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such phone line in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nThe line’s import is still running.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Disconnect a phone line",
+        "tags": [
+          "Phone lines",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "phone_lines"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A background job updates the line after this call, so rewind cannot undo it."
+        },
+        "x-iris-scope": "phone_lines:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/phone-lines/{phoneLineId}/reconnect": {
+      "post": {
+        "description": "A background job connects the line to the phone agent again. The line is `pending` until the job ends.\nOnly a `disconnected` line can be reconnected, and the organization needs an active plan and an activated phone agent.",
+        "operationId": "phone_lines_reconnect",
+        "parameters": [
+          {
+            "name": "phoneLineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPhoneLineJobDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The line is not disconnected, or there is no active plan or no activated phone agent"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `phone_lines:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such phone line in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nThe line’s import is still running.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Reconnect a disconnected phone line",
+        "tags": [
+          "Phone lines",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "phone_lines"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "A background job updates the line after this call, so rewind cannot undo it."
+        },
+        "x-iris-scope": "phone_lines:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/phone-lines/{phoneLineId}/retry": {
+      "post": {
+        "description": "A background job imports the line again. Only a `failed` line can be retried. The line is `pending` until the job ends.",
+        "operationId": "phone_lines_retry",
+        "parameters": [
+          {
+            "name": "phoneLineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPhoneLineJobDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The line is not failed"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `phone_lines:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such phone line in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The line’s import is still running."
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Retry the import of a failed phone line",
+        "tags": [
+          "Phone lines",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "phone_lines"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "A retry starts the import of a failed line again, which cannot be called back."
+        },
+        "x-iris-scope": "phone_lines:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/call-forwarding": {
+      "get": {
+        "description": "Every number the phone agents may transfer a call to, newest first, disabled ones included.",
+        "operationId": "call_forwarding_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCallForwardingListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `call_forwarding:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the call forwarding numbers",
+        "tags": [
+          "Call forwarding",
+          "Public API"
+        ],
+        "x-iris-scope": "call_forwarding:read",
+        "x-member-access": "open"
+      },
+      "post": {
+        "description": "A number the phone agents transfer a call to when `condition` holds, such as \"The caller asks for billing\".\nOmitted messages take the defaults. A background job sends the change to every phone agent, so the agents transfer by it after a short delay.\n`warning` says when the number is one of the organization’s own phone lines, which can make a call loop.",
+        "operationId": "call_forwarding_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicCallForwardingCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCallForwardingDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or a number that is not E.164"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `call_forwarding:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Add a call forwarding number",
+        "tags": [
+          "Call forwarding",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "call_forwarding"
+        ],
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "operation": "call_forwarding_delete",
+          "args": {
+            "callForwardingId": "response.id"
+          },
+          "record": {
+            "operation": "call_forwarding_get",
+            "args": {
+              "callForwardingId": "response.id"
+            }
+          }
+        },
+        "x-iris-scope": "call_forwarding:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/call-forwarding/{callForwardingId}": {
+      "get": {
+        "description": "The number with its condition and the messages the agent says as it transfers.",
+        "operationId": "call_forwarding_get",
+        "parameters": [
+          {
+            "name": "callForwardingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCallForwardingDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `call_forwarding:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such call forwarding number in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get one call forwarding number",
+        "tags": [
+          "Call forwarding",
+          "Public API"
+        ],
+        "x-iris-scope": "call_forwarding:read",
+        "x-member-access": "open"
+      },
+      "patch": {
+        "description": "Only the fields you send change, and you send at least one. Send `enabled: false` to stop transfers to it. A background job sends the change to every phone agent, so the agents transfer by it after a short delay.",
+        "operationId": "call_forwarding_update",
+        "parameters": [
+          {
+            "name": "callForwardingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicCallForwardingUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCallForwardingDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or empty body, or a number that is not E.164"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `call_forwarding:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such call forwarding number in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change a call forwarding number",
+        "tags": [
+          "Call forwarding",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "call_forwarding"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "call_forwarding_get",
+            "args": {
+              "callForwardingId": "request.callForwardingId"
+            }
+          }
+        },
+        "x-iris-scope": "call_forwarding:write",
+        "x-member-access": "deny"
+      },
+      "delete": {
+        "description": "The agents stop transferring calls to the number. A background job sends the change to every phone agent, so the agents transfer by it after a short delay.\nIt cannot be restored. Ask the user first. A deleted number answers 404, so a repeat changes nothing.",
+        "operationId": "call_forwarding_delete",
+        "parameters": [
+          {
+            "name": "callForwardingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCallForwardingDeletedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `call_forwarding:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such call forwarding number in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete a call forwarding number",
+        "tags": [
+          "Call forwarding",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "call_forwarding"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A deleted forwarding number cannot be restored. Add it again with call_forwarding_create."
+        },
+        "x-iris-scope": "call_forwarding:write",
+        "x-member-access": "deny"
+      }
+    },
     "/api/v1/mcp": {
       "post": {
         "description": "The Iris MCP server, over stateless Streamable HTTP. Point an MCP client at this URL with\nthe key as a bearer token. Every other operation in this document is a tool named by its\noperationId, and `tools/list` shows only the tools the key’s scopes allow (and, for a\nmember’s credential, only the tools a member may call). A tool call runs\nthe REST operation, so it answers what the REST call answers. A failing call has\n`isError: true` and the REST error body as its text. Send\n`Accept: application/json, text/event-stream`. Answers 404 while the organization does\nnot have the MCP server turned on.",
@@ -21256,7 +22739,11 @@
                 "business_data:read",
                 "business_data:write",
                 "integrations:read",
-                "integrations:write"
+                "integrations:write",
+                "phone_lines:read",
+                "phone_lines:write",
+                "call_forwarding:read",
+                "call_forwarding:write"
               ]
             }
           },
@@ -21373,7 +22860,11 @@
                 "business_data:read",
                 "business_data:write",
                 "integrations:read",
-                "integrations:write"
+                "integrations:write",
+                "phone_lines:read",
+                "phone_lines:write",
+                "call_forwarding:read",
+                "call_forwarding:write"
               ]
             }
           }
@@ -21461,7 +22952,11 @@
               "business_data:read",
               "business_data:write",
               "integrations:read",
-              "integrations:write"
+              "integrations:write",
+              "phone_lines:read",
+              "phone_lines:write",
+              "call_forwarding:read",
+              "call_forwarding:write"
             ]
           },
           "label": {
@@ -31183,6 +32678,554 @@
         },
         "required": [
           "cutover_id"
+        ]
+      },
+      "PublicPhoneLineLocationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "PublicPhoneLineDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Every phone_lines_* operation takes it as `phoneLineId`."
+          },
+          "phone_number": {
+            "type": "string",
+            "description": "E.164"
+          },
+          "label": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "twilio",
+              "sip_trunk"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "importing",
+              "active",
+              "failed",
+              "disconnected",
+              "deleted"
+            ],
+            "description": "`active`: the line takes calls. `pending` and `importing`: a background job works on it. `failed`: see `last_error`."
+          },
+          "last_error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the last job failed"
+          },
+          "forwarding_source_number": {
+            "type": "string",
+            "nullable": true,
+            "description": "The E.164 number that forwards its calls to this line"
+          },
+          "location_ids": {
+            "description": "The locations the line answers for. One routes every call there, several are offered first, none asks across every active location. Changing them does not move `updated_at`.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "locations": {
+            "description": "The same locations with their names, by name",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicPhoneLineLocationDto"
+            }
+          },
+          "sms_capable": {
+            "type": "boolean",
+            "description": "True when the number can send texts. Always false for a SIP trunk line."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Send it as `expected_updated_at` on a write."
+          }
+        },
+        "required": [
+          "id",
+          "phone_number",
+          "label",
+          "provider",
+          "status",
+          "last_error",
+          "forwarding_source_number",
+          "location_ids",
+          "locations",
+          "sms_capable",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "PublicPhoneLineListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicPhoneLineDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "PublicPhoneLineTwilioCreateDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "phone_number": {
+            "type": "string",
+            "description": "A number the Twilio account owns, in E.164",
+            "example": "+15551234567"
+          },
+          "label": {
+            "type": "string",
+            "description": "The name the dashboard shows for the line"
+          },
+          "account_sid": {
+            "type": "string",
+            "description": "The Twilio Account SID: AC and 32 hexadecimal characters"
+          },
+          "auth_token": {
+            "type": "string",
+            "description": "The Twilio auth token. It is stored encrypted and never returned."
+          },
+          "location_ids": {
+            "description": "Location ids from `locations_list`. Required when the organization has more than one active location.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "phone_number",
+          "label",
+          "account_sid",
+          "auth_token"
+        ]
+      },
+      "PublicPhoneLineCreatedDto": {
+        "type": "object",
+        "properties": {
+          "phone_line_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "job_id": {
+            "type": "string",
+            "description": "The background job that does the work"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "importing",
+              "active",
+              "failed",
+              "disconnected",
+              "deleted"
+            ],
+            "description": "The new line’s status, `pending` until the import job runs"
+          }
+        },
+        "required": [
+          "phone_line_id",
+          "job_id",
+          "status"
+        ]
+      },
+      "PublicPhoneLineSipTrunkCreateDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "phone_number": {
+            "type": "string",
+            "description": "A number the SIP trunk carries, in E.164",
+            "example": "+15551234567"
+          },
+          "label": {
+            "type": "string",
+            "description": "The name the dashboard shows for the line"
+          },
+          "auth_method": {
+            "type": "string",
+            "enum": [
+              "ip_allowlist",
+              "digest"
+            ],
+            "description": "`ip_allowlist`: calls from `allowed_ip_ranges`. `digest`: a SIP username and password."
+          },
+          "sip_username": {
+            "type": "string",
+            "description": "Required for `digest`. Never returned."
+          },
+          "sip_password": {
+            "type": "string",
+            "description": "For `digest`, optional. Stored encrypted and never returned."
+          },
+          "allowed_ip_ranges": {
+            "description": "Required for `ip_allowlist`: the IP addresses or CIDR ranges calls come from.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "location_ids": {
+            "description": "Location ids from `locations_list`. Required when the organization has more than one active location.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "phone_number",
+          "label",
+          "auth_method"
+        ]
+      },
+      "PublicPhoneLineRoutingDto": {
+        "type": "object",
+        "properties": {
+          "location_ids": {
+            "description": "Every location the line answers for, from `locations_list`. Replaces the set. Empty leaves none.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "location_ids"
+        ]
+      },
+      "PublicPhoneLineLocationAddedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Every phone_lines_* operation takes it as `phoneLineId`."
+          },
+          "phone_number": {
+            "type": "string",
+            "description": "E.164"
+          },
+          "label": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "twilio",
+              "sip_trunk"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "importing",
+              "active",
+              "failed",
+              "disconnected",
+              "deleted"
+            ],
+            "description": "`active`: the line takes calls. `pending` and `importing`: a background job works on it. `failed`: see `last_error`."
+          },
+          "last_error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the last job failed"
+          },
+          "forwarding_source_number": {
+            "type": "string",
+            "nullable": true,
+            "description": "The E.164 number that forwards its calls to this line"
+          },
+          "location_ids": {
+            "description": "The locations the line answers for. One routes every call there, several are offered first, none asks across every active location. Changing them does not move `updated_at`.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "locations": {
+            "description": "The same locations with their names, by name",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicPhoneLineLocationDto"
+            }
+          },
+          "sms_capable": {
+            "type": "boolean",
+            "description": "True when the number can send texts. Always false for a SIP trunk line."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Send it as `expected_updated_at` on a write."
+          },
+          "previous_location_ids": {
+            "description": "The line’s locations without this one, the set an undo restores",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "phone_number",
+          "label",
+          "provider",
+          "status",
+          "last_error",
+          "forwarding_source_number",
+          "location_ids",
+          "locations",
+          "sms_capable",
+          "created_at",
+          "updated_at",
+          "previous_location_ids"
+        ]
+      },
+      "PublicPhoneLineJobDto": {
+        "type": "object",
+        "properties": {
+          "phone_line_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "job_id": {
+            "type": "string",
+            "description": "The background job that does the work"
+          }
+        },
+        "required": [
+          "phone_line_id",
+          "job_id"
+        ]
+      },
+      "PublicPhoneLineDeletedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deleted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "deleted"
+        ]
+      },
+      "PublicCallForwardingDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Every call_forwarding_* operation takes it as `callForwardingId`."
+          },
+          "phone_number": {
+            "type": "string",
+            "description": "E.164"
+          },
+          "label": {
+            "type": "string",
+            "description": "Empty when none was given"
+          },
+          "condition": {
+            "type": "string",
+            "description": "When the agent transfers a call here, in plain words"
+          },
+          "client_message": {
+            "type": "string",
+            "description": "What the agent tells the caller as it transfers"
+          },
+          "agent_message": {
+            "type": "string",
+            "description": "What the agent tells the person who answers"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "False: the agents do not transfer here"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Send it as `expected_updated_at` on a write."
+          },
+          "warning": {
+            "type": "string",
+            "description": "Set by a create or update when the number is one of the organization’s own phone lines, a call loop"
+          }
+        },
+        "required": [
+          "id",
+          "phone_number",
+          "label",
+          "condition",
+          "client_message",
+          "agent_message",
+          "enabled",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "PublicCallForwardingListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicCallForwardingDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "PublicCallForwardingCreateDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "phone_number": {
+            "type": "string",
+            "example": "+15551234567",
+            "description": "E.164"
+          },
+          "condition": {
+            "type": "string",
+            "example": "The caller asks for billing",
+            "description": "When the agent transfers a call here"
+          },
+          "label": {
+            "type": "string",
+            "example": "Billing"
+          },
+          "client_message": {
+            "type": "string",
+            "description": "What the agent tells the caller as it transfers"
+          },
+          "agent_message": {
+            "type": "string",
+            "description": "What the agent tells the person who answers"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "phone_number",
+          "condition"
+        ]
+      },
+      "PublicCallForwardingUpdateDto": {
+        "type": "object",
+        "properties": {
+          "phone_number": {
+            "type": "string",
+            "description": "E.164"
+          },
+          "condition": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "client_message": {
+            "type": "string"
+          },
+          "agent_message": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PublicCallForwardingDeletedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deleted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "deleted"
         ]
       }
     }

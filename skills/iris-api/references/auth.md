@@ -109,6 +109,10 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `business_data:write` | Re-scrape the website, and resync the business data to every phone agent |
 | `integrations:read` | Read the GoHighLevel integration |
 | `integrations:write` | Run the GoHighLevel integration |
+| `phone_lines:read` | Read the phone lines and the locations each one answers for |
+| `phone_lines:write` | Add, route, disconnect, reconnect, retry and delete phone lines |
+| `call_forwarding:read` | Read the numbers the phone agents may transfer a call to |
+| `call_forwarding:write` | Add, change and delete call forwarding numbers |
 
 `me_get` returns the live catalog. When this table and `me_get` differ, trust `me_get`.
 

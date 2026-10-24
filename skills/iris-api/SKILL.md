@@ -214,6 +214,10 @@ A key carries scopes, one read and one write per noun:
 | `business_data:write` | re-scrape the organization's website, and resync the business data to every phone agent |
 | `integrations:read` | read the GoHighLevel connection: location pairs, sync status, conflicts, transfer runs, held work and what each pair syncs |
 | `integrations:write` | run the GoHighLevel connection: pair a location, start, pause, reconnect or disconnect its sync, change what it syncs, settle conflicts and held work, and run a migration cutover |
+| `phone_lines:read` | read the organization's phone lines and the locations each one answers for |
+| `phone_lines:write` | add a Twilio or SIP trunk line, route a line to locations, and disconnect, reconnect, retry or delete a line |
+| `call_forwarding:read` | read the numbers the phone agents may transfer a call to |
+| `call_forwarding:write` | add, change and delete the numbers the phone agents may transfer a call to |
 
 Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
 `/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
@@ -666,6 +670,29 @@ Many GoHighLevel writes change data in GoHighLevel, and rewind cannot undo them.
 a `generation` or a `version`, not `updated_at`. Send the value you read, and on a 409 read them
 again. The appointment settings carry no revision, so `ghl_update_appointment_settings` overwrites. Every write needs an owner or admin with their own credential. An organization key gets 403
 `no_acting_user`, and a MEMBER or MANAGER 403 `insufficient_role`.
+
+### 25. Connect a phone line and set up call forwarding
+
+1. Call `phone_lines_list` to see the lines. No answer carries a credential.
+2. To add a number the customer already owns, call `phone_lines_create_twilio` with the
+   `phone_number`, the Twilio `account_sid` and `auth_token`, or `phone_lines_create_sip_trunk`
+   with the `auth_method`. Send an `idempotency_key`. Ask the user first: Iris imports the number
+   and does not buy one.
+3. The import runs in a background job. Call `phone_lines_get` until `status` is `active` or
+   `failed`. `last_error` says why a line failed. Call `phone_lines_retry` only for a `failed` line.
+4. To choose the locations a line answers for, call `phone_lines_set_routing` with every
+   `location_ids` value, or `phone_lines_add_location` with one location.
+5. Ask the user before `phone_lines_disconnect` or `phone_lines_delete`. A disconnected line takes
+   no calls until `phone_lines_reconnect`. A deleted line cannot be restored.
+6. Call `call_forwarding_list` to see the numbers the agents transfer to, or
+   `call_forwarding_get` for one. To add one, call `call_forwarding_create` with a `phone_number`,
+   the `condition` in plain words and an `idempotency_key`. A `warning` means the number is one of
+   the organization's own lines, which can make a call loop. Change a number with
+   `call_forwarding_update`, and send `enabled: false` to stop transfers to it. Ask the user before
+   `call_forwarding_delete`. A deleted number cannot be restored.
+
+Phone numbers start with `+` and the country code. Any member reads both nouns. Only an owner or
+admin changes them. Any other caller gets 403 `insufficient_role`: tell the user, and do not retry.
 
 ## Other operations
 
