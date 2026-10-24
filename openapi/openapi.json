@@ -10516,6 +10516,172 @@
         "x-member-access": "open"
       }
     },
+    "/api/v1/agents/subagents": {
+      "post": {
+        "description": "Creates the subagent under the orchestrator `parent_agent_id`, then queues a job that builds its\nvoice agent, so `status` reads `provisioning` until the job ends. Read it with `agents_get`. A\nfailed build is retried with `agents_retry_provisioning`. Answers 403 when subagents are not on for\nthis organization, and 400 when the parent is not an orchestrator.",
+        "operationId": "agents_create_subagent",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentCreateSubagentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentProvisioningDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `agents:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Add a subagent that the orchestrator transfers calls to",
+        "tags": [
+          "Agents",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "agents"
+        ],
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "A background job updates the agent after this call, so rewind cannot undo it. Remove the subagent with agents_delete."
+        },
+        "x-iris-scope": "agents:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/agents/go-live-all": {
+      "post": {
+        "description": "Runs `agents_go_live` on the orchestrator first, then on each subagent, and answers one result per\nagent. One agent that fails does not stop the others: read `failure_count` and each `error`. A\nsubagent fails while its orchestrator has no live version. Answers 403 when the organization has no\nactive plan.",
+        "operationId": "agents_go_live_all",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentGoLiveAllDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `agents:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Publish the draft of every phone agent, so callers hear them",
+        "tags": [
+          "Agents",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "agents"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Roll back with agents_rollback to the version agents_list_versions shows."
+        },
+        "x-iris-scope": "agents:write",
+        "x-member-access": "deny"
+      }
+    },
     "/api/v1/agents/{agentId}": {
       "get": {
         "description": "Every field `agents_update` changes, and `updated_at` for `expected_updated_at`.",
@@ -10707,6 +10873,219 @@
         ],
         "x-iris-reverse": {
           "irreversible": "A background job updates the agent after this call, so rewind cannot undo it. Send agents_update again with the earlier values."
+        },
+        "x-iris-scope": "agents:write",
+        "x-member-access": "deny"
+      },
+      "delete": {
+        "description": "Removes the subagent from `agents_list` and queues a job that deletes its voice agent and updates\nthe orchestrator’s transfers. The orchestrator cannot be deleted and answers 400.",
+        "operationId": "agents_delete",
+        "parameters": [
+          {
+            "name": "agentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentDeletedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `agents:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such agent in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete a subagent",
+        "tags": [
+          "Agents",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "agents"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A deleted subagent cannot come back. Add a new one with agents_create_subagent."
+        },
+        "x-iris-scope": "agents:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/agents/{agentId}/retry": {
+      "post": {
+        "description": "Only a subagent whose `status` is `failed` can be retried. Any other status answers 400. The\nsubagent reads `provisioning` until the new job ends.",
+        "operationId": "agents_retry_provisioning",
+        "parameters": [
+          {
+            "name": "agentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentProvisioningDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `agents:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such agent in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Build a failed subagent’s voice agent again",
+        "tags": [
+          "Agents",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "agents"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "A background job updates the agent after this call, so rewind cannot undo it. A retry that fails again leaves the subagent `failed`."
         },
         "x-iris-scope": "agents:write",
         "x-member-access": "deny"
@@ -28896,6 +29275,951 @@
         "x-member-access": "deny"
       }
     },
+    "/api/v1/discovery/sessions": {
+      "post": {
+        "description": "Opens a text interview and answers its first question. On the first interview, it also fills the\nContext Engine from the website scrape. Answer with `discovery_send_message`, or store a fact the\nowner gave with `discovery_record_fact`.",
+        "operationId": "discovery_start",
+        "parameters": [],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdempotencyKeyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveryStartedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `discovery:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Start a discovery interview about the business",
+        "tags": [
+          "Discovery",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "discovery"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "An interview cannot be removed. Leave it, or start a new one."
+        },
+        "x-iris-scope": "discovery:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/discovery/sessions/{sessionId}/messages": {
+      "post": {
+        "description": "Iris reads the answer, stores the facts in it, and replies with the next question. Five calls a\nminute at most. A message while the last one on this interview still runs answers 409. A\n`done: true` message ends the interview.",
+        "operationId": "discovery_send_message",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoveryMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveryReplyDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `discovery:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such discovery session in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A message on this interview is still running\n\n`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Send the owner’s next answer in a discovery interview",
+        "tags": [
+          "Discovery",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "discovery",
+          "agents"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "A stored fact stays in the Context Engine. A new value for the slot is stored beside it, not in its place."
+        },
+        "x-iris-scope": "discovery:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/discovery/sessions/{sessionId}/facts": {
+      "post": {
+        "description": "Writes the value to the knowledge slot `slot_id`, converted to the slot’s type, and updates the\nprogress and the phone agents’ prompts. An unknown slot or a value the slot refuses answers\n`recorded: false` and the reason in `error`. Facts sent with one `entity_ref` in one interview\nbelong to one record. A fact sent without `entity_ref` starts a new record.",
+        "operationId": "discovery_record_fact",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoveryRecordFactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveryRecordedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `discovery:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such discovery session in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Store one fact the owner gave in a discovery interview",
+        "tags": [
+          "Discovery",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "discovery",
+          "agents"
+        ],
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "A stored fact stays in the Context Engine. A new value for the slot is stored beside it, not in its place."
+        },
+        "x-iris-scope": "discovery:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/discovery/progress": {
+      "get": {
+        "description": "Counts the filled and missing knowledge slots, with the business profile strength from 0 to 100.",
+        "operationId": "discovery_get_progress",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveryProgressV1Dto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `discovery:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Read how much of the business the discovery interview knows",
+        "tags": [
+          "Discovery",
+          "Public API"
+        ],
+        "x-iris-scope": "discovery:read",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/marketing-agent/sessions": {
+      "get": {
+        "description": "Your 30 most recent sessions in this organization, newest first. A session lists no events.",
+        "operationId": "marketing_agent_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MarketingAgentSessionDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key has no person, and a session belongs to a person\n\nThe key does not carry the `marketing_agent:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List your marketing agent sessions",
+        "tags": [
+          "Marketing agent",
+          "Public API"
+        ],
+        "x-iris-scope": "marketing_agent:read",
+        "x-member-access": "deny"
+      },
+      "post": {
+        "description": "Reads the organization’s sequences and audiences, and answers the session with `status`\n`clarifying` and the questions to answer with `marketing_agent_answer`. It changes no sequence.",
+        "operationId": "marketing_agent_start",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarketingAgentStartDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketingAgentSessionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key has no person, and a session belongs to a person\n\nThe key does not carry the `marketing_agent:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Start a marketing agent session with a goal",
+        "tags": [
+          "Marketing agent",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "marketing_agent"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "A session stays in marketing_agent_list. End it with marketing_agent_cancel."
+        },
+        "x-iris-scope": "marketing_agent:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/marketing-agent/sessions/{sessionId}": {
+      "get": {
+        "description": "Its questions, plan and `plan_hash`, the results of an approved plan, and the `version` to send next.",
+        "operationId": "marketing_agent_get",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketingAgentSessionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key has no person, and a session belongs to a person\n\nThe key does not carry the `marketing_agent:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such marketing agent session of yours in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Read one of your marketing agent sessions",
+        "tags": [
+          "Marketing agent",
+          "Public API"
+        ],
+        "x-iris-scope": "marketing_agent:read",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/marketing-agent/sessions/{sessionId}/answer": {
+      "post": {
+        "description": "Send the session’s current `version` and an answer per question `id`. The agent then asks more\nquestions (`clarifying`), or proposes a plan of sequence changes (`proposed`) to approve with\n`marketing_agent_approve`. Answering again revises the plan. Nothing changes until the approval.",
+        "operationId": "marketing_agent_answer",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarketingAgentAnswerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketingAgentSessionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key has no person, and a session belongs to a person\n\nThe key does not carry the `marketing_agent:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such marketing agent session of yours in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The session moved on since you read it: read it again with `marketing_agent_get`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Answer the questions of a marketing agent session",
+        "tags": [
+          "Marketing agent",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "marketing_agent"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "The agent plans again from the answers. Send marketing_agent_answer with other answers."
+        },
+        "x-iris-scope": "marketing_agent:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/marketing-agent/sessions/{sessionId}/approve": {
+      "post": {
+        "description": "Runs each action of the proposed plan, which can create, change, turn on and turn off sequences.\nA sequence turned on sends to the contacts it enrolls. Send the `version` and `plan_hash` you read,\nso you approve the plan you saw: another one answers 409. Read each action’s outcome in `results`.",
+        "operationId": "marketing_agent_approve",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarketingAgentApproveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketingAgentSessionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key has no person, and a session belongs to a person\n\nThe key does not carry the `marketing_agent:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such marketing agent session of yours in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The session moved on since you read it: read it again with `marketing_agent_get`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Approve a marketing agent plan, so its sequence changes run",
+        "tags": [
+          "Marketing agent",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "marketing_agent",
+          "sequences"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "An approved plan creates, changes and turns on sequences, which can send to customers. Change them with the sequences tools."
+        },
+        "x-iris-scope": "marketing_agent:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/marketing-agent/sessions/{sessionId}/cancel": {
+      "post": {
+        "description": "Ends the session. A plan that is running stops after its current action (`cancel_requested`), and\nthe actions done before stay applied.",
+        "operationId": "marketing_agent_cancel",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketingAgentSessionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key has no person, and a session belongs to a person\n\nThe key does not carry the `marketing_agent:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such marketing agent session of yours in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Cancel a marketing agent session",
+        "tags": [
+          "Marketing agent",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "marketing_agent"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A cancelled session cannot go on. Start a new one with marketing_agent_start."
+        },
+        "x-iris-scope": "marketing_agent:write",
+        "x-member-access": "deny"
+      }
+    },
     "/api/v1/mcp": {
       "post": {
         "description": "The Iris MCP server, over stateless Streamable HTTP. Point an MCP client at this URL with\nthe key as a bearer token. Every other operation in this document is a tool named by its\noperationId, and `tools/list` shows only the tools the key’s scopes allow (and, for a\nmember’s credential, only the tools a member may call). A tool call runs\nthe REST operation, so it answers what the REST call answers. A failing call has\n`isError: true` and the REST error body as its text. Send\n`Accept: application/json, text/event-stream`. Answers 404 while the organization does\nnot have the MCP server turned on.",
@@ -30054,7 +31378,11 @@
                 "context_access:read",
                 "context_access:write",
                 "crm_imports:read",
-                "crm_imports:write"
+                "crm_imports:write",
+                "discovery:read",
+                "discovery:write",
+                "marketing_agent:read",
+                "marketing_agent:write"
               ]
             }
           },
@@ -30186,7 +31514,11 @@
                 "context_access:read",
                 "context_access:write",
                 "crm_imports:read",
-                "crm_imports:write"
+                "crm_imports:write",
+                "discovery:read",
+                "discovery:write",
+                "marketing_agent:read",
+                "marketing_agent:write"
               ]
             }
           }
@@ -30289,7 +31621,11 @@
               "context_access:read",
               "context_access:write",
               "crm_imports:read",
-              "crm_imports:write"
+              "crm_imports:write",
+              "discovery:read",
+              "discovery:write",
+              "marketing_agent:read",
+              "marketing_agent:write"
             ]
           },
           "label": {
@@ -35709,6 +37045,148 @@
           "updated_at"
         ]
       },
+      "AgentCreateSubagentDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "agent_name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The name the dashboard shows"
+          },
+          "agent_role": {
+            "type": "string",
+            "minLength": 1,
+            "example": "billing",
+            "description": "What the subagent handles, such as sales, billing or support"
+          },
+          "transfer_condition": {
+            "type": "string",
+            "minLength": 1,
+            "description": "When the orchestrator transfers a call to this subagent"
+          },
+          "parent_agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The orchestrator, from `agents_list`"
+          },
+          "evaluation_criteria": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "How the subagent’s calls are scored"
+          },
+          "data_collection": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "What the subagent collects on a call"
+          },
+          "dynamic_variables": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Values the transfer passes to the subagent"
+          }
+        },
+        "required": [
+          "agent_name",
+          "agent_role",
+          "transfer_condition",
+          "parent_agent_id"
+        ]
+      },
+      "AgentProvisioningDto": {
+        "type": "object",
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "job_id": {
+            "type": "string",
+            "description": "The background job that builds the voice agent"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "provisioning",
+              "inactive",
+              "activating",
+              "active",
+              "disabled",
+              "failed",
+              "updating",
+              "deleted"
+            ],
+            "description": "`provisioning` until the job ends"
+          }
+        },
+        "required": [
+          "agent_id",
+          "job_id",
+          "status"
+        ]
+      },
+      "AgentGoLiveResultDto": {
+        "type": "object",
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "agent_name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "skipped",
+              "failed"
+            ]
+          },
+          "job_id": {
+            "type": "string",
+            "description": "The publish job, when it succeeded"
+          },
+          "error": {
+            "type": "string",
+            "description": "Why it failed"
+          }
+        },
+        "required": [
+          "agent_id",
+          "agent_name",
+          "status"
+        ]
+      },
+      "AgentGoLiveAllDto": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "description": "One per agent, the orchestrator first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentGoLiveResultDto"
+            }
+          },
+          "success_count": {
+            "type": "number"
+          },
+          "failure_count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "results",
+          "success_count",
+          "failure_count"
+        ]
+      },
       "AgentUpdateDto": {
         "type": "object",
         "properties": {
@@ -35743,6 +37221,18 @@
             "nullable": true
           }
         }
+      },
+      "AgentDeletedDto": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "description": "The background job that removes the voice agent"
+          }
+        },
+        "required": [
+          "job_id"
+        ]
       },
       "AgentStatusDto": {
         "type": "object",
@@ -44131,6 +45621,519 @@
         },
         "required": [
           "merge_policy"
+        ]
+      },
+      "DiscoveryProgressV1Dto": {
+        "type": "object",
+        "properties": {
+          "filled_slot_count": {
+            "type": "number",
+            "description": "Knowledge slots that hold a fact, across every domain"
+          },
+          "required_remaining": {
+            "type": "number",
+            "description": "Required slots still empty"
+          },
+          "domain_count": {
+            "type": "number",
+            "description": "Domains in the ontology"
+          },
+          "weighted_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Business profile strength, where key slots count more"
+          }
+        },
+        "required": [
+          "filled_slot_count",
+          "required_remaining",
+          "domain_count",
+          "weighted_score"
+        ]
+      },
+      "DiscoveryStartedDto": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The interview, for `discovery_send_message` and `discovery_record_fact`"
+          },
+          "greeting": {
+            "type": "string",
+            "description": "The first question of the interview"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/DiscoveryProgressV1Dto"
+          }
+        },
+        "required": [
+          "session_id",
+          "greeting",
+          "progress"
+        ]
+      },
+      "DiscoveryMessageDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000,
+            "description": "The owner’s next answer in the interview"
+          },
+          "done": {
+            "type": "boolean",
+            "description": "True ends the interview after this message"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "DiscoveryFactDto": {
+        "type": "object",
+        "properties": {
+          "slot_id": {
+            "type": "string",
+            "example": "identity.mission"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The record the fact belongs to. Facts about one thing share it."
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "value": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for a restricted slot, whose value is masked"
+          }
+        },
+        "required": [
+          "slot_id",
+          "display_name",
+          "entity_id",
+          "confidence",
+          "value"
+        ]
+      },
+      "DiscoveryUnlockedDomainDto": {
+        "type": "object",
+        "properties": {
+          "domain_id": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "owner_agent": {
+            "type": "string",
+            "description": "The agent the domain powers, such as `scheduler`"
+          }
+        },
+        "required": [
+          "domain_id",
+          "display_name",
+          "owner_agent"
+        ]
+      },
+      "DiscoveryReplyDto": {
+        "type": "object",
+        "properties": {
+          "reply": {
+            "type": "string",
+            "description": "Iris’s reply, usually the next question"
+          },
+          "ended": {
+            "type": "boolean",
+            "description": "True when the interview has ended"
+          },
+          "complete": {
+            "type": "boolean",
+            "description": "True when the owner said they are done or asked to stop"
+          },
+          "recorded_facts": {
+            "description": "The facts this message stored",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiscoveryFactDto"
+            }
+          },
+          "progress": {
+            "$ref": "#/components/schemas/DiscoveryProgressV1Dto"
+          },
+          "unlocked_domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiscoveryUnlockedDomainDto"
+            }
+          }
+        },
+        "required": [
+          "reply",
+          "ended",
+          "complete",
+          "recorded_facts",
+          "progress",
+          "unlocked_domains"
+        ]
+      },
+      "DiscoveryRecordFactDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "slot_id": {
+            "type": "string",
+            "minLength": 1,
+            "example": "identity.mission",
+            "description": "The exact knowledge slot id"
+          },
+          "value": {
+            "type": "string",
+            "description": "The value as the owner said it. It is converted to the slot’s type."
+          },
+          "entity_ref": {
+            "type": "string",
+            "example": "offering:1",
+            "description": "Groups facts about one thing, such as one service"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "How sure the owner is, 0 to 1. The default is 0.9."
+          }
+        },
+        "required": [
+          "slot_id",
+          "value"
+        ]
+      },
+      "DiscoveryRecordedDto": {
+        "type": "object",
+        "properties": {
+          "recorded": {
+            "type": "boolean",
+            "description": "False when the fact was not stored. `error` says why."
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "value": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for a restricted slot"
+          },
+          "confidence": {
+            "type": "number"
+          },
+          "unlocked_domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiscoveryUnlockedDomainDto"
+            }
+          },
+          "error": {
+            "type": "string",
+            "description": "Why the fact was not stored, such as an unknown slot id"
+          }
+        },
+        "required": [
+          "recorded"
+        ]
+      },
+      "MarketingAgentQuestionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The key of its answer in `answers`"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "options": {
+            "description": "Suggested answers. Any short text is accepted.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "prompt",
+          "options"
+        ]
+      },
+      "MarketingAgentActionDto": {
+        "type": "object",
+        "properties": {
+          "tool": {
+            "type": "string",
+            "enum": [
+              "sequences.create",
+              "sequences.update",
+              "sequences.activate",
+              "sequences.deactivate"
+            ]
+          },
+          "target": {
+            "type": "string",
+            "nullable": true,
+            "description": "The sequence it changes, or null for a new one"
+          },
+          "arguments": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "reason": {
+            "type": "string"
+          },
+          "expected_result": {
+            "type": "string"
+          },
+          "target_name": {
+            "type": "string"
+          },
+          "affected_records": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool",
+          "target",
+          "arguments",
+          "reason",
+          "expected_result"
+        ]
+      },
+      "MarketingAgentPlanDto": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarketingAgentActionDto"
+            }
+          }
+        },
+        "required": [
+          "summary",
+          "actions"
+        ]
+      },
+      "MarketingAgentResultDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "running",
+              "succeeded",
+              "failed"
+            ]
+          },
+          "record_id": {
+            "type": "string",
+            "description": "The sequence it made or changed"
+          },
+          "name": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          },
+          "recovery": {
+            "type": "string",
+            "description": "What to check after a failure"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "MarketingAgentSessionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "clarifying",
+              "planning",
+              "proposed",
+              "executing",
+              "cancel_requested",
+              "cancelled",
+              "completed",
+              "partial_failure",
+              "failed"
+            ],
+            "description": "`clarifying` waits for answers, `proposed` waits for approval, `executing` runs the plan, and `completed`, `partial_failure`, `failed` and `cancelled` are final."
+          },
+          "version": {
+            "type": "number",
+            "description": "Counts up with each answer. Send it with the next answer or approval."
+          },
+          "goal": {
+            "type": "string"
+          },
+          "answers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "questions": {
+            "description": "The questions to answer next",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarketingAgentQuestionDto"
+            }
+          },
+          "plan": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MarketingAgentPlanDto"
+              }
+            ]
+          },
+          "plan_hash": {
+            "type": "string",
+            "nullable": true,
+            "description": "Send it to `marketing_agent_approve`"
+          },
+          "results": {
+            "description": "One per action of an approved plan",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarketingAgentResultDto"
+            }
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the last step failed"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "version",
+          "goal",
+          "answers",
+          "questions",
+          "plan",
+          "plan_hash",
+          "results",
+          "error"
+        ]
+      },
+      "MarketingAgentStartDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "goal": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000,
+            "description": "What the marketing should achieve, in plain words"
+          }
+        },
+        "required": [
+          "goal"
+        ]
+      },
+      "MarketingAgentAnswerDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "minimum": 1,
+            "description": "The session’s `version`, from its last read. Another one answers 409."
+          },
+          "answers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "The answer to each question, keyed by the question `id`"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 4000,
+            "description": "More detail for the plan, such as a change to the last one"
+          }
+        },
+        "required": [
+          "version",
+          "answers"
+        ]
+      },
+      "MarketingAgentApproveDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "minimum": 1,
+            "description": "The session’s `version`, from its last read"
+          },
+          "plan_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "description": "The session’s `plan_hash`, so you approve the plan you read"
+          },
+          "approved": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "version",
+          "plan_hash",
+          "approved"
         ]
       }
     }

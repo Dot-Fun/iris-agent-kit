@@ -86,7 +86,7 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `calendar:read` | Read the calendar settings, saved views, feeds and view links |
 | `calendar:write` | Change the calendar settings and a location's schedule, save and assign views, and mint and revoke feeds and view links |
 | `agents:read` | Read phone agents, their versions, and whether a draft differs from the live version |
-| `agents:write` | Change a phone agent's draft, turn a subagent on or off, publish a draft and roll back |
+| `agents:write` | Change a phone agent's draft, turn a subagent on or off, publish a draft and roll back, publish every agent at once, and add, delete and rebuild subagents |
 | `organization:read` | Read the organization's settings and the roles whose agent access is off |
 | `organization:write` | Change the industry, website and timezone, and turn agent access off or on |
 | `members:read` | Read members |
@@ -124,6 +124,10 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `context_access:write` | Grant agents access to facts, set their ceiling, pin snapshots, and remove add-on agents |
 | `crm_imports:read` | Read CRM import jobs, review items and the merge policy |
 | `crm_imports:write` | Start, pause, resume and retry CRM imports, resolve review items and set the merge policy |
+| `discovery:read` | Read how much of the business the discovery interview knows |
+| `discovery:write` | Run the discovery interview and store its facts |
+| `marketing_agent:read` | Read your own marketing agent sessions |
+| `marketing_agent:write` | Start, answer, approve and cancel your own marketing agent sessions |
 
 `me_get` returns the live catalog. When this table and `me_get` differ, trust `me_get`.
 

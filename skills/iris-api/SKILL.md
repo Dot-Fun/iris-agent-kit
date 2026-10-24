@@ -191,7 +191,7 @@ A key carries scopes, one read and one write per noun:
 | `calendar:read` | read the calendar settings, a location's schedule, saved views, feeds and view links |
 | `calendar:write` | change the calendar settings and a location's schedule, save and assign views, mint and revoke feeds and view links |
 | `agents:read` | read phone agents, their versions, and whether a draft differs from the live version |
-| `agents:write` | change a phone agent's draft, turn a subagent on or off, publish a draft and roll back |
+| `agents:write` | change a phone agent's draft, turn a subagent on or off, publish a draft and roll back, publish every agent at once, and add, delete and rebuild subagents |
 | `organization:read` | read the organization's settings and the roles whose agent access is off |
 | `organization:write` | change the industry, website and timezone, and turn agent access off or on |
 | `members:read` | read the organization's members |
@@ -229,6 +229,10 @@ A key carries scopes, one read and one write per noun:
 | `context_access:write` | grant or deny an agent access to facts, set its ceiling, pin it to a snapshot, and remove an add-on agent |
 | `crm_imports:read` | read the CRM import jobs, the records waiting for a review decision, and the import merge policy |
 | `crm_imports:write` | start, pause, resume and retry a CRM import, resolve its review items, and set its merge policy |
+| `discovery:read` | read how much of the business the discovery interview knows |
+| `discovery:write` | run the discovery interview and store a fact about the business |
+| `marketing_agent:read` | read your own marketing agent sessions, with their questions, plans and results |
+| `marketing_agent:write` | start a marketing agent session, answer its questions, approve its plan and cancel it |
 
 Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
 `/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
@@ -509,6 +513,14 @@ start it again after a change. Do not use `sequences_pause` on a broadcast: it a
 6. To turn a subagent on or off, call `agents_activate` or `agents_disable`. Turning one on uses
    an agent slot: a 403 means the plan has none left, so tell the user. The orchestrator answers
    400 on both.
+7. To add a subagent, call `agents_create_subagent` with `agent_name`, `agent_role`,
+   `transfer_condition`, the orchestrator's id as `parent_agent_id` and an `idempotency_key`.
+   Call `agents_get` until `status` leaves `provisioning`. When it reads `failed`, call
+   `agents_retry_provisioning`.
+8. Ask the user before `agents_delete`: a deleted subagent cannot come back. The orchestrator
+   answers 400.
+9. To publish every agent at once, ask the user, then call `agents_go_live_all`. Read each
+   agent's entry in `results`: one can fail while the others go live.
 
 Every write needs an owner or admin. A MEMBER or MANAGER gets 403 `insufficient_role`: tell the
 user, and do not retry.
@@ -856,6 +868,36 @@ Every context access operation needs an owner or admin, and its own `context_acc
 Only an owner or admin calls these, except `crm_imports_get_settings`, which any member reads. A
 MEMBER or MANAGER gets 403 `insufficient_role`. An organization key gets 403 `no_acting_user` on
 `crm_imports_start` and `crm_imports_resolve_review_item`.
+
+### 35. Run the discovery interview
+
+1. Call `discovery_get_progress` to see how much of the business Iris knows.
+2. Call `discovery_start` with an `idempotency_key`. Show the user the `greeting`, and keep the
+   `session_id`.
+3. Send each answer with `discovery_send_message` and show the `reply`. Five calls a minute at
+   most, one at a time: a 409 means the last message still runs, so wait and send it again.
+   Stop when `ended` is true, or send `done: true` to stop early.
+4. To store a fact the user already gave, call `discovery_record_fact` with the `session_id`
+   as `sessionId`, the `slot_id` (such as `identity.mission`), the `value` and an
+   `idempotency_key`. Read `recorded`: when false, `error` says why.
+
+A stored fact cannot be removed or replaced here. A fact without `entity_ref` starts a new
+record. Only an owner or admin calls these, and another organization's interview answers 404.
+
+### 36. Plan marketing with the marketing agent
+
+1. Call `marketing_agent_start` with the user's `goal` and an `idempotency_key`.
+2. While `status` is `clarifying`, show the user the `questions`. Call `marketing_agent_answer`
+   with the session's `version` and an answer per question `id`.
+3. When `status` is `proposed`, show the user the `plan`. Ask the user, then call
+   `marketing_agent_approve` with the `version`, the `plan_hash` and `approved: true`. The plan
+   creates, changes and turns on sequences, which send to contacts. Read each action in `results`.
+4. To stop, call `marketing_agent_cancel`. Actions already done stay applied.
+5. To pick up a session, call `marketing_agent_list` and `marketing_agent_get`.
+
+A 409 means the session changed since you read it: read it again with `marketing_agent_get`. A
+session belongs to a person, so an organization key gets 403 `no_acting_user`. Only an owner or
+admin calls these.
 
 ## Other operations
 

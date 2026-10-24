@@ -16,6 +16,30 @@ Turn a subagent on, so it takes calls
 - `agentId` (path, string uuid, required)
 - `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
 
+### agents_create_subagent
+
+`POST /api/v1/agents/subagents`. Scope: `agents:write`. Member: `deny`. Changes: `agents`. Idempotent: send `idempotency_key`.
+
+Add a subagent that the orchestrator transfers calls to
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `agent_name` (body, string, required): The name the dashboard shows
+- `agent_role` (body, string, required): What the subagent handles, such as sales, billing or support
+- `transfer_condition` (body, string, required): When the orchestrator transfers a call to this subagent
+- `parent_agent_id` (body, string uuid, required): The orchestrator, from `agents_list`
+- `evaluation_criteria` (body, array of object): How the subagent’s calls are scored
+- `data_collection` (body, object): What the subagent collects on a call
+- `dynamic_variables` (body, object): Values the transfer passes to the subagent
+
+### agents_delete
+
+`DELETE /api/v1/agents/{agentId}`. Scope: `agents:write`. Member: `deny`. Confirm: required. Changes: `agents`.
+
+Delete a subagent
+
+- `agentId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
 ### agents_disable
 
 `POST /api/v1/agents/{agentId}/disable`. Scope: `agents:write`. Member: `deny`. Confirm: required. Changes: `agents`.
@@ -50,6 +74,12 @@ Publish an agent’s draft, so callers hear it
 - `agentId` (path, string uuid, required)
 - `notes` (body, string): Notes to keep with the new version
 
+### agents_go_live_all
+
+`POST /api/v1/agents/go-live-all`. Scope: `agents:write`. Member: `deny`. Confirm: required. Changes: `agents`.
+
+Publish the draft of every phone agent, so callers hear them
+
 ### agents_list
 
 `GET /api/v1/agents`. Scope: `agents:read`. Member: `open`.
@@ -65,6 +95,15 @@ List the versions an agent has published
 - `agentId` (path, string uuid, required)
 - `limit` (query, number)
 - `offset` (query, number)
+
+### agents_retry_provisioning
+
+`POST /api/v1/agents/{agentId}/retry`. Scope: `agents:write`. Member: `deny`. Changes: `agents`.
+
+Build a failed subagent’s voice agent again
+
+- `agentId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
 
 ### agents_rollback
 
@@ -1299,6 +1338,46 @@ Set the CRM import merge policy
 - `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
 - `merge_policy` (body, string, required, one of `iris_wins`, `source_wins`, `newest_wins`): The organization’s merge policy, for the imports started after it. `iris_wins` keeps what Iris holds and only fills blanks. `source_wins` takes the provider’s value. `newest_wins` takes it only when the provider’s record is newer than the contact. Email and phone are never overwritten.
 
+## Discovery
+
+### discovery_get_progress
+
+`GET /api/v1/discovery/progress`. Scope: `discovery:read`. Member: `deny`.
+
+Read how much of the business the discovery interview knows
+
+### discovery_record_fact
+
+`POST /api/v1/discovery/sessions/{sessionId}/facts`. Scope: `discovery:write`. Member: `deny`. Changes: `discovery`, `agents`. Idempotent: send `idempotency_key`.
+
+Store one fact the owner gave in a discovery interview
+
+- `sessionId` (path, string uuid, required)
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `slot_id` (body, string, required): The exact knowledge slot id
+- `value` (body, string, required): The value as the owner said it. It is converted to the slot’s type.
+- `entity_ref` (body, string): Groups facts about one thing, such as one service
+- `confidence` (body, number): How sure the owner is, 0 to 1. The default is 0.9.
+
+### discovery_send_message
+
+`POST /api/v1/discovery/sessions/{sessionId}/messages`. Scope: `discovery:write`. Member: `deny`. Confirm: required. Changes: `discovery`, `agents`. Idempotent: send `idempotency_key`.
+
+Send the owner’s next answer in a discovery interview
+
+- `sessionId` (path, string uuid, required)
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `content` (body, string, required): The owner’s next answer in the interview
+- `done` (body, boolean): True ends the interview after this message
+
+### discovery_start
+
+`POST /api/v1/discovery/sessions`. Scope: `discovery:write`. Member: `deny`. Confirm: required. Changes: `discovery`. Idempotent: send `idempotency_key`.
+
+Start a discovery interview about the business
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+
 ## Feedback
 
 ### feedback_submit
@@ -2349,6 +2428,61 @@ Make an active location the organization’s default
 
 - `locationId` (path, string uuid, required)
 - `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
+## Marketing agent
+
+### marketing_agent_answer
+
+`POST /api/v1/marketing-agent/sessions/{sessionId}/answer`. Scope: `marketing_agent:write`. Member: `deny`. Changes: `marketing_agent`.
+
+Answer the questions of a marketing agent session
+
+- `sessionId` (path, string uuid, required)
+- `version` (body, number, required): The session’s `version`, from its last read. Another one answers 409.
+- `answers` (body, object, required): The answer to each question, keyed by the question `id`
+- `message` (body, string): More detail for the plan, such as a change to the last one
+
+### marketing_agent_approve
+
+`POST /api/v1/marketing-agent/sessions/{sessionId}/approve`. Scope: `marketing_agent:write`. Member: `deny`. Confirm: required. Changes: `marketing_agent`, `sequences`.
+
+Approve a marketing agent plan, so its sequence changes run
+
+- `sessionId` (path, string uuid, required)
+- `version` (body, number, required): The session’s `version`, from its last read
+- `plan_hash` (body, string, required): The session’s `plan_hash`, so you approve the plan you read
+- `approved` (body, boolean, required, one of `true`)
+
+### marketing_agent_cancel
+
+`POST /api/v1/marketing-agent/sessions/{sessionId}/cancel`. Scope: `marketing_agent:write`. Member: `deny`. Confirm: required. Changes: `marketing_agent`.
+
+Cancel a marketing agent session
+
+- `sessionId` (path, string uuid, required)
+
+### marketing_agent_get
+
+`GET /api/v1/marketing-agent/sessions/{sessionId}`. Scope: `marketing_agent:read`. Member: `deny`.
+
+Read one of your marketing agent sessions
+
+- `sessionId` (path, string uuid, required)
+
+### marketing_agent_list
+
+`GET /api/v1/marketing-agent/sessions`. Scope: `marketing_agent:read`. Member: `deny`.
+
+List your marketing agent sessions
+
+### marketing_agent_start
+
+`POST /api/v1/marketing-agent/sessions`. Scope: `marketing_agent:write`. Member: `deny`. Confirm: required. Changes: `marketing_agent`. Idempotent: send `idempotency_key`.
+
+Start a marketing agent session with a goal
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `goal` (body, string, required): What the marketing should achieve, in plain words
 
 ## MCP
 
