@@ -1202,6 +1202,103 @@ Set the pipeline stage field and the stages a call outcome moves a contact to
 - `booking_stage_id` (body, string): One of the stage field’s option values, or null. Left out, it is cleared.
 - `no_booking_stage_id` (body, string): One of the stage field’s option values, or null. Left out, it is cleared.
 
+## CRM imports
+
+### crm_imports_get
+
+`GET /api/v1/crm-imports/jobs/{jobId}`. Scope: `crm_imports:read`. Member: `deny`.
+
+Get one CRM import
+
+- `jobId` (path, string uuid, required)
+
+### crm_imports_get_review_item
+
+`GET /api/v1/crm-imports/review-items/{itemId}`. Scope: `crm_imports:read`. Member: `deny`.
+
+Get one CRM import review item
+
+- `itemId` (path, string uuid, required)
+
+### crm_imports_get_settings
+
+`GET /api/v1/crm-imports/settings`. Scope: `crm_imports:read`. Member: `open`.
+
+Get the CRM import merge policy
+
+### crm_imports_list
+
+`GET /api/v1/crm-imports/jobs`. Scope: `crm_imports:read`. Member: `deny`.
+
+List the organization’s CRM imports
+
+- `limit` (query, number)
+
+### crm_imports_list_review_items
+
+`GET /api/v1/crm-imports/review-items`. Scope: `crm_imports:read`. Member: `deny`.
+
+List the imported records that wait for a review decision
+
+- `status` (query, string, one of `pending`, `merged`, `created`, `dismissed`, `all`): `all` lists the resolved items too
+- `limit` (query, number)
+
+### crm_imports_pause
+
+`POST /api/v1/crm-imports/jobs/{jobId}/pause`. Scope: `crm_imports:write`. Member: `deny`. Changes: `crm_imports`.
+
+Pause a CRM import
+
+- `jobId` (path, string uuid, required)
+
+### crm_imports_resolve_review_item
+
+`POST /api/v1/crm-imports/review-items/{itemId}/resolve`. Scope: `crm_imports:write`. Member: `deny`. Changes: `crm_imports`, `contacts`.
+
+Decide which contact an imported record is
+
+- `itemId` (path, string uuid, required)
+- `action` (body, string, required, one of `merge`, `create`, `dismiss`): `merge` the record into `contact_id` under the item’s `merge_policy`, `create` a new contact from it, or `dismiss` it.
+- `contact_id` (body, string uuid): Required for `merge`: the contact to merge into, usually one of the item’s `candidates`.
+
+### crm_imports_resume
+
+`POST /api/v1/crm-imports/jobs/{jobId}/resume`. Scope: `crm_imports:write`. Member: `deny`. Confirm: required. Changes: `crm_imports`, `contacts`.
+
+Resume a paused or failed CRM import
+
+- `jobId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
+### crm_imports_retry_failed
+
+`POST /api/v1/crm-imports/jobs/{jobId}/retry-failed`. Scope: `crm_imports:write`. Member: `deny`. Confirm: required. Changes: `crm_imports`, `contacts`.
+
+Retry the records a failed CRM import could not import
+
+- `jobId` (path, string uuid, required)
+
+### crm_imports_start
+
+`POST /api/v1/crm-imports/jobs`. Scope: `crm_imports:write`. Member: `deny`. Confirm: required. Changes: `crm_imports`, `contacts`. Idempotent: send `idempotency_key`.
+
+Start a CRM import
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `provider` (body, string, required, one of `zapier`, `hubspot`, `mcp`, `ghl`): The CRM to import from. Only `hubspot` imports today.
+- `connection_id` (body, string uuid): The active connection to import through. It must be this organization’s, for the same provider.
+- `object_types` (body, array of string, one of `contacts`, `companies`, `deals`): The record kinds to import, in this order: contacts, companies, deals. Defaults to contacts.
+- `merge_policy` (body, string, one of `iris_wins`, `source_wins`, `newest_wins`): The merge policy of this import only. Defaults to the organization’s, from `crm_imports_get_settings`. `iris_wins` keeps what Iris holds and only fills blanks. `source_wins` takes the provider’s value. `newest_wins` takes it only when the provider’s record is newer than the contact. Email and phone are never overwritten.
+
+### crm_imports_update_settings
+
+`PUT /api/v1/crm-imports/settings`. Scope: `crm_imports:write`. Member: `deny`. Changes: `crm_imports`.
+
+Set the CRM import merge policy
+
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `merge_policy` (body, string, required, one of `iris_wins`, `source_wins`, `newest_wins`): The organization’s merge policy, for the imports started after it. `iris_wins` keeps what Iris holds and only fills blanks. `source_wins` takes the provider’s value. `newest_wins` takes it only when the provider’s record is newer than the contact. Email and phone are never overwritten.
+
 ## Feedback
 
 ### feedback_submit

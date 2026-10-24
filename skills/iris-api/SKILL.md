@@ -227,6 +227,8 @@ A key carries scopes, one read and one write per noun:
 | `context_engine:write` | write facts and their sharing, set the archetype, add, change and delete links, run and review suggested links, and capture and publish snapshots |
 | `context_access:read` | read what each AI agent can read and write |
 | `context_access:write` | grant or deny an agent access to facts, set its ceiling, pin it to a snapshot, and remove an add-on agent |
+| `crm_imports:read` | read the CRM import jobs, the records waiting for a review decision, and the import merge policy |
+| `crm_imports:write` | start, pause, resume and retry a CRM import, resolve its review items, and set its merge policy |
 
 Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
 `/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
@@ -830,6 +832,30 @@ or admin.
    removed, and the API cannot add it back.
 
 Every context access operation needs an owner or admin, and its own `context_access` scope.
+
+### 34. Import contacts from a CRM
+
+1. Call `crm_imports_get_settings` and tell the user the `merge_policy`. To change it, call
+   `crm_imports_update_settings` with `merge_policy` and the `updated_at` you read as
+   `expected_updated_at`.
+2. Call `crm_imports_list` to see an import already queued, running or paused. Only one import
+   per provider runs at a time.
+3. Ask the user, then call `crm_imports_start` with `provider`, optional `object_types` and an
+   `idempotency_key`. The import writes contacts, and nothing takes them back. A 503 means no
+   import source is available for the provider: tell the user.
+4. Call `crm_imports_get` until `status` is `completed` or `failed`. To stop it, call
+   `crm_imports_pause`. To go on, ask the user, then call `crm_imports_resume` with the job's
+   `updated_at` as `expected_updated_at`.
+5. For a `failed` job, read `recent_errors`, then ask the user and call `crm_imports_retry_failed`
+   to read the failed records again.
+6. Call `crm_imports_list_review_items` for the records the import could not match, and
+   `crm_imports_get_review_item` for one of them. Show the user the `record` and its
+   `candidates`, then call `crm_imports_resolve_review_item` with `merge`
+   and a `contact_id`, `create` or `dismiss`. A decision is final.
+
+Only an owner or admin calls these, except `crm_imports_get_settings`, which any member reads. A
+MEMBER or MANAGER gets 403 `insufficient_role`. An organization key gets 403 `no_acting_user` on
+`crm_imports_start` and `crm_imports_resolve_review_item`.
 
 ## Other operations
 

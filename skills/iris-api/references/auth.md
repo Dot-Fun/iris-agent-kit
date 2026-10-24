@@ -122,6 +122,8 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `context_engine:write` | Write facts, set the archetype, change links, review suggested links, and capture and publish snapshots |
 | `context_access:read` | Read what each AI agent can read and write |
 | `context_access:write` | Grant agents access to facts, set their ceiling, pin snapshots, and remove add-on agents |
+| `crm_imports:read` | Read CRM import jobs, review items and the merge policy |
+| `crm_imports:write` | Start, pause, resume and retry CRM imports, resolve review items and set the merge policy |
 
 `me_get` returns the live catalog. When this table and `me_get` differ, trust `me_get`.
 

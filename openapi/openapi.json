@@ -27902,6 +27902,1000 @@
         "x-member-access": "open"
       }
     },
+    "/api/v1/crm-imports/jobs": {
+      "get": {
+        "description": "The latest import jobs, newest first, with their status, progress per record kind and errors.",
+        "operationId": "crm_imports_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCrmImportJobListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `crm_imports:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the organization’s CRM imports",
+        "tags": [
+          "CRM imports",
+          "Public API"
+        ],
+        "x-iris-scope": "crm_imports:read",
+        "x-member-access": "deny"
+      },
+      "post": {
+        "description": "Starts a background job that copies the CRM’s records into contacts under the merge policy. It can write\nmany contacts, so ask the user first. Read `crm_imports_get_settings` for the policy and `crm_imports_list`\nfor an import already running. `crm_imports_get` shows the progress, and `crm_imports_pause` stops it.",
+        "operationId": "crm_imports_start",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicCrmImportStartDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCrmImportJobDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, a provider that cannot import, or a connection not active"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `crm_imports:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The connection is not this organization’s.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "An import of this provider is already queued, running or paused, or the CRM refused the import.\n\n`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No import source is registered for the provider, so nothing was imported.\n\n`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Start a CRM import",
+        "tags": [
+          "CRM imports",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "crm_imports",
+          "contacts"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "The import writes contacts, and rewind cannot take them back. Pause the import to stop further writes."
+        },
+        "x-iris-scope": "crm_imports:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/crm-imports/jobs/{jobId}": {
+      "get": {
+        "description": "The job with its status, progress per record kind, outcome counts and latest errors.",
+        "operationId": "crm_imports_get",
+        "parameters": [
+          {
+            "name": "jobId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCrmImportJobDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `crm_imports:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such CRM import job in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get one CRM import",
+        "tags": [
+          "CRM imports",
+          "Public API"
+        ],
+        "x-iris-scope": "crm_imports:read",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/crm-imports/jobs/{jobId}/pause": {
+      "post": {
+        "description": "Stops a `queued` or `running` import after the page it is on, and keeps its place. Contacts it wrote stay.\nRead `crm_imports_get` first for the status. `crm_imports_resume` goes on from the same place.",
+        "operationId": "crm_imports_pause",
+        "parameters": [
+          {
+            "name": "jobId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCrmImportJobDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `crm_imports:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such CRM import job in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The import is in a status this change does not apply to, or it changed state during the call."
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Pause a CRM import",
+        "tags": [
+          "CRM imports",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "crm_imports"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "The import worker updates the job after a pause, so rewind cannot undo it. Resume it with crm_imports_resume."
+        },
+        "x-iris-scope": "crm_imports:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/crm-imports/jobs/{jobId}/resume": {
+      "post": {
+        "description": "Queues a `paused` or `failed` import again from where it stopped, so it writes more contacts. Ask the user\nfirst. Read `crm_imports_get` for the status and send its `updated_at` as `expected_updated_at`.",
+        "operationId": "crm_imports_resume",
+        "parameters": [
+          {
+            "name": "jobId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCrmImportJobDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `crm_imports:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such CRM import job in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nThe import is in a status this change does not apply to, or it changed state during the call.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Resume a paused or failed CRM import",
+        "tags": [
+          "CRM imports",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "crm_imports",
+          "contacts"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "The import writes contacts, and rewind cannot take them back. Pause the import to stop further writes."
+        },
+        "x-iris-scope": "crm_imports:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/crm-imports/jobs/{jobId}/retry-failed": {
+      "post": {
+        "description": "Reads again only the records of a `failed` import that failed, and writes them as contacts. Read\n`crm_imports_get` first: its `recent_errors` say why they failed, and a cause not fixed fails them again.\nAsk the user first.",
+        "operationId": "crm_imports_retry_failed",
+        "parameters": [
+          {
+            "name": "jobId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCrmImportJobDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `crm_imports:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such CRM import job in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The import is not `failed`, has no failed records, or changed state."
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No import source is registered for the provider, so nothing was imported."
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Retry the records a failed CRM import could not import",
+        "tags": [
+          "CRM imports",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "crm_imports",
+          "contacts"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "The import writes contacts, and rewind cannot take them back. Pause the import to stop further writes."
+        },
+        "x-iris-scope": "crm_imports:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/crm-imports/review-items": {
+      "get": {
+        "description": "Records an import could not match to one contact, with the contacts they might be. Oldest first, `pending` only unless `status` says otherwise.",
+        "operationId": "crm_imports_list_review_items",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "`all` lists the resolved items too",
+            "schema": {
+              "default": "pending",
+              "type": "string",
+              "enum": [
+                "pending",
+                "merged",
+                "created",
+                "dismissed",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCrmImportReviewItemListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `crm_imports:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the imported records that wait for a review decision",
+        "tags": [
+          "CRM imports",
+          "Public API"
+        ],
+        "x-iris-scope": "crm_imports:read",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/crm-imports/review-items/{itemId}": {
+      "get": {
+        "description": "The imported record, the contacts it might be and what they share, and the decision once made.",
+        "operationId": "crm_imports_get_review_item",
+        "parameters": [
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCrmImportReviewItemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `crm_imports:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such CRM import review item in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get one CRM import review item",
+        "tags": [
+          "CRM imports",
+          "Public API"
+        ],
+        "x-iris-scope": "crm_imports:read",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/crm-imports/review-items/{itemId}/resolve": {
+      "post": {
+        "description": "`merge` writes the record into `contact_id`, `create` makes a new contact, and `dismiss` drops it. Read\n`crm_imports_get_review_item` first for the record and its `candidates`. A decision is final.",
+        "operationId": "crm_imports_resolve_review_item",
+        "parameters": [
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicCrmImportResolveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCrmImportReviewItemDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or `merge` without `contact_id`"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `crm_imports:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such CRM import review item in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The item was already resolved, or someone resolved it during the call."
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Decide which contact an imported record is",
+        "tags": [
+          "CRM imports",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "crm_imports",
+          "contacts"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "A merge or create writes a contact, and rewind cannot take it back."
+        },
+        "x-iris-scope": "crm_imports:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/crm-imports/settings": {
+      "get": {
+        "description": "The policy an import uses when a record matches a contact Iris holds, unless the import sets its own.",
+        "operationId": "crm_imports_get_settings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCrmImportSettingsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `crm_imports:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get the CRM import merge policy",
+        "tags": [
+          "CRM imports",
+          "Public API"
+        ],
+        "x-iris-scope": "crm_imports:read",
+        "x-member-access": "open"
+      },
+      "put": {
+        "description": "Sets the policy of the imports started after it. An import already running keeps its own. Read\n`crm_imports_get_settings` first and send its `updated_at` as `expected_updated_at`.",
+        "operationId": "crm_imports_update_settings",
+        "parameters": [
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicCrmImportSettingsUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCrmImportSettingsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `crm_imports:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Set the CRM import merge policy",
+        "tags": [
+          "CRM imports",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "crm_imports"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "crm_imports_get_settings",
+            "args": {}
+          }
+        },
+        "x-iris-scope": "crm_imports:write",
+        "x-member-access": "deny"
+      }
+    },
     "/api/v1/mcp": {
       "post": {
         "description": "The Iris MCP server, over stateless Streamable HTTP. Point an MCP client at this URL with\nthe key as a bearer token. Every other operation in this document is a tool named by its\noperationId, and `tools/list` shows only the tools the key’s scopes allow (and, for a\nmember’s credential, only the tools a member may call). A tool call runs\nthe REST operation, so it answers what the REST call answers. A failing call has\n`isError: true` and the REST error body as its text. Send\n`Accept: application/json, text/event-stream`. Answers 404 while the organization does\nnot have the MCP server turned on.",
@@ -29058,7 +30052,9 @@
                 "context_engine:read",
                 "context_engine:write",
                 "context_access:read",
-                "context_access:write"
+                "context_access:write",
+                "crm_imports:read",
+                "crm_imports:write"
               ]
             }
           },
@@ -29188,7 +30184,9 @@
                 "context_engine:read",
                 "context_engine:write",
                 "context_access:read",
-                "context_access:write"
+                "context_access:write",
+                "crm_imports:read",
+                "crm_imports:write"
               ]
             }
           }
@@ -29289,7 +30287,9 @@
               "context_engine:read",
               "context_engine:write",
               "context_access:read",
-              "context_access:write"
+              "context_access:write",
+              "crm_imports:read",
+              "crm_imports:write"
             ]
           },
           "label": {
@@ -42499,6 +43499,638 @@
           "comment",
           "page_context",
           "created_at"
+        ]
+      },
+      "PublicCrmImportOutcomesDto": {
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "number",
+            "description": "Records that became new contacts"
+          },
+          "merged": {
+            "type": "number",
+            "description": "Records merged into a contact, with at least one field changed"
+          },
+          "unchanged": {
+            "type": "number",
+            "description": "Records equal to the contact Iris holds"
+          },
+          "review_queued": {
+            "type": "number",
+            "description": "Records sent to the review queue"
+          }
+        },
+        "required": [
+          "created",
+          "merged",
+          "unchanged",
+          "review_queued"
+        ]
+      },
+      "PublicCrmImportProgressDto": {
+        "type": "object",
+        "properties": {
+          "object_type": {
+            "type": "string",
+            "enum": [
+              "contacts",
+              "companies",
+              "deals"
+            ]
+          },
+          "imported": {
+            "type": "number"
+          },
+          "skipped": {
+            "type": "number"
+          },
+          "failed": {
+            "type": "number"
+          },
+          "pages": {
+            "type": "number",
+            "description": "Pages read so far"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When this kind was read to the end"
+          },
+          "outcomes": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicCrmImportOutcomesDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "object_type",
+          "imported",
+          "skipped",
+          "failed",
+          "pages",
+          "completed_at",
+          "outcomes"
+        ]
+      },
+      "PublicCrmImportCountsDto": {
+        "type": "object",
+        "properties": {
+          "imported": {
+            "type": "number"
+          },
+          "skipped": {
+            "type": "number"
+          },
+          "failed": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "imported",
+          "skipped",
+          "failed"
+        ]
+      },
+      "PublicCrmImportErrorDto": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "object_type": {
+            "type": "string",
+            "enum": [
+              "contacts",
+              "companies",
+              "deals"
+            ],
+            "nullable": true
+          },
+          "external_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The provider’s record id"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "at",
+          "object_type",
+          "external_id",
+          "message"
+        ]
+      },
+      "PublicCrmImportJobDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Every crm_imports_* job operation takes it as `jobId`."
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "zapier",
+              "hubspot",
+              "mcp",
+              "ghl"
+            ]
+          },
+          "connection_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "paused",
+              "failed",
+              "completed"
+            ],
+            "description": "`queued` and `running`: the import is working, and `crm_imports_pause` stops it. `paused` and `failed`: `crm_imports_resume` goes on from where it stopped. `completed` is final."
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "full",
+              "retry_failed"
+            ],
+            "description": "`full` reads every page. `retry_failed` reads only the records that failed."
+          },
+          "object_types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "contacts",
+                "companies",
+                "deals"
+              ]
+            }
+          },
+          "current_object_type": {
+            "type": "string",
+            "enum": [
+              "contacts",
+              "companies",
+              "deals"
+            ],
+            "nullable": true,
+            "description": "The kind read now"
+          },
+          "progress": {
+            "description": "One entry per kind in `object_types`, in order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicCrmImportProgressDto"
+            }
+          },
+          "counts": {
+            "$ref": "#/components/schemas/PublicCrmImportCountsDto"
+          },
+          "merge_policy": {
+            "type": "string",
+            "enum": [
+              "iris_wins",
+              "source_wins",
+              "newest_wins"
+            ],
+            "nullable": true,
+            "description": "The policy this import runs with"
+          },
+          "merge_summary": {
+            "description": "The outcomes of every kind, added up",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicCrmImportOutcomesDto"
+              }
+            ]
+          },
+          "error_count": {
+            "type": "number"
+          },
+          "last_error": {
+            "type": "string",
+            "nullable": true
+          },
+          "recent_errors": {
+            "description": "The latest errors, oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicCrmImportErrorDto"
+            }
+          },
+          "attempt_count": {
+            "type": "number",
+            "description": "Runs so far. A resume sets it to 0."
+          },
+          "next_run_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requested_by_user_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "paused_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "failed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Send it as `expected_updated_at` on `crm_imports_resume`."
+          }
+        },
+        "required": [
+          "id",
+          "provider",
+          "connection_id",
+          "status",
+          "mode",
+          "object_types",
+          "current_object_type",
+          "progress",
+          "counts",
+          "merge_policy",
+          "merge_summary",
+          "error_count",
+          "last_error",
+          "recent_errors",
+          "attempt_count",
+          "next_run_at",
+          "requested_by_user_id",
+          "started_at",
+          "paused_at",
+          "completed_at",
+          "failed_at",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "PublicCrmImportJobListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicCrmImportJobDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "PublicCrmImportStartDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "zapier",
+              "hubspot",
+              "mcp",
+              "ghl"
+            ],
+            "description": "The CRM to import from. Only `hubspot` imports today."
+          },
+          "connection_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The active connection to import through. It must be this organization’s, for the same provider."
+          },
+          "object_types": {
+            "type": "array",
+            "description": "The record kinds to import, in this order: contacts, companies, deals. Defaults to contacts.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "contacts",
+                "companies",
+                "deals"
+              ]
+            }
+          },
+          "merge_policy": {
+            "type": "string",
+            "enum": [
+              "iris_wins",
+              "source_wins",
+              "newest_wins"
+            ],
+            "description": "The merge policy of this import only. Defaults to the organization’s, from `crm_imports_get_settings`. `iris_wins` keeps what Iris holds and only fills blanks. `source_wins` takes the provider’s value. `newest_wins` takes it only when the provider’s record is newer than the contact. Email and phone are never overwritten."
+          }
+        },
+        "required": [
+          "provider"
+        ]
+      },
+      "PublicCrmImportReviewRecordDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone_number": {
+            "type": "string",
+            "nullable": true,
+            "description": "E.164"
+          },
+          "display_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "field_values": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Every other property the provider sent"
+          },
+          "source_updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the provider last changed it"
+          }
+        },
+        "required": [
+          "email",
+          "phone_number",
+          "display_name",
+          "field_values",
+          "source_updated_at"
+        ]
+      },
+      "PublicCrmImportCandidateDto": {
+        "type": "object",
+        "properties": {
+          "contact_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "display_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone_number": {
+            "type": "string",
+            "nullable": true
+          },
+          "matched_on": {
+            "type": "array",
+            "description": "What the record and the contact share",
+            "items": {
+              "type": "string",
+              "enum": [
+                "email",
+                "phone"
+              ]
+            }
+          }
+        },
+        "required": [
+          "contact_id",
+          "display_name",
+          "email",
+          "phone_number",
+          "matched_on"
+        ]
+      },
+      "PublicCrmImportReviewItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The review item operations take it as `itemId`."
+          },
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The import that found it"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "zapier",
+              "hubspot",
+              "mcp",
+              "ghl"
+            ]
+          },
+          "object_type": {
+            "type": "string",
+            "enum": [
+              "contacts",
+              "companies",
+              "deals"
+            ]
+          },
+          "external_id": {
+            "type": "string",
+            "description": "The provider’s record id"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "email_ambiguous",
+              "email_phone_conflict",
+              "phone_conflict"
+            ]
+          },
+          "merge_policy": {
+            "type": "string",
+            "enum": [
+              "iris_wins",
+              "source_wins",
+              "newest_wins"
+            ],
+            "description": "The policy a `merge` applies"
+          },
+          "record": {
+            "$ref": "#/components/schemas/PublicCrmImportReviewRecordDto"
+          },
+          "candidates": {
+            "description": "The contacts the record might be",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicCrmImportCandidateDto"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "merged",
+              "created",
+              "dismissed"
+            ],
+            "description": "`pending` waits for a decision. `merged`, `created` and `dismissed` are final."
+          },
+          "resolved_contact_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The contact it was merged into or created as"
+          },
+          "resolved_by_user_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "resolved_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "job_id",
+          "provider",
+          "object_type",
+          "external_id",
+          "reason",
+          "merge_policy",
+          "record",
+          "candidates",
+          "status",
+          "resolved_contact_id",
+          "resolved_by_user_id",
+          "resolved_at",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "PublicCrmImportReviewItemListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicCrmImportReviewItemDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "PublicCrmImportResolveDto": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "merge",
+              "create",
+              "dismiss"
+            ],
+            "description": "`merge` the record into `contact_id` under the item’s `merge_policy`, `create` a new contact from it, or `dismiss` it."
+          },
+          "contact_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Required for `merge`: the contact to merge into, usually one of the item’s `candidates`."
+          }
+        },
+        "required": [
+          "action"
+        ]
+      },
+      "PublicCrmImportSettingsDto": {
+        "type": "object",
+        "properties": {
+          "merge_policy": {
+            "type": "string",
+            "enum": [
+              "iris_wins",
+              "source_wins",
+              "newest_wins"
+            ],
+            "description": "`iris_wins` keeps what Iris holds and only fills blanks. `source_wins` takes the provider’s value. `newest_wins` takes it only when the provider’s record is newer than the contact. Email and phone are never overwritten."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The organization’s `updated_at`. Send it as `expected_updated_at` on `crm_imports_update_settings`."
+          }
+        },
+        "required": [
+          "merge_policy",
+          "updated_at"
+        ]
+      },
+      "PublicCrmImportSettingsUpdateDto": {
+        "type": "object",
+        "properties": {
+          "merge_policy": {
+            "type": "string",
+            "enum": [
+              "iris_wins",
+              "source_wins",
+              "newest_wins"
+            ],
+            "description": "The organization’s merge policy, for the imports started after it. `iris_wins` keeps what Iris holds and only fills blanks. `source_wins` takes the provider’s value. `newest_wins` takes it only when the provider’s record is newer than the contact. Email and phone are never overwritten."
+          }
+        },
+        "required": [
+          "merge_policy"
         ]
       }
     }
