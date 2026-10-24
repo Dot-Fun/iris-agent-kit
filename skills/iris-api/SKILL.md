@@ -175,17 +175,18 @@ A key carries scopes, one read and one write per noun:
 
 | Scope | Lets you |
 |---|---|
-| `contacts:read` | search and read contacts |
-| `contacts:write` | create and update contacts, notes, tags, suppression and SMS consent, and enroll contacts in sequences or cancel them through events |
+| `contacts:read` | search and read contacts, export them as CSV (`contacts_export`), list suppressed addresses, and read a contact's company and owner at a location |
+| `contacts:write` | create and update contacts, notes, tags, suppression and SMS consent, enroll contacts in sequences or cancel them through events, set a contact's locations, company and owner, and suppress or lift an address |
 | `sequences:read` | read sequences, enrollments, send logs and totals, and a broadcast's schedule and runs |
-| `sequences:write` | create, change, activate, pause, resume and duplicate sequences, enroll and cancel, and set, start and pause a broadcast's schedule and cancel one run |
-| `appointments:read` | read appointments, calendars, locations, booking options, open slots and territories |
-| `appointments:write` | book, change, reschedule and cancel appointments |
+| `sequences:write` | create, change, activate, pause, resume and duplicate sequences, enroll and cancel, and set, start and pause a broadcast's schedule and cancel one run, and create and change send windows |
+| `appointments:read` | read appointments, calendars, locations, booking options, open slots and territories, and list the appointments that need attention |
+| `appointments:write` | book, change, reschedule and cancel appointments, change their place, all-day flag, status and time zone, and keep a conflicted appointment |
 | `conversations:read` | read conversations and their messages |
 | `conversations:write` | send an SMS, reply in a conversation, and hold or resume its AI (a staff member: only for their own clients, while their SMS setting is on) |
 | `calls:read` | read calls and transcripts |
+| `calls:write` | delete calls and their recordings (an owner or admin only) |
 | `audiences:read` | read and count audiences, and list their contacts |
-| `audiences:write` | create, change, archive and restore audiences, and add and remove members |
+| `audiences:write` | create, change, archive, restore and delete audiences, and add and remove members |
 | `forms:read` | read forms, their fields and their submissions |
 | `forms:write` | create, change and delete forms, add, change, reorder and delete their fields, and rotate a form's submission key |
 | `calendar:read` | read the calendar settings, a location's schedule, saved views, feeds and view links |
@@ -489,7 +490,9 @@ start it again after a change. Do not use `sequences_pause` on a broadcast: it a
 
 1. To pick when a sequence may send, call `sequences_list_send_schedules`. It pages with `page` and `limit`, and the windows are in `items`. Pass the `id` you
    choose as `send_schedule_id` on `sequences_create` or `sequences_update`. A sequence with none
-   uses the window where `is_default` is true.
+   uses the window where `is_default` is true. To add a window, ask the user, then call
+   `sequences_create_send_schedule`. To change one, call `sequences_update_send_schedule` with the
+   whole window: the change reaches every sequence that uses it. A window cannot be deleted.
 2. To test a step, save it first: the test sends what is saved. Call `sequences_test_step` with
    the `sequenceId` and the `step_key` of the step.
 3. Send `to_email` (email step) or `to_phone` (SMS step) only to an address or number the user
@@ -899,6 +902,33 @@ A 409 means the session changed since you read it: read it again with `marketing
 session belongs to a person, so an organization key gets 403 `no_acting_user`. Only an owner or
 admin calls these.
 
+### 37. Stop or allow messages to an address
+
+1. To see who gets no email or SMS, call `contacts_list_suppressions`. Filter with `channel` and
+   `q`. Lifted SMS opt-outs show only with `include_lifted` true.
+2. To stop messages to an address, ask the user, then call `contacts_suppress_address` with
+   `channel`, `identifier` (an email address, or a phone number in E.164) and `reason`. The address
+   need not belong to a contact. A 409 means it is already suppressed.
+3. To lift one, ask the user, then call `contacts_lift_suppression` with its `id`, its `channel`
+   and a `reason`. A 403 means the contact opted out themselves: only the contact can opt back in.
+
+Only an owner or admin manages suppressions. Both writes act as the key's person: a key with no
+creator gets 403 `no_acting_user`.
+
+### 38. Move contacts to a location
+
+1. To link several contacts to one more location, call `contacts_assign_location` with
+   `contact_ids` (at most 100) and `location_id`. Their other locations stay.
+2. To set exactly where one contact belongs, read it with `contacts_get`, then call
+   `contacts_set_locations` with `location_ids` (at least one) and its `updated_at` as
+   `expected_updated_at`. Every location left out is removed.
+3. To change the contact's company or owner at a location, call `contacts_get_affiliation`, then
+   `contacts_update_affiliation` with the `revision` it answered as `expected_revision`. Create or
+   rename a company with `contacts_upsert_company`. A 409 means it changed: read it again. These act
+   as a person, and answer 404 while GoHighLevel is not on for the organization.
+
+A MANAGER with the contacts power moves contacts at their own locations only.
+
 ## Other operations
 
 These follow the same rules. Their parameters are in `references/endpoints.md`.
@@ -910,6 +940,13 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
   `contact_id`.
   To fix a title, notes or attendee detail without moving the appointment, call
   `appointments_update`. It refuses time and status fields with a 400 that names the operation to use.
+  To change the place, the all-day flag, the status or the time zone, call
+  `appointments_update_details`. It refuses `cancelled`: cancel with `appointments_cancel`. One
+  occurrence of a repeating appointment answers 409 with the `series_id` to change instead.
+  `appointments_list_conflicted` lists, for one `location_id`, the appointments whose team member
+  can no longer do them, with each cause's `key`. To keep one as it is, ask the user, then call
+  `appointments_keep_conflicted` with the `cause_keys`. An owner, an admin, or a manager with the
+  staff power does this.
   Cancel, update and reschedule answer 409 `recurring_series_not_supported` for a row with
   `recurring: true`. Nothing changes: tell the user to change it in the Iris dashboard.
   Reschedule answers 409 `appointment_cancelled` for a cancelled appointment. Nothing changes:
@@ -960,10 +997,13 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
   admin, disconnects one. Ask the user before a disconnect: rewind cannot undo it. An
   organization key gets 403 `no_acting_user` on the disconnects and the team member operations.
 - Calls: `calls_list`, `calls_get` (with transcript). Filter `calls_list` with `contact_id` to
-  see one contact's calls.
+  see one contact's calls. `calls_delete` deletes calls with their recordings for good: ask the
+  user first. It needs `calls:write` and an owner or admin. `deleted` counts what it removed.
 - Audiences: `audiences_list`, `audiences_add_member`, `audiences_remove_member`. Both member
   writes are safe to repeat. Only a `static` audience takes members. To build or change an
-  audience, follow recipe 13.
+  audience, follow recipe 13. `audiences_delete` removes an audience for good, for an owner only:
+  ask the user first, and offer `audiences_archive` instead. A 409 names the broadcasts and
+  sequences that still use it.
 - Forms: `forms_list`, `forms_get` (with fields), `forms_list_submissions`. To review the leads
   a form brought in, call `forms_list` for the form's `id`, then `forms_list_submissions` with it.
   Each submission's `payload` is keyed by the `key` of the form's fields, and `contact` is the

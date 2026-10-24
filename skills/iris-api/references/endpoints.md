@@ -193,6 +193,15 @@ Get the self-service link of an appointment
 
 - `appointmentId` (path, string uuid, required)
 
+### appointments_keep_conflicted
+
+`POST /api/v1/appointments/{appointmentId}/keep`. Scope: `appointments:write`. Member: `deny`. Manager power: `staff`. Changes: `appointments`.
+
+Keep a conflicted appointment as it is
+
+- `appointmentId` (path, string uuid, required)
+- `cause_keys` (body, array of string, required): The cause `key`s from `appointments_list_conflicted`. A key that is no longer a cause is ignored.
+
 ### appointments_list
 
 `GET /api/v1/appointments`. Scope: `appointments:read`. Member: `scoped`.
@@ -204,6 +213,14 @@ List appointments in a time window
 - `contact_id` (query, string uuid): Only this contact’s appointments: bookings made for the contact, and bookings whose attendee phone or email is the contact’s.
 - `from` (query, string date-time): Start of the window. Defaults to now.
 - `to` (query, string date-time): End of the window. Defaults to 30 days after `from`. At most 92 days after it.
+
+### appointments_list_conflicted
+
+`GET /api/v1/appointments/conflicted`. Scope: `appointments:read`. Member: `deny`. Manager power: `staff`.
+
+List appointments whose team member cannot do them
+
+- `location_id` (query, string uuid, required): The location to check, from `locations_list`
 
 ### appointments_reschedule
 
@@ -237,6 +254,20 @@ Change an appointment’s title, notes or attendee details
 - `attendee_phone` (body, string): E.164, e.g. +14155550100
 - `attendee_email` (body, string)
 - `attendee_notes` (body, string): Notes about the attendee
+
+### appointments_update_details
+
+`PATCH /api/v1/appointments/{appointmentId}/details`. Scope: `appointments:write`. Member: `scoped`. Changes: `appointments`.
+
+Change an appointment’s status, place, time zone, all-day flag or repeat rule
+
+- `appointmentId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `location` (body, string): The free-text place. `null` clears it.
+- `all_day` (body, boolean)
+- `status` (body, string, one of `tentative`, `confirmed`, `completed`, `no_show`): `completed` and `no_show` can start the matching follow-up sequences.
+- `timezone` (body, string): IANA time zone, e.g. America/Denver. The start and end do not move.
+- `recurrence_rule` (body, string): An RFC 5545 RRULE, e.g. FREQ=WEEKLY;COUNT=4. `null` stops the repeat.
 
 ## Assistant
 
@@ -292,6 +323,14 @@ Create an audience
     - `op` (body, string, required, one of `eq`, `neq`, `in`, `not_in`, `gt`, `gte`, `lt`, `lte`, `contains`, `contains_any`, `exists`, `not_exists`): `eq`, `neq`: equal or not equal. `in`, `not_in`: equal to one of a list, or to none of it. `gt`, `gte`, `lt`, `lte`: greater or less than; only on number and date fields (`total_calls`, the four date columns, and custom fields of type number, currency, date or datetime). `contains`: the text holds the value, ignoring case. `contains_any`: the text holds any value of the list. Both work on the text columns and on custom fields, not on `total_calls` or dates. `exists`, `not_exists`: the field has a value, or has none. `eq`, `neq`, `in`, `not_in`, `exists` and `not_exists` work on every field.
     - `value` (body, object): What the field is compared with. Leave it out for `exists` and `not_exists`. `in`, `not_in` and `contains_any` take a non-empty array of at most 500 strings, numbers or booleans. Every other op takes one string, number or boolean. A number field needs a number (or a numeric string). A string is at most 1000 characters. An object, or an array inside the array, answers 400.
   - `exclude_opted_out` (body, boolean): Stored with the audience. Counts and contact lists do not apply it: opted-out contacts are removed when a message is sent.
+
+### audiences_delete
+
+`DELETE /api/v1/audiences/{audienceId}`. Scope: `audiences:write`. Member: `deny`. Confirm: required. Changes: `audiences`.
+
+Delete an audience
+
+- `audienceId` (path, string uuid, required)
 
 ### audiences_get
 
@@ -769,6 +808,15 @@ Change a call forwarding number
 
 ## Calls
 
+### calls_delete
+
+`POST /api/v1/calls/delete`. Scope: `calls:write`. Member: `deny`. Confirm: required. Changes: `calls`.
+
+Delete calls
+
+- `call_ids` (body, array of string, required): Call `id`s from `calls_list`
+- `location_id` (body, string uuid): Delete only the calls at this location
+
 ### calls_get
 
 `GET /api/v1/calls/{callId}`. Scope: `calls:read`. Member: `scoped`.
@@ -833,6 +881,24 @@ Add a tag to a contact
 - `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
 - `tag` (body, string, required): Tag name. Matched without regard to case or surrounding space; created on first use.
 
+### contacts_assign_location
+
+`POST /api/v1/contacts/locations`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`. Changes: `contacts`.
+
+Link several contacts to one location
+
+- `contact_ids` (body, array of string uuid, required)
+- `location_id` (body, string uuid, required): An active location from `locations_list`
+
+### contacts_export
+
+`GET /api/v1/contacts/export`. Scope: `contacts:read`. Member: `deny`.
+
+Export contacts as CSV
+
+- `location_id` (query, string uuid): Only the contacts linked to this location
+- `q` (query, string): Free text. Only contacts whose name, email or phone contains it.
+
 ### contacts_get
 
 `GET /api/v1/contacts/{contactId}`. Scope: `contacts:read`. Member: `scoped`.
@@ -840,6 +906,25 @@ Add a tag to a contact
 Get one contact
 
 - `contactId` (path, string uuid, required)
+
+### contacts_get_affiliation
+
+`GET /api/v1/contacts/{contactId}/locations/{locationId}/affiliation`. Scope: `contacts:read`. Member: `scoped`.
+
+Get a contact’s owner, company and extra addresses at a location
+
+- `contactId` (path, string uuid, required)
+- `locationId` (path, string, required): A location the contact is linked to
+
+### contacts_lift_suppression
+
+`POST /api/v1/contacts/suppressions/{suppressionId}/lift`. Scope: `contacts:write`. Member: `deny`. Confirm: required. Changes: `contacts`.
+
+Lift a suppression
+
+- `suppressionId` (path, string uuid, required)
+- `channel` (body, string, required, one of `email`, `sms`): The `channel` of the suppression
+- `reason` (body, string, required): Why. Stored in the suppression audit log.
 
 ### contacts_list_interactions
 
@@ -869,6 +954,18 @@ List the notes of a contact
 
 List the organization’s pipeline stages
 
+### contacts_list_suppressions
+
+`GET /api/v1/contacts/suppressions`. Scope: `contacts:read`. Member: `deny`.
+
+List suppressed email addresses and phone numbers
+
+- `page` (query, number): 1-based page number
+- `limit` (query, number): Page size (capped at 100)
+- `channel` (query, string, one of `email`, `sms`): One channel. Both when left out.
+- `q` (query, string): Matches the suppressed email or phone, without regard to case
+- `include_lifted` (query, boolean): Also list lifted SMS opt-outs, with `active` false
+
 ### contacts_remove_tag
 
 `DELETE /api/v1/contacts/{contactId}/tags/{tag}`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`. Confirm: required. Changes: `contacts`.
@@ -891,6 +988,16 @@ Search contacts
 - `email` (query, string email): Exact email, without regard to case
 - `phone` (query, string): Exact phone number with its country code. Spaces, dashes and brackets are ignored, so `+1 (415) 555-0100` works. Matches the contact's phone number, not a phone held in `custom_fields`.
 
+### contacts_set_locations
+
+`PUT /api/v1/contacts/{contactId}/locations`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`. Changes: `contacts`.
+
+Set the locations of a contact
+
+- `contactId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `location_ids` (body, array of string uuid, required): Every location the contact is linked to after the call. Each must be an active location.
+
 ### contacts_suppress
 
 `POST /api/v1/contacts/{contactId}/suppress`. Scope: `contacts:write`. Member: `deny`. Manager power: `contacts`. Confirm: required. Changes: `contacts`, `sequences`.
@@ -900,6 +1007,16 @@ Suppress a contact on email or SMS
 - `contactId` (path, string uuid, required)
 - `channels` (body, array of string, required, one of `email`, `sms`)
 - `reason` (body, string): Why, for example "asked to stop on a call". Written to the server log; not stored on the contact.
+
+### contacts_suppress_address
+
+`POST /api/v1/contacts/suppressions`. Scope: `contacts:write`. Member: `deny`. Confirm: required. Changes: `contacts`, `sequences`.
+
+Suppress an email address or phone number
+
+- `channel` (body, string, required, one of `email`, `sms`)
+- `identifier` (body, string, required): An email address, or a phone number with its country code (E.164). It need not belong to a contact.
+- `reason` (body, string, required): Why. Stored in the suppression audit log.
 
 ### contacts_update
 
@@ -914,6 +1031,20 @@ Update a contact
 - `email` (body, string email)
 - `stage_id` (body, string): A stage `id` from the organization's pipeline
 - `custom_fields` (body, object): Custom field values to merge, keyed by field name. An unknown name is a 400 that names it. At most 200 keys.
+
+### contacts_update_affiliation
+
+`PUT /api/v1/contacts/{contactId}/locations/{locationId}/affiliation`. Scope: `contacts:write`. Member: `scoped`. Changes: `contacts`.
+
+Change a contact’s owner, company or extra addresses at a location
+
+- `contactId` (path, string uuid, required)
+- `locationId` (path, string, required): A location the contact is linked to
+- `expected_revision` (body, number, required): The `revision` read last, or 0 when `affiliation` is null
+- `owner_id` (body, string uuid): `null` clears the owner
+- `business_id` (body, string uuid): `null` clears the company
+- `additional_emails` (body, array of string): Replaces the list. Never the primary email.
+- `additional_phones` (body, array of string): E.164. Replaces the list. Never the primary phone.
 
 ### contacts_upsert
 
@@ -935,6 +1066,18 @@ Create or update a contact by email
   - `supersedes` (body, array of ContactCancelEventDto): Events whose running enrollments this one REPLACES. Cancelled after this event claims its `key` and before it enrolls, so a redelivery with the same `key` cancels nothing and enrolls nothing. Use this for mutually exclusive states of one subject; use the top-level `cancel_events` for an unconditional exit.
     - `name` (body, string, required): Event name whose enrollments should be cancelled for this contact.
     - `reason` (body, string, one of `replied`, `booked`, `opted_out`, `manual`, `sequence_deactivated`, `converted`, `stage_reached`, `goal_met`, `schedule_cancelled`, `assessment_retake`): Why the journey ended. Defaults to `goal_met`.
+
+### contacts_upsert_company
+
+`PUT /api/v1/contacts/{contactId}/locations/{locationId}/affiliation/companies/{companyId}`. Scope: `contacts:write`. Member: `scoped`. Changes: `contacts`.
+
+Create or rename a customer company at a location
+
+- `contactId` (path, string uuid, required)
+- `locationId` (path, string, required): A location the contact is linked to
+- `companyId` (path, string, required): A new UUID to create, or a company `id` to rename
+- `expected_revision` (body, number, required): 0 creates the company. To rename, the `revision` read last.
+- `name` (body, string, required)
 
 ## Context access
 
@@ -2818,6 +2961,22 @@ Create a draft sequence
   - `start_minute` (body, number, required): Opens at this minute of the day, organization time. 540 is 09:00.
   - `end_minute` (body, number, required): Closes at this minute (exclusive). 1080 is 18:00.
 
+### sequences_create_send_schedule
+
+`POST /api/v1/sequences/send-schedules`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Confirm: required. Changes: `sequences`.
+
+Create a send window
+
+- `name` (body, string, required)
+- `weekdays` (body, array of number, required): Days a send may go out: 0 is Sunday, 6 is Saturday
+- `start_minute` (body, number, required): First minute of the day a send may go out
+- `end_minute` (body, number, required): Last minute of the day, exclusive. After `start_minute`.
+- `timezone_mode` (body, string, required, one of `contact`, `organization`): Whose clock the window is read in
+- `skip_holidays` (body, boolean, required)
+- `holiday_calendar` (body, string, required, one of `US`)
+- `randomize_minutes` (body, number, required): Minutes of random delay added to each send
+- `is_default` (body, boolean, required): True makes it the window a sequence with no `send_schedule_id` uses
+
 ### sequences_delete
 
 `DELETE /api/v1/sequences/{sequenceId}`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Confirm: required. Changes: `sequences`.
@@ -3073,6 +3232,23 @@ Change a sequence
   - `start_minute` (body, number, required): Opens at this minute of the day, organization time. 540 is 09:00.
   - `end_minute` (body, number, required): Closes at this minute (exclusive). 1080 is 18:00.
 - `expected_revision` (body, number): The `definition_revision` of the read you changed. The update answers 409 `stale_revision` when the sequence has changed since. Omit it to save regardless.
+
+### sequences_update_send_schedule
+
+`PUT /api/v1/sequences/send-schedules/{sendScheduleId}`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Confirm: required. Changes: `sequences`.
+
+Change a send window
+
+- `sendScheduleId` (path, string uuid, required)
+- `name` (body, string, required)
+- `weekdays` (body, array of number, required): Days a send may go out: 0 is Sunday, 6 is Saturday
+- `start_minute` (body, number, required): First minute of the day a send may go out
+- `end_minute` (body, number, required): Last minute of the day, exclusive. After `start_minute`.
+- `timezone_mode` (body, string, required, one of `contact`, `organization`): Whose clock the window is read in
+- `skip_holidays` (body, boolean, required)
+- `holiday_calendar` (body, string, required, one of `US`)
+- `randomize_minutes` (body, number, required): Minutes of random delay added to each send
+- `is_default` (body, boolean, required): True makes it the window a sequence with no `send_schedule_id` uses
 
 ## Staff
 

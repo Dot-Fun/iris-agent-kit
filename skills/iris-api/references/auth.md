@@ -70,17 +70,18 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 
 | Scope | Label |
 |---|---|
-| `contacts:read` | Search and read contacts |
-| `contacts:write` | Create and update contacts, notes, tags, suppression, SMS consent, and enroll contacts in sequences or cancel them through events |
+| `contacts:read` | Search and read contacts, export them as CSV, list suppressed addresses, and read a contact's company and owner at a location |
+| `contacts:write` | Create and update contacts, notes, tags, suppression, SMS consent, and enroll contacts in sequences or cancel them through events. Set a contact's locations, company and owner, and suppress or lift an address |
 | `sequences:read` | Read sequences, enrollments, send logs and totals, and a broadcast's schedule and runs |
-| `sequences:write` | Author, activate, pause, resume and duplicate sequences, enroll and cancel, and set, start and pause a broadcast's schedule and cancel one run |
-| `appointments:read` | Read appointments, open slots, calendars, locations, booking options and territories |
-| `appointments:write` | Book, change, reschedule and cancel appointments, including attendee details, and get or reset an appointment’s self-service link |
+| `sequences:write` | Author, activate, pause, resume and duplicate sequences, enroll and cancel, and set, start and pause a broadcast's schedule and cancel one run, and create and change send windows |
+| `appointments:read` | Read appointments, open slots, calendars, locations, booking options and territories, and list the appointments that need attention |
+| `appointments:write` | Book, change, reschedule and cancel appointments, including attendee details, place, all-day flag, status and time zone, get or reset an appointment’s self-service link, and keep a conflicted appointment |
 | `conversations:read` | Read conversations and messages |
 | `conversations:write` | Send an SMS, reply in a conversation, and hold or resume its AI. A staff member acts only for their own clients, while their SMS setting is on |
 | `calls:read` | Read calls and transcripts |
+| `calls:write` | Delete calls and their recordings. An owner or admin only |
 | `audiences:read` | Read audiences |
-| `audiences:write` | Add and remove audience members |
+| `audiences:write` | Add and remove audience members, and delete an audience (an owner only) |
 | `forms:read` | Read forms, their fields and their submissions |
 | `forms:write` | Create, change and delete forms and their fields, reorder the fields, and rotate a form's submission key |
 | `calendar:read` | Read the calendar settings, saved views, feeds and view links |

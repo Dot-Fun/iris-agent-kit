@@ -199,9 +199,480 @@
         "x-member-access": "scoped"
       }
     },
+    "/api/v1/contacts/export": {
+      "get": {
+        "description": "The whole contact list as one CSV file, as the dashboard exports it: phone number, name, email,\ncall counts, first and last seen, and every custom field. Only an OWNER or ADMIN.\n`location_id` keeps the contacts linked to one location. `q` keeps those whose name, email or phone\ncontains it.",
+        "operationId": "contacts_export",
+        "parameters": [
+          {
+            "name": "location_id",
+            "required": false,
+            "in": "query",
+            "description": "Only the contacts linked to this location",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Free text. Only contacts whose name, email or phone contains it.",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The CSV file, with a header row",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `contacts:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Export contacts as CSV",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ],
+        "x-iris-scope": "contacts:read",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/contacts/locations": {
+      "post": {
+        "description": "Adds the location to each contact and keeps their other locations. Idempotent: a contact already\nlinked to it changes nothing. A MANAGER links only contacts at their own locations, to one of them.",
+        "operationId": "contacts_assign_location",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactsAssignLocationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactsAssignLocationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The location is not an active location of the organization"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The location is outside the credential’s locations\n\nThe key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `contacts` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A contact is not in the organization, or outside the credential’s locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Link several contacts to one location",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "contacts"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "Remove the location from each contact with contacts_set_locations."
+        },
+        "x-iris-scope": "contacts:write",
+        "x-manager-power": "contacts",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/contacts/suppressions": {
+      "get": {
+        "description": "Every email opt-out and SMS opt-out or revoked SMS consent in the organization, newest first,\nalso those of addresses no contact has. Only an OWNER or ADMIN. `q` matches the address.",
+        "operationId": "contacts_list_suppressions",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (capped at 100)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          },
+          {
+            "name": "channel",
+            "required": false,
+            "in": "query",
+            "description": "One channel. Both when left out.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "email",
+                "sms"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Matches the suppressed email or phone, without regard to case",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include_lifted",
+            "required": false,
+            "in": "query",
+            "description": "Also list lifted SMS opt-outs, with `active` false",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactSuppressionPageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `contacts:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List suppressed email addresses and phone numbers",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ],
+        "x-iris-scope": "contacts:read",
+        "x-member-access": "deny"
+      },
+      "post": {
+        "description": "Blocks every further email, or every SMS, to the address, whether or not a contact has it, and\nstops the sequences that would message it. Only an OWNER or ADMIN, acting as a person: an\norganization key with no creator answers 403. The reason goes to the suppression audit log.\nTo suppress a known contact on both channels, `contacts_suppress` is shorter.",
+        "operationId": "contacts_suppress_address",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactSuppressAddressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactSuppressionDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid address for the channel, or a blank reason"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The address is already suppressed"
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Suppress an email address or phone number",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "contacts",
+          "sequences"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Lift it with contacts_lift_suppression."
+        },
+        "x-iris-scope": "contacts:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/contacts/suppressions/{suppressionId}/lift": {
+      "post": {
+        "description": "Makes the address contactable again on the channel. Only a suppression with source `manual` or\n`api` can be lifted: one the contact recorded (STOP reply, unsubscribe link, bounce) answers 403.\nLifting an SMS opt-out does not restore SMS consent. Only an OWNER or ADMIN, acting as a person.",
+        "operationId": "contacts_lift_suppression",
+        "parameters": [
+          {
+            "name": "suppressionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactLiftSuppressionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactLiftSuppressionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The contact recorded the opt-out, so it stays\n\nThe key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such suppression in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Lift a suppression",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "contacts"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Suppress the address again with contacts_suppress_address."
+        },
+        "x-iris-scope": "contacts:write",
+        "x-member-access": "deny"
+      }
+    },
     "/api/v1/contacts/{contactId}": {
       "get": {
-        "description": "The contact with its pipeline stage, tags, custom fields and number of notes.\nA MEMBER, and a MANAGER without the contacts power, get its `id`, `name`, `email` and `phone` only.\nA MEMBER at the own-records level gets only the clients of their own appointments (404 otherwise).",
+        "description": "The contact with its pipeline stage, tags, custom fields, number of notes and location ids.\nA MEMBER, and a MANAGER without the contacts power, get its `id`, `name`, `email` and `phone` only.\nA MEMBER at the own-records level gets only the clients of their own appointments (404 otherwise).",
         "operationId": "contacts_get",
         "parameters": [
           {
@@ -409,6 +880,450 @@
         "x-iris-scope": "contacts:write",
         "x-manager-power": "contacts",
         "x-member-access": "deny"
+      }
+    },
+    "/api/v1/contacts/{contactId}/locations": {
+      "put": {
+        "description": "Replaces the contact’s locations with `location_ids`: it stays linked to those only. At least one,\neach an active location. A MANAGER sets only locations of their own. Returns the contact as\n`contacts_get` does. To add one location to several contacts, use `contacts_assign_location`.",
+        "operationId": "contacts_set_locations",
+        "parameters": [
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactSetLocationsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "An empty list, or a location that is not active"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A location outside the credential’s locations\n\nThe key does not carry the `contacts:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `contacts` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Set the locations of a contact",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "contacts"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "contacts_get",
+            "args": {
+              "contactId": "request.contactId"
+            }
+          }
+        },
+        "x-iris-scope": "contacts:write",
+        "x-manager-power": "contacts",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/contacts/{contactId}/locations/{locationId}/affiliation": {
+      "get": {
+        "description": "GoHighLevel organizations only. The contact’s owner, customer company and additional emails and\nphones at one location, with the companies and owners to choose from. `affiliation` is null until\nthe first change. Needs a person: an organization key answers 403 `no_acting_user`.",
+        "operationId": "contacts_get_affiliation",
+        "parameters": [
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "A location the contact is linked to",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactAffiliationPageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `contacts:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get a contact’s owner, company and extra addresses at a location",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ],
+        "x-iris-scope": "contacts:read",
+        "x-member-access": "scoped"
+      },
+      "put": {
+        "description": "GoHighLevel organizations only. Changes only the fields sent. Send `expected_revision` from\n`contacts_get_affiliation`, or 0 when its `affiliation` is null: another change since answers 409.\n`business_id` names a company from `companies`. Create one with `contacts_upsert_company`.\nThe primary email and phone never change here.",
+        "operationId": "contacts_update_affiliation",
+        "parameters": [
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "A location the contact is linked to",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactAffiliationUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicContactAffiliationDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No field sent, or an invalid email or phone"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `contacts:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The affiliation changed since `expected_revision`. Read it again."
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change a contact’s owner, company or extra addresses at a location",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "contacts"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "The affiliation answers a revision, not an updated_at. Read it with contacts_get_affiliation and send the earlier values with expected_revision."
+        },
+        "x-iris-scope": "contacts:write",
+        "x-member-access": "scoped"
+      }
+    },
+    "/api/v1/contacts/{contactId}/locations/{locationId}/affiliation/companies/{companyId}": {
+      "put": {
+        "description": "GoHighLevel organizations only. With `expected_revision` 0, creates the company under a new\n`companyId` you choose (a UUID). Otherwise renames it: send its `revision` from\n`contacts_get_affiliation`, and another change since answers 409. Then link it with\n`contacts_update_affiliation` `business_id`.",
+        "operationId": "contacts_upsert_company",
+        "parameters": [
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "A location the contact is linked to",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "companyId",
+            "required": true,
+            "in": "path",
+            "description": "A new UUID to create, or a company `id` to rename",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactCompanyUpsertDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicContactCompanyDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `contacts:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such contact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The company changed since `expected_revision`, or the id is taken"
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Create or rename a customer company at a location",
+        "tags": [
+          "Contacts",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "contacts"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "The affiliation answers a revision, not an updated_at. Read it with contacts_get_affiliation and send the earlier values with expected_revision."
+        },
+        "x-iris-scope": "contacts:write",
+        "x-member-access": "scoped"
       }
     },
     "/api/v1/contacts/{contactId}/notes": {
@@ -2162,6 +3077,79 @@
         "x-member-access": "scoped"
       }
     },
+    "/api/v1/appointments/conflicted": {
+      "get": {
+        "description": "The dashboard’s Needs attention list for one location: future appointments whose team member is\nbusy in Google Calendar, on time off, no longer eligible, or whose location is closed then. Each\ncause has a `key`. Move or reassign the appointment, or keep it as it is with\n`appointments_keep_conflicted`. Only an OWNER, an ADMIN or a MANAGER with the staff power.",
+        "operationId": "appointments_list_conflicted",
+        "parameters": [
+          {
+            "name": "location_id",
+            "required": true,
+            "in": "query",
+            "description": "The location to check, from `locations_list`",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictedAppointmentListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The location is outside the credential’s locations\n\nThe key does not carry the `appointments:read` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `staff` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List appointments whose team member cannot do them",
+        "tags": [
+          "Appointments",
+          "Public API"
+        ],
+        "x-iris-scope": "appointments:read",
+        "x-manager-power": "staff",
+        "x-member-access": "deny"
+      }
+    },
     "/api/v1/appointments/{appointmentId}": {
       "get": {
         "description": "The appointment in any status, cancelled included.\nFor a repeating appointment, `recurring` is true and `series_id` names the series.",
@@ -2243,7 +3231,7 @@
         "x-member-access": "scoped"
       },
       "patch": {
-        "description": "Changes only the fields sent: `title`, `description` (the appointment’s notes) and the attendee’s\n`attendee_name`, `attendee_phone`, `attendee_email` and `attendee_notes`. A nullable field set to\n`null` is cleared. Send at least one field. Mirrors the change to Google Calendar, which keeps an\nold description or attendee email that was cleared (the dashboard edit does the same).\nThe time, status, team member, service, location and address do not change here. A body that names\none answers 400 with the operation to use: `appointments_reschedule` moves the appointment and\n`appointments_cancel` cancels it.\nA repeating appointment answers 409 `recurring_series_not_supported` and nothing changes.\nAt a staffed location a member’s credential books and checks only its own times, and changes only its own appointments. Anything else answers 403 `insufficient_role`. A manager’s credential with the appointments power books, checks and changes anyone’s appointments at its own locations.",
+        "description": "Changes only the fields sent: `title`, `description` (the appointment’s notes) and the attendee’s\n`attendee_name`, `attendee_phone`, `attendee_email` and `attendee_notes`. A nullable field set to\n`null` is cleared. Send at least one field. Mirrors the change to Google Calendar, which keeps an\nold description or attendee email that was cleared (the dashboard edit does the same).\nThe time, status, team member, service, location and address do not change here. A body that names\none answers 400 with the operation to use: `appointments_reschedule` moves the appointment,\n`appointments_cancel` cancels it, and `appointments_update_details` sets the status, place, time zone,\nall-day flag and repeat rule.\nA repeating appointment answers 409 `recurring_series_not_supported` and nothing changes.\nAt a staffed location a member’s credential books and checks only its own times, and changes only its own appointments. Anything else answers 403 `insufficient_role`. A manager’s credential with the appointments power books, checks and changes anyone’s appointments at its own locations.",
         "operationId": "appointments_update",
         "parameters": [
           {
@@ -2364,6 +3352,232 @@
         },
         "x-iris-scope": "appointments:write",
         "x-member-access": "scoped"
+      }
+    },
+    "/api/v1/appointments/{appointmentId}/details": {
+      "patch": {
+        "description": "Changes only the fields sent, as the dashboard’s appointment editor does, and mirrors the change\nto Google Calendar. Send at least one field. The start and end do not move: use\n`appointments_reschedule`. `status` `cancelled` answers 400: use `appointments_cancel`.\n`completed` and `no_show` can start the matching follow-up sequences, which message the customer.\nOne occurrence of a repeating appointment answers 409 `recurring_series_not_supported`: change its\nseries, named by `series_id`.\nAt a staffed location a member’s credential books and checks only its own times, and changes only its own appointments. Anything else answers 403 `insufficient_role`. A manager’s credential with the appointments power books, checks and changes anyone’s appointments at its own locations.",
+        "operationId": "appointments_update_details",
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentDetailsUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, no field to change, or status `cancelled`"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `appointments:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such appointment in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\n`recurring_series_not_supported`: one occurrence of a series. Change the series.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change an appointment’s status, place, time zone, all-day flag or repeat rule",
+        "tags": [
+          "Appointments",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "appointments"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "appointments_get",
+            "args": {
+              "appointmentId": "request.appointmentId"
+            }
+          },
+          "noUndo": {
+            "status": "Setting the status back can start reminder or follow-up sequences that message the customer again."
+          }
+        },
+        "x-iris-scope": "appointments:write",
+        "x-member-access": "scoped"
+      }
+    },
+    "/api/v1/appointments/{appointmentId}/keep": {
+      "post": {
+        "description": "The causes sent stop listing the appointment in `appointments_list_conflicted`. Nothing else changes:\nthe customer, the reminders and Google Calendar see nothing. A new cause lists it again.\nOnly an OWNER, an ADMIN or a MANAGER with the staff power.",
+        "operationId": "appointments_keep_conflicted",
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentKeepConflictedDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentKeptDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `appointments:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `staff` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such appointment in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Keep a conflicted appointment as it is",
+        "tags": [
+          "Appointments",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "appointments"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "Kept causes stay kept. The appointment comes back to the list only when a new cause appears."
+        },
+        "x-iris-scope": "appointments:write",
+        "x-manager-power": "staff",
+        "x-member-access": "deny"
       }
     },
     "/api/v1/appointments/{appointmentId}/reschedule": {
@@ -6204,6 +7418,84 @@
         "x-member-access": "scoped"
       }
     },
+    "/api/v1/calls/delete": {
+      "post": {
+        "description": "Deletes each call with its transcript and recording, at the voice provider too. Only an OWNER or\nADMIN. An id that is not a call of the organization, or not at `location_id`, is skipped, so\n`deleted` can be lower than the ids sent. A deleted call cannot be restored.",
+        "operationId": "calls_delete",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CallsDeleteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallsDeleteResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `calls:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete calls",
+        "tags": [
+          "Calls",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "calls"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Deleted calls and their recordings cannot be restored."
+        },
+        "x-iris-scope": "calls:write",
+        "x-member-access": "deny"
+      }
+    },
     "/api/v1/audiences": {
       "get": {
         "description": "Every audience that is not archived, newest first. Only a `static` audience takes members.",
@@ -6575,6 +7867,95 @@
               "audienceId": "request.audienceId"
             }
           }
+        },
+        "x-iris-scope": "audiences:write",
+        "x-member-access": "deny"
+      },
+      "delete": {
+        "description": "Deletes the audience and its member list for good. Only an owner’s credential: any other answers\n403 `insufficient_role`. An audience a broadcast or a sequence trigger still uses answers 409 that\nnames them. To keep it, use `audiences_archive`.",
+        "operationId": "audiences_delete",
+        "parameters": [
+          {
+            "name": "audienceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudienceDeletedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not an owner’s credential\n\nThe key does not carry the `audiences:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such audience in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A broadcast or a sequence still uses the audience"
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete an audience",
+        "tags": [
+          "Audiences",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "audiences"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A deleted audience and its member list cannot be restored. Archive it with audiences_archive to keep it."
         },
         "x-iris-scope": "audiences:write",
         "x-member-access": "deny"
@@ -8569,6 +9950,188 @@
         ],
         "x-iris-scope": "sequences:read",
         "x-member-access": "open"
+      },
+      "post": {
+        "description": "A new window of days and hours a sequence may send in. Name it on a sequence with `send_schedule_id`.\n`is_default` true makes it the window every sequence with none uses. A credential limited to some\nlocations cannot set the default. Send windows cannot be deleted.",
+        "operationId": "sequences_create_send_schedule",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendScheduleSaveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendScheduleDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or an end before the start"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Create a send window",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "sequences"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Send windows cannot be deleted."
+        },
+        "x-iris-scope": "sequences:write",
+        "x-manager-power": "sequences",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/sequences/send-schedules/{sendScheduleId}": {
+      "put": {
+        "description": "Replaces every field of the window, for every sequence that uses it. Send the whole window, as\n`sequences_list_send_schedules` shows it. A credential limited to some locations changes only a\nwindow its own sequences use, and never the default.",
+        "operationId": "sequences_update_send_schedule",
+        "parameters": [
+          {
+            "name": "sendScheduleId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendScheduleSaveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendScheduleDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or an end before the start"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such send window in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change a send window",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "sequences"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A send window answers no updated_at. Read it with sequences_list_send_schedules and send the earlier values."
+        },
+        "x-iris-scope": "sequences:write",
+        "x-manager-power": "sequences",
+        "x-member-access": "deny"
       }
     },
     "/api/v1/sequences/variables": {
@@ -30598,6 +32161,209 @@
           "limit"
         ]
       },
+      "ContactsAssignLocationDto": {
+        "type": "object",
+        "properties": {
+          "contact_ids": {
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "An active location from `locations_list`"
+          }
+        },
+        "required": [
+          "contact_ids",
+          "location_id"
+        ]
+      },
+      "ContactsAssignLocationResponseDto": {
+        "type": "object",
+        "properties": {
+          "location_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contact_ids": {
+            "description": "The contacts now linked to the location",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "location_id",
+          "contact_ids"
+        ]
+      },
+      "ContactSuppressionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Lift it with `contacts_lift_suppression`"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms"
+            ]
+          },
+          "identifier": {
+            "type": "string",
+            "description": "The suppressed email address or E.164 phone number"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "opted_out",
+              "consent_revoked"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "description": "How it was recorded: stop_keyword, unsubscribe_link, bounce, manual, api and others. Only manual and api can be lifted."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "active": {
+            "type": "boolean",
+            "description": "False for a lifted SMS opt-out"
+          },
+          "contact_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "contact_name": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "channel",
+          "identifier",
+          "reason",
+          "source",
+          "created_at",
+          "active",
+          "contact_id",
+          "contact_name"
+        ]
+      },
+      "ContactSuppressionPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactSuppressionDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "ContactSuppressAddressDto": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms"
+            ]
+          },
+          "identifier": {
+            "type": "string",
+            "maxLength": 320,
+            "description": "An email address, or a phone number with its country code (E.164). It need not belong to a contact."
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Why. Stored in the suppression audit log."
+          }
+        },
+        "required": [
+          "channel",
+          "identifier",
+          "reason"
+        ]
+      },
+      "ContactLiftSuppressionDto": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms"
+            ],
+            "description": "The `channel` of the suppression"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Why. Stored in the suppression audit log."
+          }
+        },
+        "required": [
+          "channel",
+          "reason"
+        ]
+      },
+      "ContactLiftSuppressionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms"
+            ]
+          },
+          "identifier": {
+            "type": "string",
+            "description": "The identifier that is contactable again"
+          }
+        },
+        "required": [
+          "id",
+          "channel",
+          "identifier"
+        ]
+      },
       "ContactDto": {
         "type": "object",
         "properties": {
@@ -30653,6 +32419,13 @@
           "notes_count": {
             "type": "number",
             "description": "Absent when the credential reads identity only: a MEMBER, or a MANAGER without the contacts power."
+          },
+          "location_ids": {
+            "description": "The locations the contact is linked to. Set them with `contacts_set_locations`. Absent when the credential reads identity only: a MEMBER, or a MANAGER without the contacts power.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -30690,6 +32463,203 @@
             "maxProperties": 200
           }
         }
+      },
+      "ContactSetLocationsDto": {
+        "type": "object",
+        "properties": {
+          "location_ids": {
+            "minItems": 1,
+            "maxItems": 100,
+            "description": "Every location the contact is linked to after the call. Each must be an active location.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "location_ids"
+        ]
+      },
+      "PublicContactAffiliationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Send it back as `expected_revision`"
+          },
+          "owner_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "A user from `owners`"
+          },
+          "business_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "A company from `companies`"
+          },
+          "additional_emails": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "additional_phones": {
+            "description": "E.164",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "revision",
+          "owner_id",
+          "business_id",
+          "additional_emails",
+          "additional_phones"
+        ]
+      },
+      "PublicContactCompanyDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Send it back as `expected_revision` to rename the company"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "revision"
+        ]
+      },
+      "ContactAffiliationOwnerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "ContactAffiliationPageDto": {
+        "type": "object",
+        "properties": {
+          "affiliation": {
+            "nullable": true,
+            "description": "Null until the first change at this location. Send `expected_revision` 0 then.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicContactAffiliationDto"
+              }
+            ]
+          },
+          "companies": {
+            "description": "The location’s customer companies",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicContactCompanyDto"
+            }
+          },
+          "owners": {
+            "description": "The users who can own the contact",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactAffiliationOwnerDto"
+            }
+          }
+        },
+        "required": [
+          "affiliation",
+          "companies",
+          "owners"
+        ]
+      },
+      "ContactAffiliationUpdateDto": {
+        "type": "object",
+        "properties": {
+          "expected_revision": {
+            "type": "number",
+            "minimum": 0,
+            "description": "The `revision` read last, or 0 when `affiliation` is null"
+          },
+          "owner_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "`null` clears the owner"
+          },
+          "business_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "`null` clears the company"
+          },
+          "additional_emails": {
+            "maxItems": 100,
+            "description": "Replaces the list. Never the primary email.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "additional_phones": {
+            "maxItems": 100,
+            "description": "E.164. Replaces the list. Never the primary phone.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "expected_revision"
+        ]
+      },
+      "ContactCompanyUpsertDto": {
+        "type": "object",
+        "properties": {
+          "expected_revision": {
+            "type": "number",
+            "minimum": 0,
+            "description": "0 creates the company. To rename, the `revision` read last."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 250
+          }
+        },
+        "required": [
+          "expected_revision",
+          "name"
+        ]
       },
       "ContactNoteCreateDto": {
         "type": "object",
@@ -31334,6 +33304,7 @@
                 "conversations:read",
                 "conversations:write",
                 "calls:read",
+                "calls:write",
                 "audiences:read",
                 "audiences:write",
                 "forms:read",
@@ -31470,6 +33441,7 @@
                 "conversations:read",
                 "conversations:write",
                 "calls:read",
+                "calls:write",
                 "audiences:read",
                 "audiences:write",
                 "forms:read",
@@ -31577,6 +33549,7 @@
               "conversations:read",
               "conversations:write",
               "calls:read",
+              "calls:write",
               "audiences:read",
               "audiences:write",
               "forms:read",
@@ -31839,6 +33812,20 @@
             "nullable": true,
             "description": "The appointment notes, or null"
           },
+          "all_day": {
+            "type": "boolean",
+            "description": "True for an all-day appointment"
+          },
+          "location": {
+            "type": "string",
+            "nullable": true,
+            "description": "The free-text place, or null"
+          },
+          "recurrence_rule": {
+            "type": "string",
+            "nullable": true,
+            "description": "The RFC 5545 RRULE of a repeating series, or null"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time"
@@ -31881,6 +33868,9 @@
           "attendee_email",
           "attendee_notes",
           "description",
+          "all_day",
+          "location",
+          "recurrence_rule",
           "created_at",
           "updated_at",
           "recurring",
@@ -32035,6 +34025,128 @@
           "slots"
         ]
       },
+      "ConflictedAppointmentTeamMemberDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "AppointmentConflictCauseDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Send it to `appointments_keep_conflicted` to keep the appointment despite it"
+          },
+          "cause": {
+            "type": "string",
+            "enum": [
+              "google_busy",
+              "time_off",
+              "ineligible",
+              "location_closed"
+            ]
+          },
+          "rule": {
+            "type": "string",
+            "enum": [
+              "deactivated",
+              "unassigned_location",
+              "offering_not_handled"
+            ],
+            "nullable": true,
+            "description": "Why the person cannot do it, for `ineligible`"
+          },
+          "date": {
+            "type": "string",
+            "nullable": true,
+            "description": "The day of the time off or closure"
+          },
+          "from": {
+            "type": "string",
+            "nullable": true
+          },
+          "to": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "key",
+          "cause",
+          "rule",
+          "date",
+          "from",
+          "to"
+        ]
+      },
+      "ConflictedAppointmentItemDto": {
+        "type": "object",
+        "properties": {
+          "appointment_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "start_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "team_member": {
+            "$ref": "#/components/schemas/ConflictedAppointmentTeamMemberDto"
+          },
+          "causes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppointmentConflictCauseDto"
+            }
+          }
+        },
+        "required": [
+          "appointment_id",
+          "title",
+          "start_time",
+          "end_time",
+          "location_id",
+          "team_member",
+          "causes"
+        ]
+      },
+      "ConflictedAppointmentListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConflictedAppointmentItemDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
       "AppointmentCreateDto": {
         "type": "object",
         "properties": {
@@ -32130,6 +34242,85 @@
             "description": "Notes about the attendee"
           }
         }
+      },
+      "AppointmentDetailsUpdateDto": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500,
+            "description": "The free-text place. `null` clears it."
+          },
+          "all_day": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "tentative",
+              "confirmed",
+              "completed",
+              "no_show"
+            ],
+            "description": "`completed` and `no_show` can start the matching follow-up sequences."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "IANA time zone, e.g. America/Denver. The start and end do not move."
+          },
+          "recurrence_rule": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500,
+            "description": "An RFC 5545 RRULE, e.g. FREQ=WEEKLY;COUNT=4. `null` stops the repeat."
+          }
+        }
+      },
+      "AppointmentKeepConflictedDto": {
+        "type": "object",
+        "properties": {
+          "cause_keys": {
+            "minItems": 1,
+            "maxItems": 50,
+            "description": "The cause `key`s from `appointments_list_conflicted`. A key that is no longer a cause is ignored.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "cause_keys"
+        ]
+      },
+      "AppointmentKeptDto": {
+        "type": "object",
+        "properties": {
+          "appointment_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kept_keys": {
+            "description": "The causes now kept",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "remaining_keys": {
+            "description": "Causes still open. Empty when the appointment left the list.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "appointment_id",
+          "kept_keys",
+          "remaining_keys"
+        ]
       },
       "AppointmentRescheduleDto": {
         "type": "object",
@@ -33787,6 +35978,40 @@
           "has_audio"
         ]
       },
+      "CallsDeleteDto": {
+        "type": "object",
+        "properties": {
+          "call_ids": {
+            "minItems": 1,
+            "maxItems": 100,
+            "description": "Call `id`s from `calls_list`",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "location_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Delete only the calls at this location"
+          }
+        },
+        "required": [
+          "call_ids"
+        ]
+      },
+      "CallsDeleteResponseDto": {
+        "type": "object",
+        "properties": {
+          "deleted": {
+            "type": "number",
+            "description": "How many calls were deleted. An id not in the organization is skipped."
+          }
+        },
+        "required": [
+          "deleted"
+        ]
+      },
       "AudienceSummaryDto": {
         "type": "object",
         "properties": {
@@ -34115,6 +36340,25 @@
             "description": "`false` restores an archived audience. Archive with `audiences_archive`."
           }
         }
+      },
+      "AudienceDeletedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deleted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "deleted"
+        ]
       },
       "AudienceCountDto": {
         "type": "object",
@@ -35049,6 +37293,74 @@
           "total",
           "page",
           "limit"
+        ]
+      },
+      "SendScheduleSaveDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "weekdays": {
+            "minItems": 1,
+            "description": "Days a send may go out: 0 is Sunday, 6 is Saturday",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "start_minute": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1439,
+            "description": "First minute of the day a send may go out"
+          },
+          "end_minute": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 1440,
+            "description": "Last minute of the day, exclusive. After `start_minute`."
+          },
+          "timezone_mode": {
+            "type": "string",
+            "enum": [
+              "contact",
+              "organization"
+            ],
+            "description": "Whose clock the window is read in"
+          },
+          "skip_holidays": {
+            "type": "boolean"
+          },
+          "holiday_calendar": {
+            "type": "string",
+            "enum": [
+              "US"
+            ]
+          },
+          "randomize_minutes": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 120,
+            "description": "Minutes of random delay added to each send"
+          },
+          "is_default": {
+            "type": "boolean",
+            "description": "True makes it the window a sequence with no `send_schedule_id` uses"
+          }
+        },
+        "required": [
+          "name",
+          "weekdays",
+          "start_minute",
+          "end_minute",
+          "timezone_mode",
+          "skip_holidays",
+          "holiday_calendar",
+          "randomize_minutes",
+          "is_default"
         ]
       },
       "SequenceVariableTokenDto": {
