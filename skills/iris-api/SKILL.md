@@ -223,6 +223,10 @@ A key carries scopes, one read and one write per noun:
 | `staff:write` | read and change where a staff member hears about their appointments, and your own |
 | `assistant:write` | delete your own private Assistant note |
 | `feedback:write` | send product feedback to Iris as yourself |
+| `context_engine:read` | read the facts Iris knows about the business, the links between its records, the archetype, the suggested links and the snapshots |
+| `context_engine:write` | write facts and their sharing, set the archetype, add, change and delete links, run and review suggested links, and capture and publish snapshots |
+| `context_access:read` | read what each AI agent can read and write |
+| `context_access:write` | grant or deny an agent access to facts, set its ceiling, pin it to a snapshot, and remove an add-on agent |
 
 Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
 `/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
@@ -783,6 +787,49 @@ Both act as the person behind the credential: an organization key gets 403 `no_a
 Rewind cannot undo a HubSpot write. Only an owner or admin calls these, and a MEMBER or MANAGER
 gets 403 `insufficient_role`. An organization key gets 403 `no_acting_user` on
 `hubspot_approve_locations` and `hubspot_resolve_issue`.
+
+### 32. Teach Iris a fact and link the business's records
+
+1. Call `context_engine_list_facts`. Each topic lists its fields by `slot_id`, with the value of
+   each field that has one.
+2. Call `context_engine_write_fact` with `slot_id`, `value` and an `idempotency_key`. Send the
+   fact's `entity_id` to change a value. Leave it out for a field with no value. The phone agents
+   get the new value.
+3. To change who may hear a fact, call `context_engine_set_fact_sharing` with `slot_id`,
+   `entity_id` and `sensitivity`: `public`, `customer` or `internal`.
+4. Call `context_engine_list_relationships`. `entities` lists the records, and
+   `relationship_types` the link types with the record kinds each joins.
+5. Call `context_engine_create_relationship` with `from_entity_id`, `to_entity_id`, `rel_type` and
+   an `idempotency_key`.
+6. To change a link, read it with `context_engine_get_relationship`, then call
+   `context_engine_update_relationship` with all three fields and its `updated_at` as
+   `expected_updated_at`. A 409 `stale_revision` means it changed since you read it.
+7. Ask the user before `context_engine_delete_relationship`.
+8. To let the AI suggest links, call `context_engine_run_relationship_inference`. When its run is
+   `succeeded`, show the user `context_engine_list_relationship_suggestions`, and on the user's
+   choice call `context_engine_review_relationship_suggestions` with `accept` or `reject`.
+
+The archetype is the kind of business, and it decides which topics and fields apply. Read it with
+`context_engine_get_archetype`, and change it with `context_engine_set_archetype` and an `id` of its
+`options`. A MEMBER can list facts and links. Every other context engine operation needs an owner
+or admin.
+
+### 33. Freeze an agent's facts and set what it may read
+
+1. Call `context_access_get_summary`. Each card names an agent by `principal_id`, and lists what
+   it reads, writes and cannot read.
+2. Call `context_access_set_grant` with `principal_id`, `access` (`read`, `read_write` or `none`),
+   and `domain_id` for a whole topic or `target` for one field. Send one of the two.
+3. Call `context_access_set_ceiling` to set the most sensitive facts the agent may read.
+4. To freeze a topic, call `context_engine_capture_snapshot` with `domain_id` and an
+   `idempotency_key`, then `context_engine_publish_snapshot` with its `id`. To find a snapshot,
+   call `context_engine_list_snapshots`.
+5. Call `context_access_pin_snapshot` with the agent's `principal_id` and the snapshot `id`. Send
+   a null `snapshot_id` to go back to the live facts.
+6. Ask the user before `context_access_remove_agent`. Only a card with `removable` true can be
+   removed, and the API cannot add it back.
+
+Every context access operation needs an owner or admin, and its own `context_access` scope.
 
 ## Other operations
 

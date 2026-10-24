@@ -16471,6 +16471,1839 @@
         "x-member-access": "open"
       }
     },
+    "/api/v1/context-engine/facts": {
+      "get": {
+        "description": "Every topic with its fields, and the value of each field that has one. A field with no value has a null `entity_id`.\nA member’s credential does not see `restricted` facts.",
+        "operationId": "context_engine_list_facts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineFactListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the facts Iris knows about the business",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-scope": "context_engine:read",
+        "x-member-access": "open"
+      },
+      "post": {
+        "description": "Sets the value of one field, as the owner would in the dashboard. Send `entity_id` to change a record’s value.\nLeave it out for a field with no value: a new record is made, and `entity_id` in the answer names it.\nThe phone agents get the new value. `unlocked_domains` lists the topics this write completed.",
+        "operationId": "context_engine_write_fact",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContextEngineFactWriteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineFactWrittenDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, an unknown field, or a value of the wrong type"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such record in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Write a fact about the business",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "context_engine"
+        ],
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "A new value replaces the fact. To undo it, write the earlier value again with context_engine_write_fact."
+        },
+        "x-iris-scope": "context_engine:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/context-engine/facts/sharing": {
+      "patch": {
+        "description": "`public`: anyone, such as a caller. `customer`: a known customer. `internal`: the team only.\nThe value and where it came from stay the same.",
+        "operationId": "context_engine_set_fact_sharing",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContextEngineFactSharingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineFactWrittenDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or a restricted fact, whose sharing cannot change"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such fact in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Set who Iris may share a fact with",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "context_engine"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "To undo it, set the earlier sharing again. context_engine_list_facts shows the sharing of each fact."
+        },
+        "x-iris-scope": "context_engine:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/context-engine/archetype": {
+      "get": {
+        "description": "The archetype decides which topics and fields apply. `options` lists every archetype `context_engine_set_archetype` takes.",
+        "operationId": "context_engine_get_archetype",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineArchetypeDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get the kind of business Iris treats the organization as",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-scope": "context_engine:read",
+        "x-member-access": "deny"
+      },
+      "put": {
+        "description": "Send an `id` of the archetype options, or null to go back to the archetype of the business vertical.",
+        "operationId": "context_engine_set_archetype",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContextEngineArchetypeSetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineArchetypeDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body or an unknown archetype"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Set the kind of business Iris treats the organization as",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "context_engine"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "To undo it, read the archetype with context_engine_get_archetype first, and set the earlier one again. Null goes back to the archetype of the business vertical."
+        },
+        "x-iris-scope": "context_engine:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/context-engine/relationships": {
+      "get": {
+        "description": "Each link joins two records, such as an offering `offered_at` a location.\n`entities` lists the records a link can join, and `relationship_types` the link types with the record kinds each joins.",
+        "operationId": "context_engine_list_relationships",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineRelationshipListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the links between the business’s records",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-scope": "context_engine:read",
+        "x-member-access": "open"
+      },
+      "post": {
+        "description": "The two records must be of kinds the link type joins: `context_engine_list_relationships` lists them. The phone agents get the link.",
+        "operationId": "context_engine_create_relationship",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContextEngineRelationshipCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineRelationshipIdDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, a record linked to itself, or a type that does not join these kinds"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such record in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The two records are linked already, or the source has its most targets\n\n`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Link two of the business’s records",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "context_engine"
+        ],
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "operation": "context_engine_delete_relationship",
+          "args": {
+            "relationshipId": "response.id"
+          },
+          "record": {
+            "operation": "context_engine_get_relationship",
+            "args": {
+              "relationshipId": "response.id"
+            }
+          }
+        },
+        "x-iris-scope": "context_engine:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/context-engine/relationships/{relationshipId}": {
+      "get": {
+        "description": "The link with its `updated_at`, which `context_engine_update_relationship` and `context_engine_delete_relationship` take as `expected_updated_at`.",
+        "operationId": "context_engine_get_relationship",
+        "parameters": [
+          {
+            "name": "relationshipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineRelationshipRecordDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such relationship in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get one link",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-scope": "context_engine:read",
+        "x-member-access": "deny"
+      },
+      "patch": {
+        "description": "Replaces the source, the target and the type together. Send all three.",
+        "operationId": "context_engine_update_relationship",
+        "parameters": [
+          {
+            "name": "relationshipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContextEngineRelationshipUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineRelationshipIdDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, a record linked to itself, or a type that does not join these kinds"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such relationship in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nThe link follows the team and service settings. Change it there.\n\nThe two records are linked already, or the source has its most targets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change a link",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "context_engine"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "context_engine_get_relationship",
+            "args": {
+              "relationshipId": "request.relationshipId"
+            }
+          },
+          "fields": {
+            "from_entity_id": "from_entity",
+            "to_entity_id": "to_entity"
+          },
+          "together": [
+            [
+              "from_entity_id",
+              "to_entity_id",
+              "rel_type"
+            ]
+          ]
+        },
+        "x-iris-scope": "context_engine:write",
+        "x-member-access": "deny"
+      },
+      "delete": {
+        "description": "Removes the link between the two records. The records stay. The phone agents stop using the link.\nAsk the user first. A deleted link answers 404, so a repeat changes nothing.",
+        "operationId": "context_engine_delete_relationship",
+        "parameters": [
+          {
+            "name": "relationshipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineRelationshipDeletedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such relationship in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nThe link follows the team and service settings. Change it there.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete a link",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "context_engine"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A deleted link cannot be restored. Link the two records again with context_engine_create_relationship."
+        },
+        "x-iris-scope": "context_engine:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/context-engine/relationship-suggestions/runs": {
+      "post": {
+        "description": "Queues an AI run that reads the business’s records and suggests links between them. It adds no link itself.\nWhen a run is queued or running already, it answers that run with `reused` true.\nRead the suggestions with `context_engine_list_relationship_suggestions` once the run is `succeeded`.",
+        "operationId": "context_engine_run_relationship_inference",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineInferenceStartedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Find links the business’s records should have",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "context_engine"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "The suggestions it finds stay until reviewed. Reject the ones you do not want with context_engine_review_relationship_suggestions."
+        },
+        "x-iris-scope": "context_engine:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/context-engine/relationship-suggestions": {
+      "get": {
+        "description": "`status` defaults to `pending`, the review queue. Accept or reject them with `context_engine_review_relationship_suggestions`.",
+        "operationId": "context_engine_list_relationship_suggestions",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "The `next_cursor` of the page before. Leave out for the first page.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "pending",
+              "type": "string",
+              "enum": [
+                "pending",
+                "accepted",
+                "rejected"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineSuggestionPageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query or cursor"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the links the AI suggests",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-scope": "context_engine:read",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/context-engine/relationship-suggestions/review": {
+      "post": {
+        "description": "`accept` adds each suggested link. `reject` sets each one aside.\nEach suggestion gets its own `outcome`, so one that fails does not stop the others.",
+        "operationId": "context_engine_review_relationship_suggestions",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContextEngineSuggestionReviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineSuggestionReviewedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body: 1 to 100 suggestion ids, and `accept` or `reject`"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Accept or reject suggested links",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "context_engine"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "A reviewed suggestion does not go back to pending. Delete a link an accept added with context_engine_delete_relationship."
+        },
+        "x-iris-scope": "context_engine:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/context-engine/snapshots": {
+      "get": {
+        "description": "Every snapshot, newest first, or only those of `domain_id`. The frozen values are not returned.",
+        "operationId": "context_engine_list_snapshots",
+        "parameters": [
+          {
+            "name": "domain_id",
+            "required": false,
+            "in": "query",
+            "description": "Only the snapshots of this topic",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineSnapshotListDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the fact snapshots",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-scope": "context_engine:read",
+        "x-member-access": "deny"
+      },
+      "post": {
+        "description": "Freezes the current values of the topic as a `candidate`. No agent reads it yet.\nPublish it with `context_engine_publish_snapshot`, then pin an agent to it with `context_access_pin_snapshot`.",
+        "operationId": "context_engine_capture_snapshot",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContextEngineSnapshotCaptureDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineSnapshotDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such topic",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Capture a snapshot of one topic’s facts",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "context_engine"
+        ],
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "A captured snapshot stays in the history. It changes nothing an agent reads until it is published."
+        },
+        "x-iris-scope": "context_engine:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/context-engine/snapshots/{snapshotId}/publish": {
+      "post": {
+        "description": "Makes the `candidate` the topic’s published snapshot, and archives the one published before.\nAgents pinned to the archived one are unpinned and read the live facts. A snapshot that is not a `candidate` answers 409.",
+        "operationId": "context_engine_publish_snapshot",
+        "parameters": [
+          {
+            "name": "snapshotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineSnapshotDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such snapshot in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The snapshot is not a candidate: it was published or archived before"
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Publish a captured snapshot",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "context_engine"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "Publishing archives the topic’s earlier published snapshot. To go back, capture and publish a new snapshot."
+        },
+        "x-iris-scope": "context_engine:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/context-engine/access/summary": {
+      "get": {
+        "description": "One card per agent: the facts it reads and writes, those its sensitivity ceiling hides, and those never granted.\nSend `principal_id` for one agent. A `principal_id` is what the other context_access operations take.",
+        "operationId": "context_access_get_summary",
+        "parameters": [
+          {
+            "name": "principal_id",
+            "required": false,
+            "in": "query",
+            "description": "Only this agent. Leave it out for every agent.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextAccessSummaryDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_access:read` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Show what each AI agent can read and write",
+        "tags": [
+          "Context access",
+          "Public API"
+        ],
+        "x-iris-scope": "context_access:read",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/context-engine/access/grants": {
+      "put": {
+        "description": "Send `domain_id` for a whole topic, or `target` for a topic, a kind of record or one field. Send one of them.\n`none` denies the access. The sensitivity ceiling still hides facts above it.",
+        "operationId": "context_access_set_grant",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContextAccessGrantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextAccessChangedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, both or neither of `domain_id` and `target`, or an unknown agent or field"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_access:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Grant or deny an agent access to facts",
+        "tags": [
+          "Context access",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "context_access"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "To undo it, set the earlier access again. context_access_get_summary shows what the agent could read and write."
+        },
+        "x-iris-scope": "context_access:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/context-engine/access/ceiling": {
+      "put": {
+        "description": "From least to most sensitive: `public`, `customer`, `internal`, `restricted`.\nThe agent reads no fact above its ceiling, even one it is granted. `default` goes back to the agent’s own ceiling.",
+        "operationId": "context_access_set_ceiling",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContextAccessCeilingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextAccessChangedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or no such agent in this organization"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_access:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Set the most sensitive facts an agent may read",
+        "tags": [
+          "Context access",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "context_access"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "To undo it, set the earlier ceiling again. context_access_get_summary shows the ceiling and where it came from."
+        },
+        "x-iris-scope": "context_access:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/context-engine/access/pin": {
+      "put": {
+        "description": "The agent then reads the snapshot’s frozen facts, not the live ones. A null `snapshot_id` unpins it.\nOnly the organization’s own agents can be pinned, and only to a published snapshot.",
+        "operationId": "context_access_pin_snapshot",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContextAccessPinDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextAccessChangedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_access:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such agent or snapshot in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The snapshot is not published"
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Pin an agent to a published snapshot",
+        "tags": [
+          "Context access",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "context_access"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "To undo it, pin the earlier snapshot again, or send a null snapshot_id. context_access_get_summary shows the pin."
+        },
+        "x-iris-scope": "context_access:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/context-engine/access/agents/{principalId}": {
+      "delete": {
+        "description": "Removes a built-in add-on agent, so it reads no fact of this organization. The removal is recorded.\nThe core Iris agents and the organization’s own agents cannot be removed. Ask the user first.",
+        "operationId": "context_access_remove_agent",
+        "parameters": [
+          {
+            "name": "principalId",
+            "required": true,
+            "in": "path",
+            "description": "A `principal_id` whose card has `removable` true",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextAccessRemovedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The agent cannot be removed"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_access:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such agent in this organization, or one removed before",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Remove an add-on agent from the workspace",
+        "tags": [
+          "Context access",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "context_access"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A removed agent cannot be added back through the API or the dashboard. Iris support can restore it."
+        },
+        "x-iris-scope": "context_access:write",
+        "x-member-access": "deny"
+      }
+    },
     "/api/v1/integrations/ghl/status": {
       "get": {
         "description": "Every location mapping (a pair of one Iris location and one GoHighLevel location) with its status, its capabilities and its last sync.\n`recoveryActions` names each mapping that needs `ghl_reconnect`. A MEMBER sees the mappings of their own locations only.\nStart here: a mapping `id` names the pair in every other GoHighLevel operation.",
@@ -27221,7 +29054,11 @@
                 "call_forwarding:write",
                 "staff:write",
                 "assistant:write",
-                "feedback:write"
+                "feedback:write",
+                "context_engine:read",
+                "context_engine:write",
+                "context_access:read",
+                "context_access:write"
               ]
             }
           },
@@ -27347,7 +29184,11 @@
                 "call_forwarding:write",
                 "staff:write",
                 "assistant:write",
-                "feedback:write"
+                "feedback:write",
+                "context_engine:read",
+                "context_engine:write",
+                "context_access:read",
+                "context_access:write"
               ]
             }
           }
@@ -27444,7 +29285,11 @@
               "call_forwarding:write",
               "staff:write",
               "assistant:write",
-              "feedback:write"
+              "feedback:write",
+              "context_engine:read",
+              "context_engine:write",
+              "context_access:read",
+              "context_access:write"
             ]
           },
           "label": {
@@ -35228,6 +37073,1273 @@
           "warning",
           "last_error",
           "completed_at"
+        ]
+      },
+      "ContextEngineFactDto": {
+        "type": "object",
+        "properties": {
+          "slot_id": {
+            "type": "string",
+            "description": "The field, such as `identity.about`"
+          },
+          "entity_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The record the value belongs to. Null: the field has no value yet."
+          },
+          "entity_type_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The kind of record, such as `offering`"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "data_type": {
+            "type": "string",
+            "description": "The value type, such as `text` or `money`"
+          },
+          "sensitivity": {
+            "type": "string",
+            "enum": [
+              "public",
+              "customer",
+              "internal",
+              "restricted"
+            ],
+            "description": "Who Iris may share the value with"
+          },
+          "value": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "object",
+                "additionalProperties": true
+              },
+              {
+                "type": "array",
+                "items": {}
+              }
+            ],
+            "nullable": true,
+            "description": "The value. Null: the field has no value."
+          },
+          "source": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the value came from, such as `human`"
+          },
+          "confidence": {
+            "type": "number",
+            "nullable": true
+          },
+          "filled": {
+            "type": "boolean"
+          },
+          "is_required": {
+            "type": "boolean",
+            "description": "The topic is complete only when every required field has a value"
+          },
+          "is_custom": {
+            "type": "boolean",
+            "description": "A custom field the organization added"
+          },
+          "enum_values": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "not_applicable": {
+            "type": "boolean",
+            "description": "The organization marked the field as not applicable"
+          },
+          "derived_from": {
+            "type": "string",
+            "nullable": true,
+            "description": "The settings table the value follows. Not null: change it in those settings, not here."
+          }
+        },
+        "required": [
+          "slot_id",
+          "entity_id",
+          "entity_type_id",
+          "display_name",
+          "data_type",
+          "sensitivity",
+          "value",
+          "source",
+          "confidence",
+          "filled",
+          "is_required",
+          "is_custom",
+          "enum_values",
+          "not_applicable",
+          "derived_from"
+        ]
+      },
+      "ContextEngineFactDomainDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "slots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextEngineFactDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "slots"
+        ]
+      },
+      "ContextEngineFactListDto": {
+        "type": "object",
+        "properties": {
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextEngineFactDomainDto"
+            }
+          },
+          "filled_count": {
+            "type": "number",
+            "description": "How many fields have a value"
+          }
+        },
+        "required": [
+          "domains",
+          "filled_count"
+        ]
+      },
+      "ContextEngineFactWriteDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "slot_id": {
+            "type": "string",
+            "description": "The field, a `slot_id` of `context_engine_list_facts`"
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The record to write on. Leave it out for a field with no value yet: a new record is made."
+          },
+          "entity_type_id": {
+            "type": "string",
+            "description": "The kind of record to make, such as `offering`, when there is no `entity_id`"
+          },
+          "value": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "object",
+                "additionalProperties": true
+              },
+              {
+                "type": "array",
+                "items": {}
+              }
+            ],
+            "description": "The value, in the field’s `data_type`"
+          },
+          "sensitivity": {
+            "type": "string",
+            "enum": [
+              "public",
+              "customer",
+              "internal"
+            ],
+            "description": "Who Iris may share it with. Leave it out to keep the default."
+          }
+        },
+        "required": [
+          "slot_id",
+          "value"
+        ]
+      },
+      "ContextEngineUnlockedDomainDto": {
+        "type": "object",
+        "properties": {
+          "domain_id": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "owner_agent": {
+            "type": "string",
+            "description": "The agent the topic powers, such as `scheduler`"
+          }
+        },
+        "required": [
+          "domain_id",
+          "display_name",
+          "owner_agent"
+        ]
+      },
+      "ContextEngineFactWrittenDto": {
+        "type": "object",
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slot_id": {
+            "type": "string"
+          },
+          "sensitivity": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "unlocked_domains": {
+            "description": "Topics this write completed",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextEngineUnlockedDomainDto"
+            }
+          }
+        },
+        "required": [
+          "entity_id",
+          "slot_id",
+          "sensitivity",
+          "state",
+          "unlocked_domains"
+        ]
+      },
+      "ContextEngineFactSharingDto": {
+        "type": "object",
+        "properties": {
+          "slot_id": {
+            "type": "string",
+            "description": "The field"
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The record the value belongs to"
+          },
+          "sensitivity": {
+            "type": "string",
+            "enum": [
+              "public",
+              "customer",
+              "internal"
+            ]
+          }
+        },
+        "required": [
+          "slot_id",
+          "entity_id",
+          "sensitivity"
+        ]
+      },
+      "ContextEngineEffectiveArchetypeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null: the business could not be classified"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "override",
+              "derived",
+              "unmapped"
+            ],
+            "description": "`override`: set by hand. `derived`: from the business vertical. `unmapped`: neither."
+          }
+        },
+        "required": [
+          "id",
+          "source"
+        ]
+      },
+      "ContextEngineArchetypeOptionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "description"
+        ]
+      },
+      "ContextEngineArchetypeDto": {
+        "type": "object",
+        "properties": {
+          "effective": {
+            "$ref": "#/components/schemas/ContextEngineEffectiveArchetypeDto"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextEngineArchetypeOptionDto"
+            }
+          }
+        },
+        "required": [
+          "effective",
+          "options"
+        ]
+      },
+      "ContextEngineArchetypeSetDto": {
+        "type": "object",
+        "properties": {
+          "archetype_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "An `id` of `options`, or null to go back to the archetype of the business vertical"
+          }
+        },
+        "required": [
+          "archetype_id"
+        ]
+      },
+      "ContextEngineRelationshipDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "from_entity": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The source record"
+          },
+          "to_entity": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The target record"
+          },
+          "rel_type": {
+            "type": "string",
+            "description": "The link type, an `id` of `relationship_types`"
+          },
+          "derived_from": {
+            "type": "string",
+            "nullable": true,
+            "description": "The settings table the link follows. Not null: it cannot be changed or deleted here."
+          }
+        },
+        "required": [
+          "id",
+          "from_entity",
+          "to_entity",
+          "rel_type",
+          "derived_from"
+        ]
+      },
+      "ContextEngineRelationshipEntityDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "type": "string"
+          },
+          "entity_type_id": {
+            "type": "string"
+          },
+          "entity_type_label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "entity_type_id",
+          "entity_type_label"
+        ]
+      },
+      "ContextEngineRelationshipPairDto": {
+        "type": "object",
+        "properties": {
+          "from_entity_type_id": {
+            "type": "string"
+          },
+          "to_entity_type_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "from_entity_type_id",
+          "to_entity_type_id"
+        ]
+      },
+      "ContextEngineRelationshipTypeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "allowed_pairs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextEngineRelationshipPairDto"
+            }
+          },
+          "max_targets_per_source": {
+            "type": "number",
+            "nullable": true,
+            "description": "How many targets one source may have. Null: any."
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "allowed_pairs",
+          "max_targets_per_source"
+        ]
+      },
+      "ContextEngineRelationshipListDto": {
+        "type": "object",
+        "properties": {
+          "relationships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextEngineRelationshipDto"
+            }
+          },
+          "entities": {
+            "description": "The records a link can join",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextEngineRelationshipEntityDto"
+            }
+          },
+          "relationship_types": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextEngineRelationshipTypeDto"
+            }
+          }
+        },
+        "required": [
+          "relationships",
+          "entities",
+          "relationship_types"
+        ]
+      },
+      "ContextEngineRelationshipCreateDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "from_entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The source record, an `id` of `entities`"
+          },
+          "to_entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The target record"
+          },
+          "rel_type": {
+            "type": "string",
+            "description": "The link type. Leave it out for `related_to`."
+          }
+        },
+        "required": [
+          "from_entity_id",
+          "to_entity_id"
+        ]
+      },
+      "ContextEngineRelationshipIdDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ContextEngineRelationshipRecordDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "from_entity": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The source record"
+          },
+          "to_entity": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The target record"
+          },
+          "rel_type": {
+            "type": "string",
+            "description": "The link type, an `id` of `relationship_types`"
+          },
+          "derived_from": {
+            "type": "string",
+            "nullable": true,
+            "description": "The settings table the link follows. Not null: it cannot be changed or deleted here."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "from_entity",
+          "to_entity",
+          "rel_type",
+          "derived_from",
+          "updated_at"
+        ]
+      },
+      "ContextEngineRelationshipUpdateDto": {
+        "type": "object",
+        "properties": {
+          "from_entity_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "to_entity_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rel_type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "from_entity_id",
+          "to_entity_id",
+          "rel_type"
+        ]
+      },
+      "ContextEngineRelationshipDeletedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deleted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "deleted"
+        ]
+      },
+      "ContextEngineInferenceRunDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "processing",
+              "retry_wait",
+              "succeeded",
+              "failed",
+              "superseded"
+            ]
+          },
+          "phase": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "seeding",
+              "analyzing",
+              "persisting",
+              "done"
+            ]
+          },
+          "proposals_count": {
+            "type": "number",
+            "description": "How many links the run suggested so far"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completed_at": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "phase",
+          "proposals_count",
+          "created_at",
+          "completed_at"
+        ]
+      },
+      "ContextEngineInferenceStartedDto": {
+        "type": "object",
+        "properties": {
+          "run": {
+            "$ref": "#/components/schemas/ContextEngineInferenceRunDto"
+          },
+          "reused": {
+            "type": "boolean",
+            "description": "True: a run was already queued or running, and this is that run"
+          }
+        },
+        "required": [
+          "run",
+          "reused"
+        ]
+      },
+      "ContextEngineSuggestionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "from_entity_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "to_entity_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rel_type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "accepted",
+              "rejected"
+            ]
+          },
+          "confidence": {
+            "type": "number",
+            "description": "0 to 1"
+          },
+          "rationale": {
+            "type": "string",
+            "description": "Why the AI suggests it"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "from_entity_id",
+          "to_entity_id",
+          "rel_type",
+          "status",
+          "confidence",
+          "rationale",
+          "created_at"
+        ]
+      },
+      "ContextEngineSuggestionPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextEngineSuggestionDto"
+            }
+          },
+          "next_cursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Send it as `cursor` for the next page. Null: the last page."
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ]
+      },
+      "ContextEngineSuggestionReviewDto": {
+        "type": "object",
+        "properties": {
+          "candidate_ids": {
+            "minItems": 1,
+            "maxItems": 100,
+            "description": "Suggestion `id`s",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "accept",
+              "reject"
+            ],
+            "description": "`accept` adds each link. `reject` sets them aside."
+          }
+        },
+        "required": [
+          "candidate_ids",
+          "decision"
+        ]
+      },
+      "ContextEngineSuggestionResultDto": {
+        "type": "object",
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "accepted",
+              "rejected",
+              "already_accepted",
+              "already_rejected",
+              "already_connected",
+              "not_found",
+              "failed"
+            ]
+          },
+          "relationship_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The link an accept added"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "outcome",
+          "relationship_id"
+        ]
+      },
+      "ContextEngineSuggestionReviewSummaryDto": {
+        "type": "object",
+        "properties": {
+          "requested": {
+            "type": "number"
+          },
+          "accepted": {
+            "type": "number"
+          },
+          "rejected": {
+            "type": "number"
+          },
+          "unchanged": {
+            "type": "number"
+          },
+          "failed": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "requested",
+          "accepted",
+          "rejected",
+          "unchanged",
+          "failed"
+        ]
+      },
+      "ContextEngineSuggestionReviewedDto": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextEngineSuggestionResultDto"
+            }
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ContextEngineSuggestionReviewSummaryDto"
+          }
+        },
+        "required": [
+          "results",
+          "summary"
+        ]
+      },
+      "ContextEngineSnapshotDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "domain_id": {
+            "type": "string",
+            "description": "The topic it freezes"
+          },
+          "version": {
+            "type": "number",
+            "description": "Counts up per topic"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "candidate",
+              "published",
+              "archived"
+            ],
+            "description": "`candidate`: captured, not in use. `published`: the one in use. `archived`: replaced."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "published_at": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "row_count": {
+            "type": "number",
+            "description": "How many fact values it holds"
+          }
+        },
+        "required": [
+          "id",
+          "domain_id",
+          "version",
+          "status",
+          "created_at",
+          "published_at",
+          "row_count"
+        ]
+      },
+      "ContextEngineSnapshotListDto": {
+        "type": "object",
+        "properties": {
+          "snapshots": {
+            "description": "Newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextEngineSnapshotDto"
+            }
+          }
+        },
+        "required": [
+          "snapshots"
+        ]
+      },
+      "ContextEngineSnapshotCaptureDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "domain_id": {
+            "type": "string",
+            "description": "The topic to freeze, a domain `id` of `context_engine_list_facts`"
+          }
+        },
+        "required": [
+          "domain_id"
+        ]
+      },
+      "ContextAccessItemDto": {
+        "type": "object",
+        "properties": {
+          "level": {
+            "type": "string",
+            "enum": [
+              "domain",
+              "entity_type",
+              "slot"
+            ]
+          },
+          "domain_id": {
+            "type": "string"
+          },
+          "entity_type_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "slot_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "sensitivity": {
+            "type": "string",
+            "enum": [
+              "public",
+              "customer",
+              "internal",
+              "restricted"
+            ]
+          },
+          "access": {
+            "type": "string",
+            "enum": [
+              "none",
+              "read",
+              "write",
+              "read_write"
+            ]
+          }
+        },
+        "required": [
+          "level",
+          "domain_id",
+          "entity_type_id",
+          "slot_id",
+          "display_name",
+          "sensitivity",
+          "access"
+        ]
+      },
+      "ContextAccessPinnedSnapshotDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "domain_id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "domain_id",
+          "version"
+        ]
+      },
+      "ContextAccessCardDto": {
+        "type": "object",
+        "properties": {
+          "principal_id": {
+            "type": "string",
+            "description": "The agent, a `principal_id` of `context_access_get_summary`, such as `agent:<id>` or `scheduler`"
+          },
+          "sensitivity_ceiling": {
+            "type": "string",
+            "enum": [
+              "public",
+              "customer",
+              "internal",
+              "restricted"
+            ],
+            "description": "The most sensitive facts the agent may read"
+          },
+          "ceiling_source": {
+            "type": "string",
+            "enum": [
+              "org",
+              "global"
+            ],
+            "description": "`org`: set for this organization. `global`: the default."
+          },
+          "readable": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextAccessItemDto"
+            }
+          },
+          "writable": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextAccessItemDto"
+            }
+          },
+          "blocked_by_ceiling": {
+            "description": "Granted, but above the sensitivity ceiling",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextAccessItemDto"
+            }
+          },
+          "not_granted": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextAccessItemDto"
+            }
+          },
+          "agent_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "agent_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "agent_status": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "active",
+              "paused"
+            ]
+          },
+          "is_system": {
+            "type": "boolean",
+            "description": "A built-in Iris agent, not one of the organization’s own"
+          },
+          "removable": {
+            "type": "boolean",
+            "description": "True: `context_access_remove_agent` may remove it"
+          },
+          "pinned_snapshot": {
+            "nullable": true,
+            "description": "Null: it reads the live facts",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContextAccessPinnedSnapshotDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "principal_id",
+          "sensitivity_ceiling",
+          "ceiling_source",
+          "readable",
+          "writable",
+          "blocked_by_ceiling",
+          "not_granted",
+          "agent_id",
+          "agent_name",
+          "agent_status",
+          "is_system",
+          "removable",
+          "pinned_snapshot"
+        ]
+      },
+      "ContextAccessSummaryDto": {
+        "type": "object",
+        "properties": {
+          "principals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextAccessCardDto"
+            }
+          }
+        },
+        "required": [
+          "principals"
+        ]
+      },
+      "ContextAccessTargetDto": {
+        "type": "object",
+        "properties": {
+          "level": {
+            "type": "string",
+            "enum": [
+              "domain",
+              "entity_type",
+              "slot"
+            ]
+          },
+          "domain_id": {
+            "type": "string"
+          },
+          "entity_type_id": {
+            "type": "string",
+            "description": "Needed for `entity_type`"
+          },
+          "slot_id": {
+            "type": "string",
+            "description": "Needed for `slot`"
+          }
+        },
+        "required": [
+          "level",
+          "domain_id"
+        ]
+      },
+      "ContextAccessGrantDto": {
+        "type": "object",
+        "properties": {
+          "principal_id": {
+            "type": "string",
+            "description": "The agent, a `principal_id` of `context_access_get_summary`, such as `agent:<id>` or `scheduler`"
+          },
+          "access": {
+            "type": "string",
+            "enum": [
+              "read",
+              "read_write",
+              "none"
+            ],
+            "description": "`none` denies it"
+          },
+          "domain_id": {
+            "type": "string",
+            "description": "A whole topic. Send this or `target`, not both."
+          },
+          "target": {
+            "description": "A topic, a kind of record or one field",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContextAccessTargetDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "principal_id",
+          "access"
+        ]
+      },
+      "ContextAccessChangedDto": {
+        "type": "object",
+        "properties": {
+          "principal_id": {
+            "type": "string"
+          },
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "principal_id",
+          "ok"
+        ]
+      },
+      "ContextAccessCeilingDto": {
+        "type": "object",
+        "properties": {
+          "principal_id": {
+            "type": "string",
+            "description": "The agent, a `principal_id` of `context_access_get_summary`, such as `agent:<id>` or `scheduler`"
+          },
+          "ceiling": {
+            "type": "string",
+            "enum": [
+              "public",
+              "customer",
+              "internal",
+              "restricted",
+              "default"
+            ],
+            "description": "`default` removes this organization’s setting"
+          }
+        },
+        "required": [
+          "principal_id",
+          "ceiling"
+        ]
+      },
+      "ContextAccessPinDto": {
+        "type": "object",
+        "properties": {
+          "principal_id": {
+            "type": "string",
+            "description": "One of the organization’s own agents, `agent:<id>`"
+          },
+          "snapshot_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "A published snapshot `id`. Null: unpin, and the agent reads the live facts."
+          }
+        },
+        "required": [
+          "principal_id"
+        ]
+      },
+      "ContextAccessRemovedDto": {
+        "type": "object",
+        "properties": {
+          "principal_id": {
+            "type": "string"
+          },
+          "removed": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "principal_id",
+          "removed"
         ]
       },
       "PublicGhlCapabilitiesDto": {

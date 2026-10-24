@@ -118,6 +118,10 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `staff:write` | Read and change a staff member's notification settings, and your own |
 | `assistant:write` | Delete your own private Assistant note |
 | `feedback:write` | Send product feedback to Iris as yourself |
+| `context_engine:read` | Read the business's facts, links, archetype, suggested links and snapshots |
+| `context_engine:write` | Write facts, set the archetype, change links, review suggested links, and capture and publish snapshots |
+| `context_access:read` | Read what each AI agent can read and write |
+| `context_access:write` | Grant agents access to facts, set their ceiling, pin snapshots, and remove add-on agents |
 
 `me_get` returns the live catalog. When this table and `me_get` differ, trust `me_get`.
 

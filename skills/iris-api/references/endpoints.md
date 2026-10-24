@@ -897,6 +897,198 @@ Create or update a contact by email
     - `name` (body, string, required): Event name whose enrollments should be cancelled for this contact.
     - `reason` (body, string, one of `replied`, `booked`, `opted_out`, `manual`, `sequence_deactivated`, `converted`, `stage_reached`, `goal_met`, `schedule_cancelled`, `assessment_retake`): Why the journey ended. Defaults to `goal_met`.
 
+## Context access
+
+### context_access_get_summary
+
+`GET /api/v1/context-engine/access/summary`. Scope: `context_access:read`. Member: `deny`.
+
+Show what each AI agent can read and write
+
+- `principal_id` (query, string): Only this agent. Leave it out for every agent.
+
+### context_access_pin_snapshot
+
+`PUT /api/v1/context-engine/access/pin`. Scope: `context_access:write`. Member: `deny`. Changes: `context_access`.
+
+Pin an agent to a published snapshot
+
+- `principal_id` (body, string, required): One of the organization’s own agents, `agent:<id>`
+- `snapshot_id` (body, string uuid): A published snapshot `id`. Null: unpin, and the agent reads the live facts.
+
+### context_access_remove_agent
+
+`DELETE /api/v1/context-engine/access/agents/{principalId}`. Scope: `context_access:write`. Member: `deny`. Confirm: required. Changes: `context_access`.
+
+Remove an add-on agent from the workspace
+
+- `principalId` (path, string, required): A `principal_id` whose card has `removable` true
+
+### context_access_set_ceiling
+
+`PUT /api/v1/context-engine/access/ceiling`. Scope: `context_access:write`. Member: `deny`. Changes: `context_access`.
+
+Set the most sensitive facts an agent may read
+
+- `principal_id` (body, string, required): The agent, a `principal_id` of `context_access_get_summary`, such as `agent:<id>` or `scheduler`
+- `ceiling` (body, string, required, one of `public`, `customer`, `internal`, `restricted`, `default`): `default` removes this organization’s setting
+
+### context_access_set_grant
+
+`PUT /api/v1/context-engine/access/grants`. Scope: `context_access:write`. Member: `deny`. Changes: `context_access`.
+
+Grant or deny an agent access to facts
+
+- `principal_id` (body, string, required): The agent, a `principal_id` of `context_access_get_summary`, such as `agent:<id>` or `scheduler`
+- `access` (body, string, required, one of `read`, `read_write`, `none`): `none` denies it
+- `domain_id` (body, string): A whole topic. Send this or `target`, not both.
+- `target` (body, ContextAccessTargetDto): A topic, a kind of record or one field
+  - `level` (body, string, required, one of `domain`, `entity_type`, `slot`)
+  - `domain_id` (body, string, required)
+  - `entity_type_id` (body, string): Needed for `entity_type`
+  - `slot_id` (body, string): Needed for `slot`
+
+## Context engine
+
+### context_engine_capture_snapshot
+
+`POST /api/v1/context-engine/snapshots`. Scope: `context_engine:write`. Member: `deny`. Changes: `context_engine`. Idempotent: send `idempotency_key`.
+
+Capture a snapshot of one topic’s facts
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `domain_id` (body, string, required): The topic to freeze, a domain `id` of `context_engine_list_facts`
+
+### context_engine_create_relationship
+
+`POST /api/v1/context-engine/relationships`. Scope: `context_engine:write`. Member: `deny`. Changes: `context_engine`. Idempotent: send `idempotency_key`.
+
+Link two of the business’s records
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `from_entity_id` (body, string uuid, required): The source record, an `id` of `entities`
+- `to_entity_id` (body, string uuid, required): The target record
+- `rel_type` (body, string): The link type. Leave it out for `related_to`.
+
+### context_engine_delete_relationship
+
+`DELETE /api/v1/context-engine/relationships/{relationshipId}`. Scope: `context_engine:write`. Member: `deny`. Confirm: required. Changes: `context_engine`.
+
+Delete a link
+
+- `relationshipId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
+### context_engine_get_archetype
+
+`GET /api/v1/context-engine/archetype`. Scope: `context_engine:read`. Member: `deny`.
+
+Get the kind of business Iris treats the organization as
+
+### context_engine_get_relationship
+
+`GET /api/v1/context-engine/relationships/{relationshipId}`. Scope: `context_engine:read`. Member: `deny`.
+
+Get one link
+
+- `relationshipId` (path, string uuid, required)
+
+### context_engine_list_facts
+
+`GET /api/v1/context-engine/facts`. Scope: `context_engine:read`. Member: `open`.
+
+List the facts Iris knows about the business
+
+### context_engine_list_relationship_suggestions
+
+`GET /api/v1/context-engine/relationship-suggestions`. Scope: `context_engine:read`. Member: `deny`.
+
+List the links the AI suggests
+
+- `cursor` (query, string): The `next_cursor` of the page before. Leave out for the first page.
+- `limit` (query, number)
+- `status` (query, string, one of `pending`, `accepted`, `rejected`)
+
+### context_engine_list_relationships
+
+`GET /api/v1/context-engine/relationships`. Scope: `context_engine:read`. Member: `open`.
+
+List the links between the business’s records
+
+### context_engine_list_snapshots
+
+`GET /api/v1/context-engine/snapshots`. Scope: `context_engine:read`. Member: `deny`.
+
+List the fact snapshots
+
+- `domain_id` (query, string): Only the snapshots of this topic
+
+### context_engine_publish_snapshot
+
+`POST /api/v1/context-engine/snapshots/{snapshotId}/publish`. Scope: `context_engine:write`. Member: `deny`. Changes: `context_engine`.
+
+Publish a captured snapshot
+
+- `snapshotId` (path, string uuid, required)
+
+### context_engine_review_relationship_suggestions
+
+`POST /api/v1/context-engine/relationship-suggestions/review`. Scope: `context_engine:write`. Member: `deny`. Changes: `context_engine`.
+
+Accept or reject suggested links
+
+- `candidate_ids` (body, array of string uuid, required): Suggestion `id`s
+- `decision` (body, string, required, one of `accept`, `reject`): `accept` adds each link. `reject` sets them aside.
+
+### context_engine_run_relationship_inference
+
+`POST /api/v1/context-engine/relationship-suggestions/runs`. Scope: `context_engine:write`. Member: `deny`. Changes: `context_engine`.
+
+Find links the business’s records should have
+
+### context_engine_set_archetype
+
+`PUT /api/v1/context-engine/archetype`. Scope: `context_engine:write`. Member: `deny`. Changes: `context_engine`.
+
+Set the kind of business Iris treats the organization as
+
+- `archetype_id` (body, string, required): An `id` of `options`, or null to go back to the archetype of the business vertical
+
+### context_engine_set_fact_sharing
+
+`PATCH /api/v1/context-engine/facts/sharing`. Scope: `context_engine:write`. Member: `deny`. Changes: `context_engine`.
+
+Set who Iris may share a fact with
+
+- `slot_id` (body, string, required): The field
+- `entity_id` (body, string uuid, required): The record the value belongs to
+- `sensitivity` (body, string, required, one of `public`, `customer`, `internal`)
+
+### context_engine_update_relationship
+
+`PATCH /api/v1/context-engine/relationships/{relationshipId}`. Scope: `context_engine:write`. Member: `deny`. Changes: `context_engine`.
+
+Change a link
+
+- `relationshipId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `from_entity_id` (body, string uuid, required)
+- `to_entity_id` (body, string uuid, required)
+- `rel_type` (body, string, required)
+
+### context_engine_write_fact
+
+`POST /api/v1/context-engine/facts`. Scope: `context_engine:write`. Member: `deny`. Changes: `context_engine`. Idempotent: send `idempotency_key`.
+
+Write a fact about the business
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `slot_id` (body, string, required): The field, a `slot_id` of `context_engine_list_facts`
+- `entity_id` (body, string uuid): The record to write on. Leave it out for a field with no value yet: a new record is made.
+- `entity_type_id` (body, string): The kind of record to make, such as `offering`, when there is no `entity_id`
+- `value` (body, object, required): The value, in the field’s `data_type`
+- `sensitivity` (body, string, one of `public`, `customer`, `internal`): Who Iris may share it with. Leave it out to keep the default.
+
 ## Conversations
 
 ### contacts_record_sms_consent
