@@ -332,6 +332,9 @@ enrollment, and resume cannot bring them back.
 2. Call `sequences_get_enrollment` with `sequenceId` and `enrollmentId`.
 3. It returns the enrollment, its step runs and its events in order: sent, delivered, bounced,
    replied. Answer "what happened to this person" from these events only.
+4. To say which branch the contact took, read each run's `step_key` and `via_edge_key`, and
+   match them to `steps` and `edges` from `sequences_get`. `exit_edge_key` names the edge the
+   contact left through. A null `via_edge_key` means the contact moved to the next step.
 
 ### 7. Read sequence totals
 
@@ -342,6 +345,8 @@ enrollment, and resume cannot bring them back.
    - `unsupported`: the sending provider does not report delivery. A zero means "unknown", not
      "none". Say so.
    - `not_applicable`: the sequence sends no email.
+4. To say where contacts went, read `paths`. `nodes` counts runs per `step_key`, `edges` and
+   `exits` count traversals per `edge_key`, and `implied` counts moves to the next step.
 
 ### 8. Build a draft sequence and activate it
 
@@ -353,11 +358,16 @@ enrollment, and resume cannot bring them back.
 3. To start from a sequence that works, call `sequences_duplicate` instead and change the copy.
 4. Call `sequences_update` to change steps, delays or copy. `steps`, `edges` and
    `exit_conditions` each replace the whole list, so start from `sequences_get`, edit, and send
-   the full list back with every `step_key` kept. Read it back with `sequences_get`.
-5. Show the user the draft and ask before you activate it.
-6. Call `sequences_activate`. On 400 `sequence_activation_blocked`, show the `blockers` (for
+   the full list back with every `step_key` and `edge_key` kept. Send its `definition_revision`
+   as `expected_revision`. On 409 `stale_revision`, read the sequence again and redo the edit.
+   Read it back with `sequences_get`.
+5. If the sequence has contacts in it, call `sequences_preview_update` with the same body first.
+   Show the user each `affected` step that has `waiting` contacts and each edge in
+   `removed_edges_with_traffic`, and ask before you send the update.
+6. Show the user the draft and ask before you activate it.
+7. Call `sequences_activate`. On 400 `sequence_activation_blocked`, show the `blockers` (for
    example a missing sending domain) and stop.
-7. To throw away a draft the user no longer wants, ask first, then call `sequences_delete`. It
+8. To throw away a draft the user no longer wants, ask first, then call `sequences_delete`. It
    deletes the sequence with its enrollments and send log, and it cannot be restored. To stop a
    sequence and keep it, pause it (recipe 5) instead.
 

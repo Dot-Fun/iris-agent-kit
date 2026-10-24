@@ -1288,6 +1288,7 @@ Create a draft sequence
   - `condition` (body, object, required): A condition in the DSL `sequences_get_condition_vocabulary` describes, e.g. `{ "signal": "replied" }`
   - `cancel_reason` (body, string, required, one of `goal_met`, `converted`, `stage_reached`, `replied`, `booked`, `opted_out`): Recorded on the enrollment when this exit fires
 - `edges` (body, array of SequenceEdgeInputDto): Replaces the branch edges. Omit for a straight sequence.
+  - `edge_key` (body, string): The `edge_key` `sequences_get` returned. Send it back to keep the edge and the traffic recorded on it. Omit it for a new edge.
   - `from_step_key` (body, string, required): `step_key` of the step the edge leaves
   - `to_step_key` (body, string): `step_key` it goes to. Null ends the sequence.
   - `condition` (body, object): A routing condition in the condition DSL. Omit for the fallback edge.
@@ -1416,6 +1417,52 @@ Pause a broadcast's schedule
 
 - `sequenceId` (path, string uuid, required)
 
+### sequences_preview_update
+
+`POST /api/v1/sequences/{sequenceId}/changes/preview`. Scope: `sequences:read`. Member: `deny`. Manager power: `sequences`. Changes: none.
+
+Preview what an update would do to enrolled contacts
+
+- `sequenceId` (path, string uuid, required)
+- `name` (body, string)
+- `description` (body, string)
+- `trigger_type` (body, string): The primary trigger, a `key` from `sequences_list_triggers`
+- `trigger_config` (body, object): Settings of the primary trigger
+- `triggers` (body, array of SequenceTriggerInputDto): Every trigger. The first is the primary one and must match `trigger_type` when both are sent.
+  - `type` (body, string, required): A trigger `key` from `sequences_list_triggers` whose `authorable` is true
+  - `config` (body, object): Trigger settings
+- `kind` (body, string, one of `automation`, `broadcast`): `automation` runs off a trigger. `broadcast` sends to an audience.
+- `audience_id` (body, string uuid): For a broadcast: its audience. An automation stores none. An audience of another organization answers 404.
+- `send_schedule_id` (body, string uuid): A saved send schedule. Null uses the organization default.
+- `location_id` (body, string uuid): The location the sequence runs for: it enrolls only contacts at that location. Null or omitted is organization-wide, which only an owner or admin may set. A manager must name one of their locations. On an update, a move is refused while any enrollment, live or finished, holds a contact who is not at the new location.
+- `is_active` (body, boolean, one of `false`): Only `false`, and `true` is a 400. A new sequence is always an inactive draft. On an update, `false` turns the sequence off and cancels every enrollment. Turn a sequence on with `sequences_activate`, and hold contacts in place with `sequences_pause`.
+- `steps` (body, array of SequenceStepInputDto): The ordered steps. On an update, replaces them all.
+  - `step_index` (body, number, required): Zero-based position of the step
+  - `channel` (body, string, required, one of `email`, `sms`, `wait`, `task`): `email` and `sms` message the contact. `wait` only waits. `task` notifies the team: its subject is the title and its body the note.
+  - `delay_minutes` (body, number, required): Minutes to wait after the previous step before this one runs
+  - `step_key` (body, string): Stable id of the step. Edges name steps by it. Keep it when you edit a step. Generated when omitted.
+  - `subject_template` (body, string): Email subject, or the task title. May use `{{variables}}`.
+  - `body_template` (body, string): Message body, or the task note. May use `{{variables}}`.
+  - `preheader_template` (body, string): Email preview text shown next to the subject in the inbox
+  - `body_document` (body, object): A designed email body (EmailDocument v1), on `email` steps only. At most 60 blocks, counting each block inside columns and sections, 10000 characters, and 40 items in one list. An optional `meta.templateName` (at most 120 characters, other `meta` keys dropped) names the template the email was started from. It is informational only and is never rendered. A heading, text block or list item that still reads its new-block placeholder ("Your heading", "Write something…", "First point") is dropped. Omit to keep the stored one. A step that leaves `email` loses it. Null clears it.
+  - `ai_enabled` (body, boolean): Let AI write the copy from `ai_prompt` at send time
+  - `ai_prompt` (body, string): What the AI should write, when `ai_enabled`
+- `exit_conditions` (body, array of SequenceExitConditionInputDto): Replaces the exit conditions. An enrollment stops when any of them is met.
+  - `condition` (body, object, required): A condition in the DSL `sequences_get_condition_vocabulary` describes, e.g. `{ "signal": "replied" }`
+  - `cancel_reason` (body, string, required, one of `goal_met`, `converted`, `stage_reached`, `replied`, `booked`, `opted_out`): Recorded on the enrollment when this exit fires
+- `edges` (body, array of SequenceEdgeInputDto): Replaces the branch edges. Omit for a straight sequence.
+  - `edge_key` (body, string): The `edge_key` `sequences_get` returned. Send it back to keep the edge and the traffic recorded on it. Omit it for a new edge.
+  - `from_step_key` (body, string, required): `step_key` of the step the edge leaves
+  - `to_step_key` (body, string): `step_key` it goes to. Null ends the sequence.
+  - `condition` (body, object): A routing condition in the condition DSL. Omit for the fallback edge.
+  - `priority` (body, number): Lower runs first. The first edge that matches wins.
+  - `max_iterations` (body, number): Most passes through a loop. Required on an edge that goes back.
+  - `variant_weight` (body, number): A/B split weight. Every edge from the step must carry one, and they sum to 100.
+- `send_window` (body, SendWindowInputDto): Hours of the day email and SMS may send. Null removes the window.
+  - `start_minute` (body, number, required): Opens at this minute of the day, organization time. 540 is 09:00.
+  - `end_minute` (body, number, required): Closes at this minute (exclusive). 1080 is 18:00.
+- `expected_revision` (body, number): The `definition_revision` of the read you changed. The update answers 409 `stale_revision` when the sequence has changed since. Omit it to save regardless.
+
 ### sequences_resume
 
 `POST /api/v1/sequences/{sequenceId}/resume`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Confirm: required. Changes: `sequences`.
@@ -1496,6 +1543,7 @@ Change a sequence
   - `condition` (body, object, required): A condition in the DSL `sequences_get_condition_vocabulary` describes, e.g. `{ "signal": "replied" }`
   - `cancel_reason` (body, string, required, one of `goal_met`, `converted`, `stage_reached`, `replied`, `booked`, `opted_out`): Recorded on the enrollment when this exit fires
 - `edges` (body, array of SequenceEdgeInputDto): Replaces the branch edges. Omit for a straight sequence.
+  - `edge_key` (body, string): The `edge_key` `sequences_get` returned. Send it back to keep the edge and the traffic recorded on it. Omit it for a new edge.
   - `from_step_key` (body, string, required): `step_key` of the step the edge leaves
   - `to_step_key` (body, string): `step_key` it goes to. Null ends the sequence.
   - `condition` (body, object): A routing condition in the condition DSL. Omit for the fallback edge.
@@ -1505,6 +1553,7 @@ Change a sequence
 - `send_window` (body, SendWindowInputDto): Hours of the day email and SMS may send. Null removes the window.
   - `start_minute` (body, number, required): Opens at this minute of the day, organization time. 540 is 09:00.
   - `end_minute` (body, number, required): Closes at this minute (exclusive). 1080 is 18:00.
+- `expected_revision` (body, number): The `definition_revision` of the read you changed. The update answers 409 `stale_revision` when the sequence has changed since. Omit it to save regardless.
 
 ## Table views
 

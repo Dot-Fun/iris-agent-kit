@@ -7045,7 +7045,7 @@
         "x-member-access": "open"
       },
       "patch": {
-        "description": "Changes only the fields sent. `steps`, `edges` and `exit_conditions` each replace the whole\nlist: read the sequence with `sequences_get`, edit it, and send the full list back. Keep each\n`step_key`. `is_active: false` turns the sequence off and cancels every enrollment. To hold\ncontacts in place, use `sequences_pause` instead.",
+        "description": "Changes only the fields sent. `steps`, `edges` and `exit_conditions` each replace the whole\nlist: read the sequence with `sequences_get`, edit it, and send the full list back. Keep each\n`step_key` and `edge_key`. `is_active: false` turns the sequence off and cancels every enrollment. To hold\ncontacts in place, use `sequences_pause` instead. Send the `definition_revision` you read as\n`expected_revision` to save only when nothing changed since: a 409 `stale_revision` means read it again.",
         "operationId": "sequences_update",
         "parameters": [
           {
@@ -7123,7 +7123,7 @@
             }
           },
           "409": {
-            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\n`stale_revision`: the sequence changed after the `definition_revision` you sent as `expected_revision`, and nothing changed. Read it again before you decide.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7286,6 +7286,113 @@
           "irreversible": "A deleted sequence cannot be restored."
         },
         "x-iris-scope": "sequences:write",
+        "x-manager-power": "sequences",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/sequences/{sequenceId}/changes/preview": {
+      "post": {
+        "description": "Takes the same body as `sequences_update` and saves nothing. It checks the body as the update\ndoes, so a 400 here names what to fix. It lists the saved steps the update changes or removes,\nwith the contacts sitting on each, and the saved edges it removes that contacts have taken. Show\nthe user any `affected` step with `waiting` contacts before you send the update. Send the\n`definition_revision` you read as `expected_revision` here and on the update: a 409 `stale_revision` means read it again.",
+        "operationId": "sequences_preview_update",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SequenceUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceChangePreviewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The update would be refused"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:read` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the sequence changed after the `definition_revision` you sent as `expected_revision`, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Preview what an update would do to enrolled contacts",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ],
+        "x-iris-changes": [],
+        "x-iris-reverse": "nothing",
+        "x-iris-scope": "sequences:read",
         "x-manager-power": "sequences",
         "x-member-access": "deny"
       }
@@ -7709,7 +7816,7 @@
     },
     "/api/v1/sequences/{sequenceId}/enrollments/{enrollmentId}": {
       "get": {
-        "description": "The enrollment, each step run in the order it ran, and each event (sent, delivered, opened, clicked, replied, bounced) oldest first.",
+        "description": "The enrollment, each step run in the order it was scheduled with the step and edge it took, and each event (sent, delivered, opened, clicked, replied, bounced) oldest first.",
         "operationId": "sequences_get_enrollment",
         "parameters": [
           {
@@ -7898,7 +8005,7 @@
     },
     "/api/v1/sequences/{sequenceId}/analytics": {
       "get": {
-        "description": "Event counts per step and for the whole sequence. Read `email_delivery_reporting` before\nyou report email numbers: `unsupported` means delivered and bounced are unknown, not zero.",
+        "description": "Event counts per step and for the whole sequence. Read `email_delivery_reporting` before\nyou report email numbers: `unsupported` means delivered and bounced are unknown, not zero.\n`paths` says where contacts went: runs per `step_key`, and traversals per `edge_key` and exit.",
         "operationId": "sequences_analytics",
         "parameters": [
           {
@@ -18949,6 +19056,10 @@
       "SequenceEdgeDto": {
         "type": "object",
         "properties": {
+          "edge_key": {
+            "type": "string",
+            "description": "Stable id of the edge. Send it back on an update to keep the edge."
+          },
           "from_step_key": {
             "type": "string"
           },
@@ -18967,6 +19078,7 @@
           }
         },
         "required": [
+          "edge_key",
           "from_step_key",
           "condition",
           "priority"
@@ -19114,6 +19226,10 @@
             "type": "boolean",
             "description": "A platform sequence. Its copy can change, but its trigger, kind, steps and timing cannot."
           },
+          "definition_revision": {
+            "type": "number",
+            "description": "Goes up on every change to the sequence, its steps or its edges. Send it as `expected_revision` on `sequences_update`."
+          },
           "steps": {
             "type": "array",
             "items": {
@@ -19164,6 +19280,7 @@
           "triggers",
           "location_id",
           "is_system_managed",
+          "definition_revision",
           "steps",
           "edges",
           "exit_conditions",
@@ -19280,6 +19397,11 @@
       "SequenceEdgeInputDto": {
         "type": "object",
         "properties": {
+          "edge_key": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "The `edge_key` `sequences_get` returned. Send it back to keep the edge and the traffic recorded on it. Omit it for a new edge."
+          },
           "from_step_key": {
             "type": "string",
             "description": "`step_key` of the step the edge leaves"
@@ -19529,8 +19651,99 @@
                 "$ref": "#/components/schemas/SendWindowInputDto"
               }
             ]
+          },
+          "expected_revision": {
+            "type": "number",
+            "minimum": 0,
+            "description": "The `definition_revision` of the read you changed. The update answers 409 `stale_revision` when the sequence has changed since. Omit it to save regardless."
           }
         }
+      },
+      "SequenceChangeAffectedStepDto": {
+        "type": "object",
+        "properties": {
+          "step_key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string",
+            "description": "The step subject, or its number and channel"
+          },
+          "waiting": {
+            "type": "number",
+            "description": "Enrollments, active or paused, on the step now"
+          },
+          "change": {
+            "type": "string",
+            "enum": [
+              "changed",
+              "removed"
+            ]
+          }
+        },
+        "required": [
+          "step_key",
+          "label",
+          "waiting",
+          "change"
+        ]
+      },
+      "SequenceChangeRemovedEdgeDto": {
+        "type": "object",
+        "properties": {
+          "edge_key": {
+            "type": "string"
+          },
+          "traversals": {
+            "type": "number",
+            "description": "Times contacts took the edge"
+          }
+        },
+        "required": [
+          "edge_key",
+          "traversals"
+        ]
+      },
+      "SequenceChangePreviewDto": {
+        "type": "object",
+        "properties": {
+          "definition_revision": {
+            "type": "number",
+            "description": "The revision the preview read. It equals `expected_revision` when you sent one"
+          },
+          "active_enrollments": {
+            "type": "number",
+            "description": "Enrollments in the sequence now, active or paused"
+          },
+          "affected": {
+            "description": "Saved steps the update changes or removes",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceChangeAffectedStepDto"
+            }
+          },
+          "removed_edges_with_traffic": {
+            "description": "Saved edges the update removes that contacts took",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceChangeRemovedEdgeDto"
+            }
+          },
+          "activation_warnings": {
+            "description": "Email setup that may keep mail from landing, when the update would turn the sequence on",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceActivationWarningDto"
+            }
+          }
+        },
+        "required": [
+          "definition_revision",
+          "active_enrollments",
+          "affected",
+          "removed_edges_with_traffic",
+          "activation_warnings"
+        ]
       },
       "SequenceActivationBlockerDto": {
         "type": "object",
@@ -19805,6 +20018,26 @@
           "variant_key": {
             "type": "string",
             "nullable": true
+          },
+          "step_key": {
+            "type": "string",
+            "nullable": true,
+            "description": "The `step_key` the run executed. Null on a run recorded before the path was."
+          },
+          "from_run_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The run the enrollment came from. Null for the first step."
+          },
+          "via_edge_key": {
+            "type": "string",
+            "nullable": true,
+            "description": "The `edge_key` a branch took into this run. Null when the enrollment moved to the next step."
+          },
+          "exit_edge_key": {
+            "type": "string",
+            "nullable": true,
+            "description": "The `edge_key` the enrollment left the sequence through after this run."
           }
         },
         "required": [
@@ -19854,7 +20087,7 @@
             "$ref": "#/components/schemas/EnrollmentDto"
           },
           "step_runs": {
-            "description": "In the order the steps ran",
+            "description": "In the order the steps were scheduled",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/EnrollmentStepRunDto"
@@ -19933,6 +20166,123 @@
           "delivery_channels"
         ]
       },
+      "SequencePathNodeStatsDto": {
+        "type": "object",
+        "properties": {
+          "step_key": {
+            "type": "string"
+          },
+          "reached": {
+            "type": "number",
+            "description": "Runs of the step, each loop pass counted"
+          },
+          "unique_contacts": {
+            "type": "number",
+            "description": "Contacts behind those runs"
+          }
+        },
+        "required": [
+          "step_key",
+          "reached",
+          "unique_contacts"
+        ]
+      },
+      "SequencePathEdgeStatsDto": {
+        "type": "object",
+        "properties": {
+          "edge_key": {
+            "type": "string"
+          },
+          "traversals": {
+            "type": "number",
+            "description": "Times an enrollment took the edge"
+          },
+          "unique_contacts": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "edge_key",
+          "traversals",
+          "unique_contacts"
+        ]
+      },
+      "SequencePathExitStatsDto": {
+        "type": "object",
+        "properties": {
+          "edge_key": {
+            "type": "string"
+          },
+          "traversals": {
+            "type": "number",
+            "description": "Times an enrollment left the sequence through the edge"
+          }
+        },
+        "required": [
+          "edge_key",
+          "traversals"
+        ]
+      },
+      "SequencePathImpliedStatsDto": {
+        "type": "object",
+        "properties": {
+          "from_step_key": {
+            "type": "string"
+          },
+          "to_step_key": {
+            "type": "string"
+          },
+          "traversals": {
+            "type": "number",
+            "description": "Moves to the next step with no edge between them"
+          }
+        },
+        "required": [
+          "from_step_key",
+          "to_step_key",
+          "traversals"
+        ]
+      },
+      "SequencePathStatsDto": {
+        "type": "object",
+        "properties": {
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequencePathNodeStatsDto"
+            }
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequencePathEdgeStatsDto"
+            }
+          },
+          "exits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequencePathExitStatsDto"
+            }
+          },
+          "implied": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequencePathImpliedStatsDto"
+            }
+          },
+          "unknown_step_runs": {
+            "type": "number",
+            "description": "Runs recorded before the path was, with no known step"
+          }
+        },
+        "required": [
+          "nodes",
+          "edges",
+          "exits",
+          "implied",
+          "unknown_step_runs"
+        ]
+      },
       "SequenceAnalyticsDto": {
         "type": "object",
         "properties": {
@@ -19974,6 +20324,14 @@
           "email_provider": {
             "type": "string",
             "nullable": true
+          },
+          "paths": {
+            "description": "Runs per step and traversals per edge and exit",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SequencePathStatsDto"
+              }
+            ]
           }
         },
         "required": [
@@ -19981,7 +20339,8 @@
           "rollup",
           "delivery_channels",
           "variant_assignments",
-          "email_delivery_reporting"
+          "email_delivery_reporting",
+          "paths"
         ]
       },
       "SequenceTestStepDto": {
