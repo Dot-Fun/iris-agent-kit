@@ -107,6 +107,8 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `knowledge_base:write` | Add and delete knowledge base documents, and generate suggestions |
 | `business_data:read` | Read the status of a website re-scrape or an agent resync |
 | `business_data:write` | Re-scrape the website, and resync the business data to every phone agent |
+| `integrations:read` | Read the GoHighLevel integration |
+| `integrations:write` | Run the GoHighLevel integration |
 
 `me_get` returns the live catalog. When this table and `me_get` differ, trust `me_get`.
 

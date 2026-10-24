@@ -917,6 +917,539 @@ Change a field of a form
   - `label` (body, string, required)
 - `contact_target` (body, string): Where the answer saves on the contact: `none`, `full_name`, `first_name`, `last_name`, `phone`, or `field:<CRM field key>`. Null: by key. An `email` field takes null.
 
+## Integrations
+
+### ghl_apply_relink
+
+`POST /api/v1/integrations/ghl/mappings/{mappingId}/relink/{reviewId}/apply`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Move a GoHighLevel link to another contact
+
+- `mappingId` (path, string uuid, required)
+- `reviewId` (path, string uuid, required): The `id` from `ghl_preview_relink`
+
+### ghl_begin_reconciliation
+
+`POST /api/v1/integrations/ghl/mappings/{mappingId}/reconciliation`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`, `contacts`. Idempotent: send `idempotency_key`.
+
+Find and apply GoHighLevel changes the sync missed
+
+- `mappingId` (path, string uuid, required)
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+
+### ghl_begin_sync
+
+`POST /api/v1/integrations/ghl/mappings/{mappingId}/start`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`, `contacts`. Idempotent: send `idempotency_key`.
+
+Start the first transfer and the sync
+
+- `mappingId` (path, string uuid, required)
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `preview_id` (body, string uuid, required): The `id` of the completed preview run the user reviewed
+
+### ghl_confirm_appointment
+
+`POST /api/v1/integrations/ghl/mappings/{mappingId}/appointments/review/{operationId}/confirm`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Confirm an appointment that exists in GoHighLevel
+
+- `mappingId` (path, string uuid, required)
+- `operationId` (path, string uuid, required): An `id` from `ghl_list_appointment_reviews`
+- `revision` (body, string, required): The `revision` of the review item
+- `ghl_appointment_id` (body, string, required): The GoHighLevel appointment the user found
+
+### ghl_continue_transfer
+
+`POST /api/v1/integrations/ghl/mappings/{mappingId}/resume`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`, `contacts`. Idempotent: send `idempotency_key`.
+
+Continue a stopped transfer run
+
+- `mappingId` (path, string uuid, required)
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `run_id` (body, string uuid, required): The `id` of the paused or failed transfer run
+
+### ghl_disconnect
+
+`POST /api/v1/integrations/ghl/mappings/{mappingId}/disconnect`. Scope: `integrations:write`. Member: `deny`. Confirm: required. Changes: `integrations`.
+
+Disconnect a mapping
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_freeze_cutover
+
+`POST /api/v1/integrations/ghl/mappings/{mappingId}/cutover/freeze`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`, `contacts`.
+
+Freeze writes for a migration cutover
+
+- `mappingId` (path, string uuid, required)
+- `cutover_id` (body, string uuid, required): The cutover `id` from `ghl_list_cutovers` or `ghl_preview_cutover`
+
+### ghl_get_appointment_settings
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/appointments/config`. Scope: `integrations:read`. Member: `scoped`.
+
+Get the appointment sync settings of a mapping
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_get_association_catalog
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/objects/associations/catalog`. Scope: `integrations:read`. Member: `deny`.
+
+List the GoHighLevel owners and companies
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_get_associations
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/objects/associations`. Scope: `integrations:read`. Member: `deny`.
+
+Get the owner and company pairs of a mapping
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_get_authorization
+
+`GET /api/v1/integrations/ghl/authorization`. Scope: `integrations:read`. Member: `deny`.
+
+Get the link that connects GoHighLevel
+
+- `capabilities` (query, array of string, one of `appointments`, `opportunities`, `notesTasks`, `customFields`, `affiliations`, `conversations`, `callSummaries`, `workflows`, `agencyAuthorization`): The optional capabilities to ask GoHighLevel for, comma-separated. Omit it for contacts only. Asking does not turn a capability on.
+
+### ghl_get_conversation_context
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/engagement/contacts/{contactId}/context`. Scope: `integrations:read`. Member: `scoped`.
+
+Read a contact’s recent GoHighLevel conversations
+
+- `mappingId` (path, string uuid, required)
+- `contactId` (path, string uuid, required): An Iris contact linked to GoHighLevel
+
+### ghl_get_custom_field_catalog
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/objects/custom-fields/catalog`. Scope: `integrations:read`. Member: `deny`.
+
+List the GoHighLevel contact fields
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_get_custom_fields
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/objects/custom-fields`. Scope: `integrations:read`. Member: `deny`.
+
+Get the custom field pairs of a mapping
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_get_engagement_settings
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/engagement/config`. Scope: `integrations:read`. Member: `scoped`.
+
+Get the engagement settings of a mapping
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_get_mapping
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}`. Scope: `integrations:read`. Member: `scoped`.
+
+Get one GoHighLevel location mapping
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_get_object_catalog
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/objects/catalog`. Scope: `integrations:read`. Member: `deny`.
+
+List the GoHighLevel pipelines, stages and owners
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_get_object_settings
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/objects/settings`. Scope: `integrations:read`. Member: `deny`.
+
+Get the opportunity, note and task settings of a mapping
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_get_review_options
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/review`. Scope: `integrations:read`. Member: `deny`.
+
+List the Iris contacts a preview result may link to
+
+- `mappingId` (path, string uuid, required)
+- `preview_id` (query, string uuid, required): The `id` of the preview run
+- `object_id` (query, string, required): The `object_id` of a preview result to review
+
+### ghl_get_setup_options
+
+`GET /api/v1/integrations/ghl/setup-options`. Scope: `integrations:read`. Member: `deny`.
+
+List the locations you can pair
+
+- `environment` (query, string, one of `production`, `staging`, `develop`, `ci`, `local`)
+
+### ghl_get_status
+
+`GET /api/v1/integrations/ghl/status`. Scope: `integrations:read`. Member: `scoped`.
+
+Get the GoHighLevel connection status
+
+### ghl_list_appointment_options
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/appointments/options`. Scope: `integrations:read`. Member: `scoped`.
+
+List the GoHighLevel calendars a mapping can use
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_list_appointment_reviews
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/appointments/review`. Scope: `integrations:read`. Member: `scoped`.
+
+List the appointment work held for review
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_list_conflicts
+
+`GET /api/v1/integrations/ghl/conflicts`. Scope: `integrations:read`. Member: `scoped`.
+
+List the open sync conflicts
+
+### ghl_list_contact_recovery
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/contact-recovery`. Scope: `integrations:read`. Member: `deny`.
+
+List the contact writes held for review
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_list_cutovers
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/cutover`. Scope: `integrations:read`. Member: `deny`.
+
+List the migration cutovers of a mapping
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_list_engagement_reviews
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/engagement/review`. Scope: `integrations:read`. Member: `scoped`.
+
+List the summaries and workflow handoffs held for review
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_list_enrichment_recovery
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/objects/enrichment-recovery/{kind}`. Scope: `integrations:read`. Member: `deny`.
+
+List the custom field or association writes held for review
+
+- `mappingId` (path, string uuid, required)
+- `kind` (path, string, required, one of `customFields`, `associations`)
+- `offset` (query, number)
+
+### ghl_list_object_recovery
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/objects/recovery`. Scope: `integrations:read`. Member: `deny`.
+
+List the opportunity, note and task work held for review
+
+- `mappingId` (path, string uuid, required)
+- `offset` (query, number)
+
+### ghl_list_reconciliations
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/reconciliation`. Scope: `integrations:read`. Member: `deny`.
+
+List the reconciliation runs of a mapping
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_list_relink_options
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/relink/options`. Scope: `integrations:read`. Member: `deny`.
+
+List the contact links and contacts a relink can use
+
+- `mappingId` (path, string uuid, required)
+- `page` (query, number)
+
+### ghl_list_run_outcomes
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/runs/{runId}/outcomes`. Scope: `integrations:read`. Member: `scoped`.
+
+List the outcomes of a transfer run
+
+- `mappingId` (path, string uuid, required)
+- `runId` (path, string uuid, required): A run `id` from `ghl_list_runs`
+- `page` (query, number)
+
+### ghl_list_run_results
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/runs/{runId}/results`. Scope: `integrations:read`. Member: `scoped`.
+
+List the results of a preview run
+
+- `mappingId` (path, string uuid, required)
+- `runId` (path, string uuid, required): A run `id` from `ghl_list_runs`
+- `page` (query, number)
+
+### ghl_list_runs
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/runs`. Scope: `integrations:read`. Member: `scoped`.
+
+List the transfer runs of a mapping
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_list_summary_receipts
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/engagement/summary-receipts`. Scope: `integrations:read`. Member: `scoped`.
+
+List the call summaries posted to GoHighLevel
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_list_workflow_options
+
+`GET /api/v1/integrations/ghl/mappings/{mappingId}/engagement/workflow-options`. Scope: `integrations:read`. Member: `deny`.
+
+List the GoHighLevel workflows a handoff can start
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_pause
+
+`POST /api/v1/integrations/ghl/mappings/{mappingId}/pause`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Pause the sync of a mapping
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_preview_cutover
+
+`POST /api/v1/integrations/ghl/mappings/{mappingId}/cutover/preview`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`. Idempotent: send `idempotency_key`.
+
+Preview a migration cutover
+
+- `mappingId` (path, string uuid, required)
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+
+### ghl_preview_mapping
+
+`POST /api/v1/integrations/ghl/mappings/preview`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`. Idempotent: send `idempotency_key`.
+
+Pair a location and preview the first transfer
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `connection_id` (body, string uuid, required): The `connectionId` of a location from `ghl_get_setup_options`
+- `grant_id` (body, string uuid, required): The `grantId` of the same GoHighLevel location
+- `iris_location_id` (body, string uuid, required): An eligible Iris location from `ghl_get_setup_options`
+- `ghl_location_id` (body, string, required): The `id` of the GoHighLevel location
+- `environment` (body, string, required, one of `production`, `staging`, `develop`, `ci`, `local`)
+
+### ghl_preview_relink
+
+`POST /api/v1/integrations/ghl/mappings/{mappingId}/relink/preview`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Preview moving a GoHighLevel link to another contact
+
+- `mappingId` (path, string uuid, required)
+- `link_id` (body, string uuid, required): A link `id` from `ghl_list_relink_options`
+- `target_contact_id` (body, string uuid, required): A contact `id` from `ghl_list_relink_options`
+- `remote_id` (body, string, required): The GoHighLevel contact id
+
+### ghl_reconcile_contact
+
+`POST /api/v1/integrations/ghl/mappings/{mappingId}/contact-recovery/{operationId}/reconcile`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Check a held contact write in GoHighLevel
+
+- `mappingId` (path, string uuid, required)
+- `operationId` (path, string uuid, required): An `id` from `ghl_list_contact_recovery`
+- `remote_id` (body, string): The GoHighLevel contact id, when a create lost its answer and the user found the contact
+
+### ghl_reconcile_enrichment
+
+`PUT /api/v1/integrations/ghl/mappings/{mappingId}/objects/enrichment-recovery/{kind}/{jobId}`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Check a held custom field or association write in GoHighLevel
+
+- `mappingId` (path, string uuid, required)
+- `kind` (path, string, required, one of `customFields`, `associations`)
+- `jobId` (path, string uuid, required): A recovery item `id`
+- `expected_revision` (body, string, required): The `revision` of the recovery item, exactly as listed
+
+### ghl_reconcile_object
+
+`PUT /api/v1/integrations/ghl/mappings/{mappingId}/objects/recovery/{jobId}`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Link a held record to the GoHighLevel object the user found
+
+- `mappingId` (path, string uuid, required)
+- `jobId` (path, string uuid, required): A recovery item `id`
+- `expected_revision` (body, number, required): The `source_revision` of the recovery item
+- `remote_id` (body, string, required): The existing GoHighLevel object the user picked
+
+### ghl_reconnect
+
+`POST /api/v1/integrations/ghl/mappings/{mappingId}/reconnect`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Turn the sync of a mapping back on
+
+- `mappingId` (path, string uuid, required)
+
+### ghl_recover_rejected_create
+
+`POST /api/v1/integrations/ghl/mappings/{mappingId}/runs/{runId}/recover-rejected-create`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`. Idempotent: send `idempotency_key`.
+
+Create again a contact GoHighLevel rejected
+
+- `mappingId` (path, string uuid, required)
+- `runId` (path, string uuid, required): A run `id` from `ghl_list_runs`
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `outbound_operation_id` (body, string uuid, required): The `recoverRejectedOperationId` of a transfer outcome
+- `confirmed_ghl_location_id` (body, string, required): The `ghlLocationId` of the outcomes page, which the user confirmed
+
+### ghl_refresh_preview
+
+`POST /api/v1/integrations/ghl/mappings/{mappingId}/preview`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`. Idempotent: send `idempotency_key`.
+
+Run a new preview of a mapping
+
+- `mappingId` (path, string uuid, required)
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+
+### ghl_resolve_conflict
+
+`POST /api/v1/integrations/ghl/conflicts/{conflictId}/resolve`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`, `contacts`.
+
+Settle a sync conflict
+
+- `conflictId` (path, string uuid, required)
+- `resolution` (body, string, required, one of `resolved_iris`, `resolved_ghl`, `resolved_manual`)
+- `value` (body, string): The value both sides take, for `resolved_manual` only. Null clears the field.
+
+### ghl_resolve_engagement_review
+
+`POST /api/v1/integrations/ghl/mappings/{mappingId}/engagement/review/{operationId}/resolve`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Record what happened to a held summary or handoff
+
+- `mappingId` (path, string uuid, required)
+- `operationId` (path, string uuid, required): An `id` from `ghl_list_engagement_reviews`
+- `revision` (body, string, required): The `source_revision` of the review item
+- `outcome` (body, string, required, one of `confirmed`, `no_effect`)
+- `receipt` (body, string, required): What the user saw in GoHighLevel
+
+### ghl_retry_contact
+
+`POST /api/v1/integrations/ghl/mappings/{mappingId}/runs/{runId}/retry-contact`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`, `contacts`. Idempotent: send `idempotency_key`.
+
+Retry one contact that failed to transfer from GoHighLevel
+
+- `mappingId` (path, string uuid, required)
+- `runId` (path, string uuid, required): A run `id` from `ghl_list_runs`
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `inbound_event_id` (body, string uuid, required): The `retryInboundEventId` of a transfer outcome
+
+### ghl_review_contact
+
+`POST /api/v1/integrations/ghl/mappings/{mappingId}/review`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Decide how a previewed contact transfers
+
+- `mappingId` (path, string uuid, required)
+- `preview_id` (body, string uuid, required): The `id` of the preview run
+- `object_id` (body, string, required): The `object_id` of a preview result to review
+- `decision` (body, string, required, one of `link_existing`, `create_distinct`, `skip`)
+- `iris_contact_id` (body, string uuid): The Iris contact to link, for `link_existing`
+
+### ghl_rollback_cutover
+
+`POST /api/v1/integrations/ghl/mappings/{mappingId}/cutover/rollback`. Scope: `integrations:write`. Member: `deny`. Confirm: required. Changes: `integrations`.
+
+Roll back a migration cutover
+
+- `mappingId` (path, string uuid, required)
+- `cutover_id` (body, string uuid, required): The cutover `id` from `ghl_list_cutovers` or `ghl_preview_cutover`
+
+### ghl_update_appointment_settings
+
+`PUT /api/v1/integrations/ghl/mappings/{mappingId}/appointments/config`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Change the appointment sync of a mapping
+
+- `mappingId` (path, string uuid, required)
+- `enabled` (body, boolean, required)
+- `calendar_mappings` (body, object, required): An `irisCalendars` `id` to a GoHighLevel calendar `id`, both from `ghl_list_appointment_options`
+- `staff_mappings` (body, object, required): An `irisCalendars` `id` to a GoHighLevel user id from `ghlUsers` of `ghl_list_appointment_options`. Each key must also be a key of `calendar_mappings`. Send `{}` for none.
+
+### ghl_update_associations
+
+`PUT /api/v1/integrations/ghl/mappings/{mappingId}/objects/associations`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Change the owner and company pairs of a mapping
+
+- `mappingId` (path, string uuid, required)
+- `expected_version` (body, number, required): The settings `version` from `ghl_get_associations`, or 0 the first time
+- `mappings` (body, object, required): `owners` and `businesses`, each a list of `{ irisId, ghlId }` pairs, as `ghl_get_associations` shows them
+
+### ghl_update_capabilities
+
+`PATCH /api/v1/integrations/ghl/mappings/{mappingId}/capabilities`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Choose what a mapping syncs
+
+- `mappingId` (path, string uuid, required)
+- `capabilities` (body, object, required): Every capability as `ghl_get_mapping` shows it: `appointments`, `opportunities`, `notes`, `tasks`, `associations`, `customFields`, `conversations`, `workflows`. A missing one counts as false.
+- `expected_generation` (body, number, required): The mapping’s `connectionGeneration` from `ghl_get_mapping`
+
+### ghl_update_custom_fields
+
+`PUT /api/v1/integrations/ghl/mappings/{mappingId}/objects/custom-fields`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Change the custom field pairs of a mapping
+
+- `mappingId` (path, string uuid, required)
+- `expected_version` (body, number, required): The settings `version` from `ghl_get_custom_fields`, or 0 the first time
+- `fields` (body, array of GhlCustomFieldPairInputDto, required): One-to-one pairs of an Iris custom field and a GoHighLevel field of a compatible type
+  - `irisFieldId` (body, string uuid, required)
+  - `ghlFieldId` (body, string, required)
+
+### ghl_update_engagement_settings
+
+`PUT /api/v1/integrations/ghl/mappings/{mappingId}/engagement/config`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Change the engagement settings of a mapping
+
+- `mappingId` (path, string uuid, required)
+- `conversations` (body, boolean, required)
+- `publish_call_summaries` (body, boolean, required)
+- `workflows` (body, boolean, required)
+- `workflow_mappings` (body, array of GhlWorkflowMappingInputDto, required)
+  - `eventKey` (body, string, required, one of `call.completed`, `appointment.created`, `appointment.rescheduled`, `appointment.cancelled`)
+  - `workflowId` (body, string, required)
+  - `enabled` (body, boolean, required)
+- `expected_generation` (body, number, required): The `generation` of the settings from `ghl_get_engagement_settings`
+
+### ghl_update_object_settings
+
+`PUT /api/v1/integrations/ghl/mappings/{mappingId}/objects/settings`. Scope: `integrations:write`. Member: `deny`. Changes: `integrations`.
+
+Change the opportunity, note and task settings of a mapping
+
+- `mappingId` (path, string uuid, required)
+- `expected_version` (body, number, required): The settings `version` from `ghl_get_object_settings`, or 0 the first time
+- `mappings` (body, object, required): `version` (the next version), `pipelines` (each `{ irisId, ghlId, stages: [{ irisId, ghlId }] }`) and `owners` (`{ irisId, ghlId }` pairs)
+- `allow_creates` (body, array of string, required, one of `opportunities`, `notes`, `tasks`): The kinds Iris may create in GoHighLevel
+
 ## Invitations
 
 ### invitations_create

@@ -212,6 +212,8 @@ A key carries scopes, one read and one write per noun:
 | `knowledge_base:write` | add a text or web page document to a phone agent's knowledge base, delete one, and generate suggestions |
 | `business_data:read` | read the status of a website re-scrape or an agent resync |
 | `business_data:write` | re-scrape the organization's website, and resync the business data to every phone agent |
+| `integrations:read` | read the GoHighLevel connection: location pairs, sync status, conflicts, transfer runs, held work and what each pair syncs |
+| `integrations:write` | run the GoHighLevel connection: pair a location, start, pause, reconnect or disconnect its sync, change what it syncs, settle conflicts and held work, and run a migration cutover |
 
 Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
 `/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
@@ -639,6 +641,32 @@ After the user changes the website, call `business_data_rescrape_website`, then
 `business_data_resync` to update every agent. Ask the user first: each one replaces data. Both
 answer a `job_id`: read its progress with `business_data_get_job`.
 
+### 24. Connect GoHighLevel and keep it in sync
+
+1. Call `ghl_get_status`. It lists the GoHighLevel location pairs (mappings) and their `status`.
+   A 404 on every GoHighLevel operation means the organization does not have the integration.
+2. When nothing is connected, call `ghl_get_authorization` and give the user the link. The user
+   approves it in a browser. You cannot approve it.
+3. Call `ghl_get_setup_options` for the locations to pair, then `ghl_preview_mapping` with the
+   connection, grant, both location ids, the environment and an `idempotency_key`. It makes the
+   mapping and a preview run that writes nothing.
+4. Read the preview with `ghl_list_run_results`. For a contact that needs a decision, call
+   `ghl_get_review_options`, then `ghl_review_contact`. `ghl_refresh_preview` runs the preview
+   again.
+5. Show the user the preview, then call `ghl_begin_sync` with the `previewRun` `id` as
+   `preview_id` and an `idempotency_key`. The first transfer writes contacts on both sides. If it stops, call
+   `ghl_continue_transfer` with the `run_id`.
+6. To check health, call `ghl_get_mapping`, `ghl_list_runs` and `ghl_list_run_outcomes`. For a
+   failed contact, call `ghl_retry_contact`, or `ghl_recover_rejected_create` after the user
+   checked GoHighLevel.
+7. Call `ghl_pause` and `ghl_reconnect` to stop and start the sync. Ask the user before
+   `ghl_disconnect`.
+
+Many GoHighLevel writes change data in GoHighLevel, and rewind cannot undo them. Most settings carry
+a `generation` or a `version`, not `updated_at`. Send the value you read, and on a 409 read them
+again. The appointment settings carry no revision, so `ghl_update_appointment_settings` overwrites. Every write needs an owner or admin with their own credential. An organization key gets 403
+`no_acting_user`, and a MEMBER or MANAGER 403 `insufficient_role`.
+
 ## Other operations
 
 These follow the same rules. Their parameters are in `references/endpoints.md`.
@@ -699,6 +727,23 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
   owner. Ownership transfer is in the dashboard only. Confirm a role change, a deactivation, an
   SMS change and a removal with the user first: a demotion, a deactivation and a removal revoke
   the keys the person created.
+- GoHighLevel: what a pair syncs is `ghl_update_capabilities`, then the settings with their
+  GoHighLevel reads. Appointments: `ghl_get_appointment_settings`,
+  `ghl_list_appointment_options`, `ghl_update_appointment_settings`, `ghl_list_appointment_reviews`,
+  `ghl_confirm_appointment`. Engagement: `ghl_get_engagement_settings`,
+  `ghl_list_workflow_options`, `ghl_update_engagement_settings`, `ghl_get_conversation_context`,
+  `ghl_list_engagement_reviews`, `ghl_list_summary_receipts`, `ghl_resolve_engagement_review`.
+  Objects: `ghl_get_object_settings`, `ghl_get_object_catalog`, `ghl_update_object_settings`,
+  `ghl_list_object_recovery`, `ghl_reconcile_object`. Custom fields: `ghl_get_custom_fields`,
+  `ghl_get_custom_field_catalog`, `ghl_update_custom_fields`. Associations:
+  `ghl_get_associations`, `ghl_get_association_catalog`, `ghl_update_associations`. Enrichment:
+  `ghl_list_enrichment_recovery`, `ghl_reconcile_enrichment`. Conflicts: `ghl_list_conflicts`,
+  `ghl_resolve_conflict`. Contact recovery and relinks: `ghl_list_contact_recovery`,
+  `ghl_reconcile_contact`, `ghl_list_relink_options`, `ghl_preview_relink`, `ghl_apply_relink`.
+  Reconciliation: `ghl_list_reconciliations`, `ghl_begin_reconciliation`. Migration cutover:
+  `ghl_list_cutovers`, `ghl_preview_cutover`, `ghl_freeze_cutover`, `ghl_rollback_cutover`. A
+  settling action on held work tells GoHighLevel nothing new: settle an item only after the user
+  checked GoHighLevel. Ask the user before `ghl_rollback_cutover`.
 - Invitations: `invitations_list`, `invitations_create`, `invitations_revoke`. Only an owner or
   admin invites, with their own credential. `invitations_create` emails the person at once, so
   confirm the email and the role (`ADMIN` or `MEMBER`) with the user first, and send an
