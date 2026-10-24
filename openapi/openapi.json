@@ -23328,6 +23328,568 @@
         "x-member-access": "deny"
       }
     },
+    "/api/v1/staff/me/notifications": {
+      "get": {
+        "description": "The notification settings of the staff member linked to your login: `notify_phone`, `notify_email`\nand the `notify_by_sms` and `notify_by_email` switches. Any role reads its own. It needs a person\nbehind the credential, so an organization key gets 403 `no_acting_user`. A login linked to no staff\nmember, or an organization without team scheduling, answers 404.",
+        "operationId": "staff_get_my_notifications",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffSettingsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key has no person\n\nThe key does not carry the `staff:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "This login is not linked to a bookable person yet.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Read where you hear about your own appointments",
+        "tags": [
+          "Staff",
+          "Public API"
+        ],
+        "x-iris-scope": "staff:write",
+        "x-member-access": "open"
+      },
+      "patch": {
+        "description": "Changes the settings `staff_get_my_notifications` reads. A field left out keeps its value. null\nclears the phone number or the email address. Any role changes its own. An organization key gets\n403 `no_acting_user`, and a login linked to no staff member 404.\n\n`expected_updated_at` compares with `updated_at` from the matching read. A status, login or notification change moves it.",
+        "operationId": "staff_update_my_notifications",
+        "parameters": [
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStaffDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffSettingsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key has no person\n\nThe key does not carry the `staff:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "This login is not linked to a bookable person yet.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nTeam scheduling is not available for this organization, so nothing changed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change where you hear about your own appointments",
+        "tags": [
+          "Staff",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "staff"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "staff_get_my_notifications",
+            "args": {}
+          }
+        },
+        "x-iris-scope": "staff:write",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/staff/{staffId}/settings": {
+      "get": {
+        "description": "Where the staff member hears about their appointments (`notify_phone`, `notify_email` and the\n`notify_by_sms` and `notify_by_email` switches) and the membership (login) linked to them.\nOwner configuration: an owner’s or admin’s credential, or an organization key with no role, reads it.",
+        "operationId": "staff_get_settings",
+        "parameters": [
+          {
+            "name": "staffId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffSettingsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `staff:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such staff member in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Read a staff member’s notification settings and linked login",
+        "tags": [
+          "Staff",
+          "Public API"
+        ],
+        "x-iris-scope": "staff:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/staff/{staffId}": {
+      "patch": {
+        "description": "Changes the notification settings `staff_get_settings` reads. A field left out keeps its value.\nnull clears the phone number or the email address. Owner configuration: an owner’s or admin’s\ncredential, or an organization key with no role.\n\n`expected_updated_at` compares with `updated_at` from the matching read. A status, login or notification change moves it.",
+        "operationId": "staff_update",
+        "parameters": [
+          {
+            "name": "staffId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStaffDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffSettingsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `staff:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such staff member in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nTeam scheduling is not available for this organization, so nothing changed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change where a staff member hears about their appointments",
+        "tags": [
+          "Staff",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "staff"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "staff_get_settings",
+            "args": {
+              "staffId": "request.staffId"
+            }
+          }
+        },
+        "x-iris-scope": "staff:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/assistant/note": {
+      "delete": {
+        "description": "Deletes the note the Assistant keeps about you in this organization, with the copies rewind keeps\nof it. `deleted` is false when you had no note. It needs a person behind the credential, so an\norganization key gets 403 `no_acting_user`. An organization without the Assistant answers 404.",
+        "operationId": "assistant_delete_note",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantNoteDeletedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key has no person\n\nThe key does not carry the `assistant:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The Assistant is not available for this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete your private Assistant note",
+        "tags": [
+          "Assistant",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "assistant"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "The note is deleted with every copy rewind keeps of it, so no rewind can bring it back. Write it again in the Assistant."
+        },
+        "x-iris-scope": "assistant:write",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/feedback": {
+      "post": {
+        "description": "Feedback about Iris itself, from the person behind the credential: a comment, an optional rating\nfrom 1 to 5, and the page it is about. Any role sends it. An organization key gets 403\n`no_acting_user`, because feedback comes from a person.",
+        "operationId": "feedback_submit",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackSubmitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, such as an empty comment or a rating outside 1 to 5"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key has no person\n\nThe key does not carry the `feedback:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Send product feedback to the Iris team",
+        "tags": [
+          "Feedback",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "feedback"
+        ],
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "Feedback goes to the Iris team as soon as it is sent, and it cannot be taken back."
+        },
+        "x-iris-scope": "feedback:write",
+        "x-member-access": "open"
+      }
+    },
     "/api/v1/mcp": {
       "post": {
         "description": "The Iris MCP server, over stateless Streamable HTTP. Point an MCP client at this URL with\nthe key as a bearer token. Every other operation in this document is a tool named by its\noperationId, and `tools/list` shows only the tools the key’s scopes allow (and, for a\nmember’s credential, only the tools a member may call). A tool call runs\nthe REST operation, so it answers what the REST call answers. A failing call has\n`isError: true` and the REST error body as its text. Send\n`Accept: application/json, text/event-stream`. Answers 404 while the organization does\nnot have the MCP server turned on.",
@@ -24477,7 +25039,10 @@
                 "phone_lines:read",
                 "phone_lines:write",
                 "call_forwarding:read",
-                "call_forwarding:write"
+                "call_forwarding:write",
+                "staff:write",
+                "assistant:write",
+                "feedback:write"
               ]
             }
           },
@@ -24600,7 +25165,10 @@
                 "phone_lines:read",
                 "phone_lines:write",
                 "call_forwarding:read",
-                "call_forwarding:write"
+                "call_forwarding:write",
+                "staff:write",
+                "assistant:write",
+                "feedback:write"
               ]
             }
           }
@@ -24694,7 +25262,10 @@
               "phone_lines:read",
               "phone_lines:write",
               "call_forwarding:read",
-              "call_forwarding:write"
+              "call_forwarding:write",
+              "staff:write",
+              "assistant:write",
+              "feedback:write"
             ]
           },
           "label": {
@@ -35613,6 +36184,154 @@
         "required": [
           "id",
           "deleted"
+        ]
+      },
+      "StaffSettingsDto": {
+        "type": "object",
+        "properties": {
+          "staff_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "notify_phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "The phone number that gets appointment texts"
+          },
+          "notify_email": {
+            "type": "string",
+            "nullable": true,
+            "description": "The email address that gets appointment emails"
+          },
+          "notify_by_sms": {
+            "type": "boolean"
+          },
+          "notify_by_email": {
+            "type": "boolean"
+          },
+          "membership_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The membership (login) linked to the staff member, or null"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the settings last changed. Send it as `expected_updated_at` on the matching update."
+          }
+        },
+        "required": [
+          "staff_id",
+          "notify_phone",
+          "notify_email",
+          "notify_by_sms",
+          "notify_by_email",
+          "membership_id",
+          "updated_at"
+        ]
+      },
+      "UpdateStaffDto": {
+        "type": "object",
+        "properties": {
+          "notify_phone": {
+            "type": "string",
+            "nullable": true,
+            "example": "+14155550100",
+            "description": "The phone number that gets the staff member’s appointment texts, E.164 such as +14155550100, or null for none"
+          },
+          "notify_email": {
+            "type": "string",
+            "nullable": true,
+            "format": "email",
+            "maxLength": 320,
+            "example": "maya@example.com",
+            "description": "The email address that gets the staff member’s appointment emails, or null for none"
+          },
+          "notify_by_sms": {
+            "type": "boolean",
+            "description": "Whether the staff member gets a text about their appointments"
+          },
+          "notify_by_email": {
+            "type": "boolean",
+            "description": "Whether the staff member gets an email about their appointments"
+          }
+        }
+      },
+      "AssistantNoteDeletedDto": {
+        "type": "object",
+        "properties": {
+          "deleted": {
+            "type": "boolean",
+            "description": "false: you had no note"
+          }
+        },
+        "required": [
+          "deleted"
+        ]
+      },
+      "FeedbackSubmitDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "rating": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "A rating from 1 (poor) to 5 (great)"
+          },
+          "comment": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000,
+            "description": "What the user wants to tell Iris"
+          },
+          "page_context": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "/dashboard/calendar",
+            "description": "The page of the app the feedback is about"
+          }
+        },
+        "required": [
+          "comment"
+        ]
+      },
+      "FeedbackDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rating": {
+            "type": "number",
+            "nullable": true,
+            "description": "The rating from 1 to 5, or null"
+          },
+          "comment": {
+            "type": "string"
+          },
+          "page_context": {
+            "type": "string",
+            "nullable": true,
+            "description": "The page the feedback is about, or null"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "rating",
+          "comment",
+          "page_context",
+          "created_at"
         ]
       }
     }

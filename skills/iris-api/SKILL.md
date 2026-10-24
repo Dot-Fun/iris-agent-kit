@@ -220,6 +220,9 @@ A key carries scopes, one read and one write per noun:
 | `phone_lines:write` | add a Twilio or SIP trunk line, route a line to locations, and disconnect, reconnect, retry or delete a line |
 | `call_forwarding:read` | read the numbers the phone agents may transfer a call to |
 | `call_forwarding:write` | add, change and delete the numbers the phone agents may transfer a call to |
+| `staff:write` | read and change where a staff member hears about their appointments, and your own |
+| `assistant:write` | delete your own private Assistant note |
+| `feedback:write` | send product feedback to Iris as yourself |
 
 Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
 `/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
@@ -734,6 +737,31 @@ To subscribe to one person's or one location's appointments, call `calendar_feed
 
 While `self_service_links_enabled` is false in `calendar_settings_get`, every link answers 404.
 Turn it on with `calendar_self_service_links_update_settings`.
+
+### 29. Change where a staff member hears about appointments
+
+1. For your own settings, call `staff_get_my_notifications`. For another staff member, take the
+   `id` from `locations_booking_options` and call `staff_get_settings` with it.
+2. Call `staff_update_my_notifications` or `staff_update` with only the fields to change:
+   `notify_phone` (E.164, such as `+14155550100`), `notify_email`, `notify_by_sms` and
+   `notify_by_email`. Null clears the phone number or the email address. Send the `updated_at`
+   from the read as `expected_updated_at`.
+3. A 409 `stale_revision` means the settings changed since you read them: read them again before
+   you decide.
+
+Only an owner or admin reads or changes another person's settings. Any role changes its own, with
+its own credential: an organization key gets 403 `no_acting_user`. A 404 on your own settings
+means your login is linked to no staff member. Tell the user, and do not retry.
+
+### 30. Forget the Assistant note, or send feedback
+
+1. Ask the user before `assistant_delete_note`. It deletes their own note with every copy rewind
+   keeps, so nothing brings it back. `deleted` is false when there was no note.
+2. To pass on what the user thinks of Iris, call `feedback_submit` with `comment`, an optional
+   `rating` from 1 to 5, the `page_context` it is about and an `idempotency_key`. Feedback cannot
+   be taken back, so send only what the user asked to send.
+
+Both act as the person behind the credential: an organization key gets 403 `no_acting_user`.
 
 ## Other operations
 

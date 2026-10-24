@@ -115,6 +115,9 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `phone_lines:write` | Add, route, disconnect, reconnect, retry and delete phone lines |
 | `call_forwarding:read` | Read the numbers the phone agents may transfer a call to |
 | `call_forwarding:write` | Add, change and delete call forwarding numbers |
+| `staff:write` | Read and change a staff member's notification settings, and your own |
+| `assistant:write` | Delete your own private Assistant note |
+| `feedback:write` | Send product feedback to Iris as yourself |
 
 `me_get` returns the live catalog. When this table and `me_get` differ, trust `me_get`.
 

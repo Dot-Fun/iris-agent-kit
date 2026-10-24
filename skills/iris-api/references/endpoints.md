@@ -199,6 +199,14 @@ Change an appointment’s title, notes or attendee details
 - `attendee_email` (body, string)
 - `attendee_notes` (body, string): Notes about the attendee
 
+## Assistant
+
+### assistant_delete_note
+
+`DELETE /api/v1/assistant/note`. Scope: `assistant:write`. Member: `open`. Confirm: required. Changes: `assistant`.
+
+Delete your private Assistant note
+
 ## Audiences
 
 ### audiences_add_member
@@ -1001,6 +1009,19 @@ Set the pipeline stage field and the stages a call outcome moves a contact to
 - `stage_field` (body, string, required): The `field_name` of an enum field that is on. null turns the pipeline off and clears both stage ids.
 - `booking_stage_id` (body, string): One of the stage field’s option values, or null. Left out, it is cleared.
 - `no_booking_stage_id` (body, string): One of the stage field’s option values, or null. Left out, it is cleared.
+
+## Feedback
+
+### feedback_submit
+
+`POST /api/v1/feedback`. Scope: `feedback:write`. Member: `open`. Changes: `feedback`. Idempotent: send `idempotency_key`.
+
+Send product feedback to the Iris team
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `rating` (body, number): A rating from 1 (poor) to 5 (great)
+- `comment` (body, string, required): What the user wants to tell Iris
+- `page_context` (body, string): The page of the app the feedback is about
 
 ## Forms
 
@@ -2415,6 +2436,47 @@ Change a sequence
   - `start_minute` (body, number, required): Opens at this minute of the day, organization time. 540 is 09:00.
   - `end_minute` (body, number, required): Closes at this minute (exclusive). 1080 is 18:00.
 - `expected_revision` (body, number): The `definition_revision` of the read you changed. The update answers 409 `stale_revision` when the sequence has changed since. Omit it to save regardless.
+
+## Staff
+
+### staff_get_my_notifications
+
+`GET /api/v1/staff/me/notifications`. Scope: `staff:write`. Member: `open`.
+
+Read where you hear about your own appointments
+
+### staff_get_settings
+
+`GET /api/v1/staff/{staffId}/settings`. Scope: `staff:write`. Member: `deny`.
+
+Read a staff member’s notification settings and linked login
+
+- `staffId` (path, string uuid, required)
+
+### staff_update
+
+`PATCH /api/v1/staff/{staffId}`. Scope: `staff:write`. Member: `deny`. Changes: `staff`.
+
+Change where a staff member hears about their appointments
+
+- `staffId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `notify_phone` (body, string): The phone number that gets the staff member’s appointment texts, E.164 such as +14155550100, or null for none
+- `notify_email` (body, string email): The email address that gets the staff member’s appointment emails, or null for none
+- `notify_by_sms` (body, boolean): Whether the staff member gets a text about their appointments
+- `notify_by_email` (body, boolean): Whether the staff member gets an email about their appointments
+
+### staff_update_my_notifications
+
+`PATCH /api/v1/staff/me/notifications`. Scope: `staff:write`. Member: `open`. Changes: `staff`.
+
+Change where you hear about your own appointments
+
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `notify_phone` (body, string): The phone number that gets the staff member’s appointment texts, E.164 such as +14155550100, or null for none
+- `notify_email` (body, string email): The email address that gets the staff member’s appointment emails, or null for none
+- `notify_by_sms` (body, boolean): Whether the staff member gets a text about their appointments
+- `notify_by_email` (body, boolean): Whether the staff member gets an email about their appointments
 
 ## Table views
 
