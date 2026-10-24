@@ -1521,6 +1521,210 @@ Start a discovery interview about the business
 
 - `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
 
+## Email design
+
+### email_design_create_frame_part
+
+`POST /api/v1/email-design/frame-parts`. Scope: `email_design:write`. Member: `deny`. Changes: `email_design`. Idempotent: send `idempotency_key`.
+
+Create a header or footer
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `kind` (body, string, required, one of `header`, `footer`)
+- `name` (body, string, required): Unique among the organization’s parts of its kind
+- `blocks` (body, array of object, required): The part’s blocks, in the block format of a document’s `blocks`. Iris sanitizes them on write and on read.
+
+### email_design_create_template
+
+`POST /api/v1/email-design/templates`. Scope: `email_design:write`. Member: `deny`. Changes: `email_design`. Idempotent: send `idempotency_key`.
+
+Save an email template
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `name` (body, string, required): Unique in the organization
+- `folder` (body, string): The folder the template is filed under. Null, or blank, is Unfiled.
+- `document` (body, object, required): A block document: `{ "version": 1, "blocks": [...] }`, the format the email designer saves. Iris sanitizes it on write and on read.
+
+### email_design_delete_frame_part
+
+`DELETE /api/v1/email-design/frame-parts/{partId}`. Scope: `email_design:write`. Member: `deny`. Confirm: required. Changes: `email_design`.
+
+Delete a header or footer
+
+- `partId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
+### email_design_delete_template
+
+`DELETE /api/v1/email-design/templates/{templateId}`. Scope: `email_design:write`. Member: `deny`. Confirm: required. Changes: `email_design`.
+
+Delete a saved email template
+
+- `templateId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+
+### email_design_duplicate_frame_part
+
+`POST /api/v1/email-design/frame-parts/{partId}/duplicate`. Scope: `email_design:write`. Member: `deny`. Changes: `email_design`. Idempotent: send `idempotency_key`.
+
+Copy a header or footer
+
+- `partId` (path, string uuid, required)
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `name` (body, string, required): The copy’s name, unique among the parts of its kind
+
+### email_design_get_brand_frame
+
+`GET /api/v1/email-design/brand-frame`. Scope: `email_design:read`. Member: `open`.
+
+Get the email brand frame
+
+### email_design_get_frame_part
+
+`GET /api/v1/email-design/frame-parts/{partId}`. Scope: `email_design:read`. Member: `open`.
+
+Get one header or footer
+
+- `partId` (path, string uuid, required)
+
+### email_design_get_template
+
+`GET /api/v1/email-design/templates/{templateId}`. Scope: `email_design:read`. Member: `open`.
+
+Get one saved email template
+
+- `templateId` (path, string uuid, required)
+
+### email_design_list_frame_parts
+
+`GET /api/v1/email-design/frame-parts`. Scope: `email_design:read`. Member: `open`.
+
+List the headers and footers
+
+- `kind` (query, string, one of `header`, `footer`): Only headers or only footers. Leave it out for both.
+
+### email_design_list_templates
+
+`GET /api/v1/email-design/templates`. Scope: `email_design:read`. Member: `open`.
+
+List the saved email templates
+
+### email_design_send_test
+
+`POST /api/v1/email-design/test-send`. Scope: `email_design:write`. Member: `open`. Confirm: required. Changes: `email_design`. Idempotent: send `idempotency_key`.
+
+Send a designed email to yourself
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `subject` (body, string, required): The subject. Iris puts `Test: ` before it.
+- `preheader` (body, string): The preview line an inbox shows after the subject
+- `document` (body, object, required): A block document: `{ "version": 1, "blocks": [...] }`, the format the email designer saves. Iris sanitizes it on write and on read.
+
+### email_design_set_brand_frame
+
+`PUT /api/v1/email-design/brand-frame`. Scope: `email_design:write`. Member: `deny`. Changes: `email_design`.
+
+Replace the email brand frame
+
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `logo_url` (body, string, required): The public URL of a logo uploaded to the organization’s brand assets, or null for no logo
+- `brand_color` (body, string, required): The accent colour, as #rrggbb
+- `button_color` (body, string, required): The button colour, as #rrggbb
+- `text_color` (body, string, required): The body text colour, as #rrggbb
+- `background_color` (body, string, required): The colour behind the email card, as #rrggbb
+- `header_layout` (body, string, required, one of `logo_name`, `logo`, `name`): What the header shows: the logo, the name, or both
+- `business_name` (body, string, required): The business name in the header
+- `business_line` (body, string, required): The line under it, such as the phone
+- `footer_text` (body, string, required): The footer line above the unsubscribe link, such as the name and postal address
+
+### email_design_set_default_frame_part
+
+`PUT /api/v1/email-design/frame-parts/{partId}/default`. Scope: `email_design:write`. Member: `deny`. Changes: `email_design`.
+
+Make a header or footer the default
+
+- `partId` (path, string uuid, required)
+
+### email_design_update_frame_part
+
+`PATCH /api/v1/email-design/frame-parts/{partId}`. Scope: `email_design:write`. Member: `deny`. Changes: `email_design`.
+
+Change a header or footer
+
+- `partId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `name` (body, string): Unique among the organization’s parts of its kind
+- `blocks` (body, array of object): The part’s blocks, in the block format of a document’s `blocks`. Iris sanitizes them on write and on read.
+
+### email_design_update_template
+
+`PATCH /api/v1/email-design/templates/{templateId}`. Scope: `email_design:write`. Member: `deny`. Changes: `email_design`.
+
+Change a saved email template
+
+- `templateId` (path, string uuid, required)
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `name` (body, string): Unique in the organization
+- `folder` (body, string): The folder the template is filed under. Null, or blank, is Unfiled.
+- `document` (body, object): A block document: `{ "version": 1, "blocks": [...] }`, the format the email designer saves. Iris sanitizes it on write and on read.
+
+## Email settings
+
+### email_settings_delete
+
+`DELETE /api/v1/email-settings`. Scope: `email_settings:write`. Member: `deny`. Confirm: required. Changes: `email_settings`.
+
+Delete the email sending settings
+
+### email_settings_get
+
+`GET /api/v1/email-settings`. Scope: `email_settings:read`. Member: `open`.
+
+Get the email sending settings
+
+### email_settings_send_test
+
+`POST /api/v1/email-settings/test`. Scope: `email_settings:write`. Member: `deny`. Confirm: required. Changes: `email_settings`. Idempotent: send `idempotency_key`.
+
+Send a test email
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `to_email` (body, string, required): The address the test email goes to
+
+### email_settings_update
+
+`PUT /api/v1/email-settings`. Scope: `email_settings:write`. Member: `deny`. Changes: `email_settings`.
+
+Save the email sending settings
+
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `provider` (body, string, one of `smtp`, `sendgrid`, `mailgun`, `ses`, `gmail`, `outlook`, `yahoo`, `zoho`, `icloud`, `fastmail`, `postmark`, `resend`): The provider Iris sends through
+- `enabled` (body, boolean): Whether Iris sends email through this provider
+- `from_email` (body, string): The From address of every email
+- `from_name` (body, string): The From name
+- `signature_html` (body, string): The mailbox signature as HTML. Iris sanitizes it and derives the plain text. Null removes it.
+- `reply_to_email` (body, string): The Reply-To address
+- `default_reply_forwarding_email` (body, string): Who gets a copy of each reply that reaches the Iris reply gateway
+- `smtp_host` (body, string): The SMTP host, for an SMTP provider
+- `smtp_port` (body, number): The SMTP port, for an SMTP provider
+- `smtp_use_tls` (body, boolean): Whether the SMTP connection uses TLS
+- `credentials` (body, object): The provider credential, such as `{ "username", "password" }` for SMTP or `{ "apiKey" }` for an API provider. Iris stores it encrypted and never returns it. Leave it out to keep the stored one.
+- `daily_limit` (body, number): The most emails a day
+- `hourly_limit` (body, number): The most emails an hour
+- `per_recipient_daily_limit` (body, number): The most emails a day to one address
+
+### email_settings_verify_connection
+
+`POST /api/v1/email-settings/verify`. Scope: `email_settings:write`. Member: `deny`. Changes: `email_settings`.
+
+Check the email provider connection
+
+### email_settings_verify_domain
+
+`POST /api/v1/email-settings/domain/verify`. Scope: `email_settings:write`. Member: `deny`. Changes: `email_settings`.
+
+Check the sending domain
+
 ## Feedback
 
 ### feedback_submit

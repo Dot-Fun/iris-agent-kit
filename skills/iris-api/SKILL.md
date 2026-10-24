@@ -234,6 +234,10 @@ A key carries scopes, one read and one write per noun:
 | `discovery:write` | run the discovery interview and store a fact about the business |
 | `marketing_agent:read` | read your own marketing agent sessions, with their questions, plans and results |
 | `marketing_agent:write` | start a marketing agent session, answer its questions, approve its plan and cancel it |
+| `email_settings:read` | read the email sending settings, without the stored credential |
+| `email_settings:write` | save and delete the email sending settings, check the connection and the domain, and send a test email |
+| `email_design:read` | read the email brand frame, the saved templates and the headers and footers |
+| `email_design:write` | change the brand frame, templates and headers and footers, and send a designed email to yourself |
 
 Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
 `/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
@@ -928,6 +932,44 @@ creator gets 403 `no_acting_user`.
    as a person, and answer 404 while GoHighLevel is not on for the organization.
 
 A MANAGER with the contacts power moves contacts at their own locations only.
+
+### 39. Set up the email provider
+
+1. Call `email_settings_get`. A 404 means no settings are saved yet.
+2. Call `email_settings_update` with the `provider`, `from_email`, `from_name` and the
+   `credentials` the user gives you. Send `expected_updated_at` from the read when there was one.
+   No answer carries the credential back: `has_credentials` says one is stored.
+3. Call `email_settings_verify_connection`. When `success` is false, show the user the `error`.
+4. Call `email_settings_verify_domain` and show the user the DNS records to publish. Call it again
+   after they publish them. SMTP answers `status` `unsupported`.
+5. Ask the user, then call `email_settings_send_test` with a `to_email` and an `idempotency_key`.
+
+Ask the user before `email_settings_delete`: Iris stops sending email and the credential is gone.
+Every write needs an owner or admin. A MEMBER or MANAGER gets 403 `insufficient_role`.
+
+### 40. Design an email
+
+1. Call `email_design_get_brand_frame`. To change it, send every field to
+   `email_design_set_brand_frame` with `expected_updated_at`, because it replaces the frame.
+2. To save a template, call `email_design_create_template` with a `name`, a block `document` and an
+   `idempotency_key`. A 409 means the name is taken.
+3. To add a footer, call `email_design_create_frame_part` with `kind` `footer`, a `name`, the
+   `blocks` and an `idempotency_key`. To make it the one every email uses, call
+   `email_design_set_default_frame_part` with its id as `partId`.
+4. To change a template or part, send its `updated_at` as `expected_updated_at`. A 409
+   `stale_revision` means it changed: read it again.
+5. Ask the user, then call `email_design_send_test` with a `subject`, the `document` and an
+   `idempotency_key`. It goes to the person behind the credential, so an organization key gets 403
+   `no_acting_user`.
+
+Read templates with `email_design_list_templates` and `email_design_get_template`, and change or
+delete one with `email_design_update_template` and `email_design_delete_template`. Read headers and
+footers with `email_design_list_frame_parts` and `email_design_get_frame_part`, and change, copy or
+delete one with `email_design_update_frame_part`, `email_design_duplicate_frame_part` and
+`email_design_delete_frame_part`.
+
+Ask the user before a delete. The default header or footer answers 409: make another part the
+default first. Every write but the test send needs an owner or admin.
 
 ## Other operations
 

@@ -129,6 +129,10 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `discovery:write` | Run the discovery interview and store its facts |
 | `marketing_agent:read` | Read your own marketing agent sessions |
 | `marketing_agent:write` | Start, answer, approve and cancel your own marketing agent sessions |
+| `email_settings:read` | Read the email sending settings, without the stored credential |
+| `email_settings:write` | Save, delete, check and test the email sending settings |
+| `email_design:read` | Read the email brand frame, templates, headers and footers |
+| `email_design:write` | Change the email brand frame, templates, headers and footers, and send a designed email to yourself |
 
 `me_get` returns the live catalog. When this table and `me_get` differ, trust `me_get`.
 

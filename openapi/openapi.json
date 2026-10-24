@@ -31783,6 +31783,1945 @@
         "x-member-access": "deny"
       }
     },
+    "/api/v1/email-settings": {
+      "get": {
+        "description": "The provider, the From address, the sending limits, the last connection check and the sending domain.\nThe stored credential never comes back: `has_credentials` says one is stored. 404 before the first save.",
+        "operationId": "email_settings_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailSettingsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_settings:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The organization has no email settings yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get the email sending settings",
+        "tags": [
+          "Email settings",
+          "Public API"
+        ],
+        "x-iris-scope": "email_settings:read",
+        "x-member-access": "open"
+      },
+      "put": {
+        "description": "Creates the settings on the first save, then changes the fields sent and keeps the rest.\nA new `provider` or credential clears the last connection check: run `email_settings_verify_connection` after it.\n`expected_updated_at` is the `updated_at` from `email_settings_get`.",
+        "operationId": "email_settings_update",
+        "parameters": [
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailSettingsUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailSettingsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_settings:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Save the email sending settings",
+        "tags": [
+          "Email settings",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "email_settings"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "email_settings_get",
+            "args": {}
+          },
+          "noUndo": {
+            "credentials": "Iris never returns a stored credential, so an undo cannot send the earlier one back."
+          }
+        },
+        "x-iris-scope": "email_settings:write",
+        "x-member-access": "deny"
+      },
+      "delete": {
+        "description": "Deletes the settings with the stored credential. Iris sends no email until settings are saved again. Ask the user first.",
+        "operationId": "email_settings_delete",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_settings:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete the email sending settings",
+        "tags": [
+          "Email settings",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "email_settings"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "Deleted email settings cannot be restored: the stored credential is gone with them, and Iris stops sending email."
+        },
+        "x-iris-scope": "email_settings:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/email-settings/verify": {
+      "post": {
+        "description": "Signs in to the provider with the stored credential and records the result as `connection_verified`.\nA failed check answers 200 with `success` false and the reason in `error`. It sends no email.",
+        "operationId": "email_settings_verify_connection",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailSettingsConnectionDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No credential is stored"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_settings:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The organization has no email settings yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Check the email provider connection",
+        "tags": [
+          "Email settings",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "email_settings"
+        ],
+        "x-iris-reverse": "nothing",
+        "x-iris-scope": "email_settings:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/email-settings/domain/verify": {
+      "post": {
+        "description": "Registers the From address’s domain with the provider when needed, and answers the DNS records to publish with their status.\nCall it again to refresh the status. A provider without a domain API, such as SMTP, answers `supported` false and `status` `unsupported`.",
+        "operationId": "email_settings_verify_domain",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailSettingsDomainDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_settings:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The organization has no email settings yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Check the sending domain",
+        "tags": [
+          "Email settings",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "email_settings"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "The provider keeps the sending domain it registered."
+        },
+        "x-iris-scope": "email_settings:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/email-settings/test": {
+      "post": {
+        "description": "Sends a short test email to `to_email` through the saved provider, also while the settings are not enabled.\nAsk the user first. A failed send answers 200 with `success` false and the reason in `error`.",
+        "operationId": "email_settings_send_test",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailSettingsSendTestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailSettingsTestDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_settings:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Send a test email",
+        "tags": [
+          "Email settings",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "email_settings"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "A sent email cannot be unsent."
+        },
+        "x-iris-scope": "email_settings:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/email-design/brand-frame": {
+      "get": {
+        "description": "The logo, colours, header and footer line every designed email renders inside.\nBefore the first save, Iris derives the frame from the business profile and `updated_at` is null.",
+        "operationId": "email_design_get_brand_frame",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailBrandFrameDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_design:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get the email brand frame",
+        "tags": [
+          "Email design",
+          "Public API"
+        ],
+        "x-iris-scope": "email_design:read",
+        "x-member-access": "open"
+      },
+      "put": {
+        "description": "Replaces the whole frame, so send every field. Every designed email the organization sends uses it.\nA default header or footer that still shows the old frame follows the new one.\n`expected_updated_at` is the `updated_at` from `email_design_get_brand_frame`. A derived frame has none, so any value is stale.",
+        "operationId": "email_design_set_brand_frame",
+        "parameters": [
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailBrandFrameInputDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailBrandFrameDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or a logo URL outside the organization’s brand assets"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_design:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Replace the email brand frame",
+        "tags": [
+          "Email design",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "email_design"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "email_design_get_brand_frame",
+            "args": {}
+          }
+        },
+        "x-iris-scope": "email_design:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/email-design/templates": {
+      "get": {
+        "description": "The organization’s saved templates by name, each with its document. A sequence email step copies a template’s document, so a later change to the template leaves the step alone.",
+        "operationId": "email_design_list_templates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EmailTemplateDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_design:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the saved email templates",
+        "tags": [
+          "Email design",
+          "Public API"
+        ],
+        "x-iris-scope": "email_design:read",
+        "x-member-access": "open"
+      },
+      "post": {
+        "description": "Saves a block document under a name that is new in the organization.",
+        "operationId": "email_design_create_template",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailTemplateCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailTemplateDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body or document, or the organization keeps 200 templates"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_design:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A template with that name already exists\n\n`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Save an email template",
+        "tags": [
+          "Email design",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "email_design"
+        ],
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "operation": "email_design_delete_template",
+          "args": {
+            "templateId": "response.id"
+          },
+          "record": {
+            "operation": "email_design_get_template",
+            "args": {
+              "templateId": "response.id"
+            }
+          }
+        },
+        "x-iris-scope": "email_design:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/email-design/templates/{templateId}": {
+      "get": {
+        "operationId": "email_design_get_template",
+        "parameters": [
+          {
+            "name": "templateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailTemplateDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_design:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such email template in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get one saved email template",
+        "tags": [
+          "Email design",
+          "Public API"
+        ],
+        "x-iris-scope": "email_design:read",
+        "x-member-access": "open"
+      },
+      "patch": {
+        "description": "Renames it, moves it to another folder, or replaces its document. A field left out stays as stored. Send at least one.\nSteps that already copied the template keep their copy.\n`expected_updated_at` is the template’s `updated_at`.",
+        "operationId": "email_design_update_template",
+        "parameters": [
+          {
+            "name": "templateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailTemplateUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailTemplateDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body or document, or nothing to change"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_design:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such email template in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nA template with that name already exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change a saved email template",
+        "tags": [
+          "Email design",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "email_design"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "email_design_get_template",
+            "args": {
+              "templateId": "request.templateId"
+            }
+          }
+        },
+        "x-iris-scope": "email_design:write",
+        "x-member-access": "deny"
+      },
+      "delete": {
+        "description": "Deletes the template. Steps that copied it keep their copy. It cannot be restored, so ask the user first.\n`expected_updated_at` is the template’s `updated_at`.",
+        "operationId": "email_design_delete_template",
+        "parameters": [
+          {
+            "name": "templateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_design:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such email template in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete a saved email template",
+        "tags": [
+          "Email design",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "email_design"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A deleted template cannot be restored. Steps that copied it keep their copy."
+        },
+        "x-iris-scope": "email_design:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/email-design/test-send": {
+      "post": {
+        "description": "Renders the document inside the brand frame, as a sequence email renders, and sends it to the person behind the credential.\nClick and open tracking are off, and tokens stay as written. The subject gets `Test: ` before it. At most 10 a minute.\nAsk the user first. An organization key has no person, so it gets 403 `no_acting_user`.",
+        "operationId": "email_design_send_test",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailDesignTestSendDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailDesignTestSentDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, an empty or too large document, or the send failed"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key has no person to send the test to\n\nThe key does not carry the `email_design:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Send a designed email to yourself",
+        "tags": [
+          "Email design",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "email_design"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "A sent email cannot be unsent."
+        },
+        "x-iris-scope": "email_design:write",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/email-design/frame-parts": {
+      "get": {
+        "description": "The organization’s header and footer parts, each kind’s default first, then by name. `kind` narrows the list to one kind.",
+        "operationId": "email_design_list_frame_parts",
+        "parameters": [
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "description": "Only headers or only footers. Leave it out for both.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "header",
+                "footer"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EmailFramePartDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_design:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the headers and footers",
+        "tags": [
+          "Email design",
+          "Public API"
+        ],
+        "x-iris-scope": "email_design:read",
+        "x-member-access": "open"
+      },
+      "post": {
+        "description": "A new header or footer part, not the default. Make it the default with `email_design_set_default_frame_part`.",
+        "operationId": "email_design_create_frame_part",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailFramePartCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailFramePartDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body or blocks, or the organization keeps 50 parts of the kind"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_design:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A part of the kind has that name\n\n`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Create a header or footer",
+        "tags": [
+          "Email design",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "email_design"
+        ],
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "operation": "email_design_delete_frame_part",
+          "args": {
+            "partId": "response.id"
+          },
+          "record": {
+            "operation": "email_design_get_frame_part",
+            "args": {
+              "partId": "response.id"
+            }
+          }
+        },
+        "x-iris-scope": "email_design:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/email-design/frame-parts/{partId}": {
+      "get": {
+        "operationId": "email_design_get_frame_part",
+        "parameters": [
+          {
+            "name": "partId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailFramePartDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_design:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such header or footer in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get one header or footer",
+        "tags": [
+          "Email design",
+          "Public API"
+        ],
+        "x-iris-scope": "email_design:read",
+        "x-member-access": "open"
+      },
+      "patch": {
+        "description": "Renames it, replaces its blocks, or both. A field left out stays as stored. Send at least one.\nEmails sent after it render with the change. `expected_updated_at` is the part’s `updated_at`.",
+        "operationId": "email_design_update_frame_part",
+        "parameters": [
+          {
+            "name": "partId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailFramePartUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailFramePartDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body or blocks, or nothing to change"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_design:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such header or footer in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nA part of the kind has that name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Change a header or footer",
+        "tags": [
+          "Email design",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "email_design"
+        ],
+        "x-iris-reverse": {
+          "restore": {
+            "operation": "email_design_get_frame_part",
+            "args": {
+              "partId": "request.partId"
+            }
+          }
+        },
+        "x-iris-scope": "email_design:write",
+        "x-member-access": "deny"
+      },
+      "delete": {
+        "description": "Deletes the part. An email that named it renders with its kind’s default. It cannot be restored, so ask the user first.\nThe default of its kind answers 409: make another part the default first. `expected_updated_at` is the part’s `updated_at`.",
+        "operationId": "email_design_delete_frame_part",
+        "parameters": [
+          {
+            "name": "partId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_design:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such header or footer in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nThe part is the default of its kind.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete a header or footer",
+        "tags": [
+          "Email design",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "email_design"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "irreversible": "A deleted header or footer cannot be restored."
+        },
+        "x-iris-scope": "email_design:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/email-design/frame-parts/{partId}/duplicate": {
+      "post": {
+        "description": "A new part of the same kind with the same blocks, under a new name. The copy is not the default.",
+        "operationId": "email_design_duplicate_frame_part",
+        "parameters": [
+          {
+            "name": "partId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailFramePartDuplicateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailFramePartDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or the organization keeps 50 parts of the kind"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_design:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such header or footer in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A part of the kind has that name\n\n`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Copy a header or footer",
+        "tags": [
+          "Email design",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "email_design"
+        ],
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "operation": "email_design_delete_frame_part",
+          "args": {
+            "partId": "response.id"
+          },
+          "record": {
+            "operation": "email_design_get_frame_part",
+            "args": {
+              "partId": "response.id"
+            }
+          }
+        },
+        "x-iris-scope": "email_design:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/email-design/frame-parts/{partId}/default": {
+      "put": {
+        "description": "Makes the part its kind’s default, which every email that names no part renders with. The old default of the kind stops being the default.",
+        "operationId": "email_design_set_default_frame_part",
+        "parameters": [
+          {
+            "name": "partId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailFramePartDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `email_design:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such header or footer in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Make a header or footer the default",
+        "tags": [
+          "Email design",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "email_design"
+        ],
+        "x-iris-reverse": {
+          "irreversible": "The answer does not name the old default. Read the list with email_design_list_frame_parts first, and make the old default the default again with this operation."
+        },
+        "x-iris-scope": "email_design:write",
+        "x-member-access": "deny"
+      }
+    },
     "/api/v1/mcp": {
       "post": {
         "description": "The Iris MCP server, over stateless Streamable HTTP. Point an MCP client at this URL with\nthe key as a bearer token. Every other operation in this document is a tool named by its\noperationId, and `tools/list` shows only the tools the key’s scopes allow (and, for a\nmember’s credential, only the tools a member may call). A tool call runs\nthe REST operation, so it answers what the REST call answers. A failing call has\n`isError: true` and the REST error body as its text. Send\n`Accept: application/json, text/event-stream`. Answers 404 while the organization does\nnot have the MCP server turned on.",
@@ -33353,7 +35292,11 @@
                 "discovery:read",
                 "discovery:write",
                 "marketing_agent:read",
-                "marketing_agent:write"
+                "marketing_agent:write",
+                "email_settings:read",
+                "email_settings:write",
+                "email_design:read",
+                "email_design:write"
               ]
             }
           },
@@ -33490,7 +35433,11 @@
                 "discovery:read",
                 "discovery:write",
                 "marketing_agent:read",
-                "marketing_agent:write"
+                "marketing_agent:write",
+                "email_settings:read",
+                "email_settings:write",
+                "email_design:read",
+                "email_design:write"
               ]
             }
           }
@@ -33598,7 +35545,11 @@
               "discovery:read",
               "discovery:write",
               "marketing_agent:read",
-              "marketing_agent:write"
+              "marketing_agent:write",
+              "email_settings:read",
+              "email_settings:write",
+              "email_design:read",
+              "email_design:write"
             ]
           },
           "label": {
@@ -48446,6 +50397,770 @@
           "version",
           "plan_hash",
           "approved"
+        ]
+      },
+      "EmailSettingsDomainRecordDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "Human label for the record's role, e.g. DKIM, SPF, Return-Path"
+          },
+          "type": {
+            "type": "string",
+            "description": "DNS record type, e.g. TXT, MX, CNAME"
+          },
+          "name": {
+            "type": "string",
+            "description": "Host/name to create the record on"
+          },
+          "value": {
+            "type": "string",
+            "description": "Record value to publish"
+          },
+          "priority": {
+            "type": "number",
+            "nullable": true,
+            "description": "MX priority, when applicable"
+          },
+          "ttl": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "verified",
+              "pending",
+              "failed",
+              "unknown"
+            ]
+          }
+        },
+        "required": [
+          "label",
+          "type",
+          "name",
+          "value",
+          "status"
+        ]
+      },
+      "EmailSettingsDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "smtp",
+              "sendgrid",
+              "mailgun",
+              "ses",
+              "gmail",
+              "outlook",
+              "yahoo",
+              "zoho",
+              "icloud",
+              "fastmail",
+              "postmark",
+              "resend"
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "from_email": {
+            "type": "string"
+          },
+          "from_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "signature_html": {
+            "type": "string",
+            "nullable": true
+          },
+          "signature_text": {
+            "type": "string",
+            "nullable": true
+          },
+          "reply_to_email": {
+            "type": "string",
+            "nullable": true
+          },
+          "default_reply_forwarding_email": {
+            "type": "string",
+            "nullable": true
+          },
+          "smtp_host": {
+            "type": "string",
+            "nullable": true
+          },
+          "smtp_port": {
+            "type": "number",
+            "nullable": true
+          },
+          "smtp_use_tls": {
+            "type": "boolean"
+          },
+          "daily_limit": {
+            "type": "number"
+          },
+          "hourly_limit": {
+            "type": "number"
+          },
+          "per_recipient_daily_limit": {
+            "type": "number"
+          },
+          "connection_verified": {
+            "type": "boolean",
+            "description": "Whether the last connection check passed"
+          },
+          "last_verified_at": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "has_credentials": {
+            "type": "boolean",
+            "description": "Whether a credential is stored. The credential itself is never returned."
+          },
+          "credential_username": {
+            "type": "string",
+            "nullable": true,
+            "description": "The mailbox Iris signs in as, for an SMTP provider. Null when there is no credential or the provider has no username. Never the password."
+          },
+          "domain_verification_supported": {
+            "type": "boolean",
+            "description": "Whether Iris can check the sending domain with this provider"
+          },
+          "sending_domain": {
+            "type": "string",
+            "nullable": true
+          },
+          "sending_domain_status": {
+            "type": "string",
+            "enum": [
+              "verified",
+              "pending",
+              "failed",
+              "not_found",
+              "unsupported",
+              "unknown"
+            ]
+          },
+          "sending_domain_records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailSettingsDomainRecordDto"
+            }
+          },
+          "sending_domain_checked_at": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "provider",
+          "enabled",
+          "from_email",
+          "from_name",
+          "signature_html",
+          "signature_text",
+          "reply_to_email",
+          "default_reply_forwarding_email",
+          "smtp_host",
+          "smtp_port",
+          "smtp_use_tls",
+          "daily_limit",
+          "hourly_limit",
+          "per_recipient_daily_limit",
+          "connection_verified",
+          "last_verified_at",
+          "has_credentials",
+          "credential_username",
+          "domain_verification_supported",
+          "sending_domain",
+          "sending_domain_status",
+          "sending_domain_records",
+          "sending_domain_checked_at",
+          "updated_at"
+        ]
+      },
+      "EmailSettingsUpdateDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "smtp",
+              "sendgrid",
+              "mailgun",
+              "ses",
+              "gmail",
+              "outlook",
+              "yahoo",
+              "zoho",
+              "icloud",
+              "fastmail",
+              "postmark",
+              "resend"
+            ],
+            "description": "The provider Iris sends through"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether Iris sends email through this provider"
+          },
+          "from_email": {
+            "type": "string",
+            "description": "The From address of every email"
+          },
+          "from_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The From name"
+          },
+          "signature_html": {
+            "type": "string",
+            "nullable": true,
+            "description": "The mailbox signature as HTML. Iris sanitizes it and derives the plain text. Null removes it."
+          },
+          "reply_to_email": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Reply-To address"
+          },
+          "default_reply_forwarding_email": {
+            "type": "string",
+            "nullable": true,
+            "description": "Who gets a copy of each reply that reaches the Iris reply gateway"
+          },
+          "smtp_host": {
+            "type": "string",
+            "nullable": true,
+            "description": "The SMTP host, for an SMTP provider"
+          },
+          "smtp_port": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 65535,
+            "description": "The SMTP port, for an SMTP provider"
+          },
+          "smtp_use_tls": {
+            "type": "boolean",
+            "description": "Whether the SMTP connection uses TLS"
+          },
+          "credentials": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "The provider credential, such as `{ \"username\", \"password\" }` for SMTP or `{ \"apiKey\" }` for an API provider. Iris stores it encrypted and never returns it. Leave it out to keep the stored one."
+          },
+          "daily_limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100000,
+            "description": "The most emails a day"
+          },
+          "hourly_limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10000,
+            "description": "The most emails an hour"
+          },
+          "per_recipient_daily_limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 1000,
+            "description": "The most emails a day to one address"
+          }
+        }
+      },
+      "EmailSettingsConnectionDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the stored credential signed in. It says nothing about the sending domain."
+          },
+          "error": {
+            "type": "string",
+            "description": "Why the check failed"
+          },
+          "restricted": {
+            "type": "boolean",
+            "description": "The credential works, but it cannot read the sending domain"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "EmailSettingsDomainDto": {
+        "type": "object",
+        "properties": {
+          "supported": {
+            "type": "boolean",
+            "description": "False when the provider has no domain API, as with SMTP"
+          },
+          "domain": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "verified",
+              "pending",
+              "failed",
+              "not_found",
+              "unsupported",
+              "unknown"
+            ]
+          },
+          "records": {
+            "description": "The DNS records to publish, with their status",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailSettingsDomainRecordDto"
+            }
+          },
+          "checked_at": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "error": {
+            "type": "string",
+            "description": "Why Iris could not read the provider"
+          }
+        },
+        "required": [
+          "supported",
+          "domain",
+          "status",
+          "records",
+          "checked_at"
+        ]
+      },
+      "EmailSettingsSendTestDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "to_email": {
+            "type": "string",
+            "description": "The address the test email goes to"
+          }
+        },
+        "required": [
+          "to_email"
+        ]
+      },
+      "EmailSettingsTestDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message_id": {
+            "type": "string",
+            "description": "The provider’s message id"
+          },
+          "error": {
+            "type": "string",
+            "description": "Why the send failed"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "EmailBrandFrameDto": {
+        "type": "object",
+        "properties": {
+          "logo_url": {
+            "type": "string",
+            "nullable": true,
+            "description": "The public URL of a logo uploaded to the organization’s brand assets, or null for no logo"
+          },
+          "brand_color": {
+            "type": "string",
+            "description": "The accent colour, as #rrggbb"
+          },
+          "button_color": {
+            "type": "string",
+            "description": "The button colour, as #rrggbb"
+          },
+          "text_color": {
+            "type": "string",
+            "description": "The body text colour, as #rrggbb"
+          },
+          "background_color": {
+            "type": "string",
+            "description": "The colour behind the email card, as #rrggbb"
+          },
+          "header_layout": {
+            "type": "string",
+            "enum": [
+              "logo_name",
+              "logo",
+              "name"
+            ],
+            "description": "What the header shows: the logo, the name, or both"
+          },
+          "business_name": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "The business name in the header"
+          },
+          "business_line": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "The line under it, such as the phone"
+          },
+          "footer_text": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "The footer line above the unsubscribe link, such as the name and postal address"
+          },
+          "updated_at": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "When the frame was last saved. Null while Iris derives it from the business profile."
+          }
+        },
+        "required": [
+          "logo_url",
+          "brand_color",
+          "button_color",
+          "text_color",
+          "background_color",
+          "header_layout",
+          "business_name",
+          "business_line",
+          "footer_text",
+          "updated_at"
+        ]
+      },
+      "EmailBrandFrameInputDto": {
+        "type": "object",
+        "properties": {
+          "logo_url": {
+            "type": "string",
+            "nullable": true,
+            "description": "The public URL of a logo uploaded to the organization’s brand assets, or null for no logo"
+          },
+          "brand_color": {
+            "type": "string",
+            "description": "The accent colour, as #rrggbb"
+          },
+          "button_color": {
+            "type": "string",
+            "description": "The button colour, as #rrggbb"
+          },
+          "text_color": {
+            "type": "string",
+            "description": "The body text colour, as #rrggbb"
+          },
+          "background_color": {
+            "type": "string",
+            "description": "The colour behind the email card, as #rrggbb"
+          },
+          "header_layout": {
+            "type": "string",
+            "enum": [
+              "logo_name",
+              "logo",
+              "name"
+            ],
+            "description": "What the header shows: the logo, the name, or both"
+          },
+          "business_name": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "The business name in the header"
+          },
+          "business_line": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "The line under it, such as the phone"
+          },
+          "footer_text": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "The footer line above the unsubscribe link, such as the name and postal address"
+          }
+        },
+        "required": [
+          "logo_url",
+          "brand_color",
+          "button_color",
+          "text_color",
+          "background_color",
+          "header_layout",
+          "business_name",
+          "business_line",
+          "footer_text"
+        ]
+      },
+      "EmailTemplateDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "folder": {
+            "type": "string",
+            "nullable": true,
+            "description": "The folder the template is filed under. Null, or blank, is Unfiled."
+          },
+          "document": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "A block document: `{ \"version\": 1, \"blocks\": [...] }`, the format the email designer saves. Iris sanitizes it on write and on read."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "folder",
+          "document",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "EmailTemplateCreateDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "Unique in the organization"
+          },
+          "folder": {
+            "type": "string",
+            "nullable": true,
+            "description": "The folder the template is filed under. Null, or blank, is Unfiled."
+          },
+          "document": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "A block document: `{ \"version\": 1, \"blocks\": [...] }`, the format the email designer saves. Iris sanitizes it on write and on read."
+          }
+        },
+        "required": [
+          "name",
+          "document"
+        ]
+      },
+      "EmailTemplateUpdateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "Unique in the organization"
+          },
+          "folder": {
+            "type": "string",
+            "nullable": true,
+            "description": "The folder the template is filed under. Null, or blank, is Unfiled."
+          },
+          "document": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "A block document: `{ \"version\": 1, \"blocks\": [...] }`, the format the email designer saves. Iris sanitizes it on write and on read."
+          }
+        }
+      },
+      "EmailDesignTestSendDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "The subject. Iris puts `Test: ` before it."
+          },
+          "preheader": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "The preview line an inbox shows after the subject"
+          },
+          "document": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "A block document: `{ \"version\": 1, \"blocks\": [...] }`, the format the email designer saves. Iris sanitizes it on write and on read."
+          }
+        },
+        "required": [
+          "subject",
+          "document"
+        ]
+      },
+      "EmailDesignTestSentDto": {
+        "type": "object",
+        "properties": {
+          "sent_to": {
+            "type": "string",
+            "description": "The address of the person behind the credential, which the test went to"
+          }
+        },
+        "required": [
+          "sent_to"
+        ]
+      },
+      "EmailFramePartDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "header",
+              "footer"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "description": "The part’s blocks, in the block format of a document’s `blocks`. Iris sanitizes them on write and on read."
+          },
+          "is_default": {
+            "type": "boolean",
+            "description": "Whether it is the organization’s default of its kind, which an email that names no part renders with"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "blocks",
+          "is_default",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "EmailFramePartCreateDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "header",
+              "footer"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "Unique among the organization’s parts of its kind"
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "description": "The part’s blocks, in the block format of a document’s `blocks`. Iris sanitizes them on write and on read."
+          }
+        },
+        "required": [
+          "kind",
+          "name",
+          "blocks"
+        ]
+      },
+      "EmailFramePartUpdateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "Unique among the organization’s parts of its kind"
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "description": "The part’s blocks, in the block format of a document’s `blocks`. Iris sanitizes them on write and on read."
+          }
+        }
+      },
+      "EmailFramePartDuplicateDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "The copy’s name, unique among the parts of its kind"
+          }
+        },
+        "required": [
+          "name"
         ]
       }
     }
