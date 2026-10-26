@@ -3095,6 +3095,7 @@ Turn a sequence on
 Get the send totals of a sequence
 
 - `sequenceId` (path, string uuid, required)
+- `since` (query, string date-time): Count only the runs created at or after this instant, in paths and step_counts_by_key. The per-step counts and the rollup ignore it
 
 ### sequences_cancel_enrollment
 
@@ -3243,6 +3244,15 @@ Get a broadcast's send schedule and its runs
 - `page` (query, number): 1-based page number, at most 1000
 - `limit` (query, number): Page size (capped at 100)
 
+### sequences_get_version
+
+`GET /api/v1/sequences/{sequenceId}/versions/{revision}`. Scope: `sequences:read`. Member: `open`.
+
+Get one saved version of a sequence
+
+- `sequenceId` (path, string uuid, required)
+- `revision` (path, integer, required): A `revision` from `sequences_list_versions`
+
 ### sequences_list
 
 `GET /api/v1/sequences`. Scope: `sequences:read`. Member: `open`.
@@ -3261,6 +3271,7 @@ List the contacts enrolled in one sequence
 - `status` (query, string, one of `active`, `paused`, `completed`, `cancelled`, `failed`): Only enrollments with this status
 - `contact_id` (query, string uuid): Only this contact's enrollments in the sequence
 - `email` (query, string): Only the enrollments of the contact with this email, in the key’s organization. Matched without regard to case. Takes precedence over `contact_id`. An email no contact carries returns an empty page, not a 404. When more than one contact carries the email, the one that owns it as its identity is used.
+- `reached_step_key` (query, string): Only the enrollments that reached this step, by its `step_key`, on any pass of the sequence
 
 ### sequences_list_send_schedules
 
@@ -3282,6 +3293,16 @@ List the triggers a sequence can start on
 `GET /api/v1/sequences/variables`. Scope: `sequences:read`. Member: `open`.
 
 List the variables step copy may use
+
+### sequences_list_versions
+
+`GET /api/v1/sequences/{sequenceId}/versions`. Scope: `sequences:read`. Member: `open`.
+
+List the saved versions of a sequence
+
+- `sequenceId` (path, string uuid, required)
+- `page` (query, number): 1-based page number, at most 1000
+- `limit` (query, number): Page size (capped at 100)
 
 ### sequences_pause
 
@@ -3352,6 +3373,17 @@ Preview what an update would do to enrolled contacts
 Resume a paused sequence
 
 - `sequenceId` (path, string uuid, required)
+
+### sequences_revert_version
+
+`POST /api/v1/sequences/{sequenceId}/versions/{revision}/revert`. Scope: `sequences:write`. Member: `deny`. Manager power: `sequences`. Confirm: required. Changes: `sequences`.
+
+Put a saved version of a sequence back
+
+- `sequenceId` (path, string uuid, required)
+- `revision` (path, integer, required): A `revision` from `sequences_list_versions`
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `confirm` (body, boolean, required, one of `true`): Must be true: the revert replaces the steps and edges
 
 ### sequences_set_schedule
 

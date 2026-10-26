@@ -2370,6 +2370,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "reached_step_key",
+            "required": false,
+            "in": "query",
+            "description": "Only the enrollments that reached this step, by its `step_key`, on any pass of the sequence",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -10692,6 +10702,343 @@
         "x-member-access": "deny"
       }
     },
+    "/api/v1/sequences/{sequenceId}/versions": {
+      "get": {
+        "description": "Every save of the steps, edges or settings keeps a version: from the dashboard, from\n`sequences_update`, from a revert and from the marketing agent. Each item names its `revision`,\nwhen and by whom it was saved, a `summary` of the change and its `step_count`. Newest first. Paged\nby `page` (at most 1000) and `limit` (at most 100).",
+        "operationId": "sequences_list_versions",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number, at most 1000",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (capped at 100)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceVersionPageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sequence in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the saved versions of a sequence",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ],
+        "x-iris-scope": "sequences:read",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/sequences/{sequenceId}/versions/{revision}": {
+      "get": {
+        "description": "The sequence as `sequences_get` returns it, with the steps, edges, triggers, exit conditions and\nsend schedule of that version. `definition_revision` is the version’s revision, and each step’s\n`id` is its `step_key`: a version keeps no step rows. The status and `send_window` are the\nsequence’s now: a version keeps the send schedule id, not legacy send-window hours.",
+        "operationId": "sequences_get_version",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "revision",
+            "required": true,
+            "in": "path",
+            "description": "A `revision` from `sequences_list_versions`",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceAtVersionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sequence in this organization\n\nNo such version of this sequence",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get one saved version of a sequence",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ],
+        "x-iris-scope": "sequences:read",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/sequences/{sequenceId}/versions/{revision}/revert": {
+      "post": {
+        "description": "Replaces the steps, edges, name, description, triggers, exit conditions and send schedule with\nthose of the version. The location stays. Only while nobody is in the sequence: with an active or\npaused enrollment it answers 409 `sequence_has_live_enrollments` with `active_enrollments`, and\nnothing changes. Cancel or finish those enrollments first. The revert keeps the current definition\nas a version, then saves the old one as a new version. `previous_revision` undoes it.\nA system-managed sequence (an appointment automation that follows SMS settings and platform copy) answers 409 `system_managed_revert_unsupported` and changes nothing.",
+        "operationId": "sequences_revert_version",
+        "parameters": [
+          {
+            "name": "sequenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "revision",
+            "required": true,
+            "in": "path",
+            "description": "A `revision` from `sequences_list_versions`",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SequenceRevertVersionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceRevertResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The version no longer passes the save rules, for example its audience is gone"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `sequences` power, at their locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such sequence in this organization\n\nNo such version of this sequence",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\n`sequence_has_live_enrollments`: people are in the sequence. `active_enrollments` says how many. Nothing changed.\n\n`stale_revision` also answers a sequence that changed while the revert ran.\n\n`system_managed_revert_unsupported`: Iris manages the sequence from SMS settings and platform copy, so it has no revert. Nothing changed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceRevertConflictDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Put a saved version of a sequence back",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "sequences"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "operation": "sequences_revert_version",
+          "args": {
+            "sequenceId": "request.sequenceId",
+            "revision": "response.previous_revision",
+            "confirm": "const:true"
+          },
+          "record": {
+            "operation": "sequences_get",
+            "args": {
+              "sequenceId": "request.sequenceId"
+            }
+          }
+        },
+        "x-iris-scope": "sequences:write",
+        "x-manager-power": "sequences",
+        "x-member-access": "deny"
+      }
+    },
     "/api/v1/sequences/{sequenceId}/activate": {
       "post": {
         "description": "Checks that the organization can send what the sequence sends, then turns it on. The\nsequence starts enrolling and sending at once. When it cannot send, answers 400\n`sequence_activation_blocked` with `blockers`, and nothing changes. `activation_warnings`\non success name email setup that may keep mail from landing. A paused sequence stays paused:\ncall `sequences_resume` for it. For a broadcast, call `sequences_start_schedule`: a broadcast\nsends nothing until its schedule starts.",
@@ -11300,7 +11647,7 @@
     },
     "/api/v1/sequences/{sequenceId}/analytics": {
       "get": {
-        "description": "Event counts per step and for the whole sequence. Read `email_delivery_reporting` before\nyou report email numbers: `unsupported` means delivered and bounced are unknown, not zero.\n`paths` says where contacts went: runs per `step_key`, and traversals per `edge_key` and exit.",
+        "description": "Event counts per step and for the whole sequence. Read `email_delivery_reporting` before\nyou report email numbers: `unsupported` means delivered and bounced are unknown, not zero.\n`paths` says where contacts went: runs per `step_key`, and traversals per `edge_key` and exit.\n`since` counts only the runs created from that instant on in `paths` and `step_counts_by_key`;\nthe per-step counts and the rollup ignore it.",
         "operationId": "sequences_analytics",
         "parameters": [
           {
@@ -11309,6 +11656,16 @@
             "in": "path",
             "schema": {
               "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "since",
+            "required": false,
+            "in": "query",
+            "description": "Count only the runs created at or after this instant, in paths and step_counts_by_key. The per-step counts and the rollup ignore it",
+            "schema": {
+              "format": "date-time",
               "type": "string"
             }
           }
@@ -40201,6 +40558,482 @@
           "activation_warnings"
         ]
       },
+      "SequenceVersionDto": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "number",
+            "description": "The `definition_revision` the save produced. Pass it to `sequences_get_version`"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "created_by_user_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "created_by_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The author’s name, when known"
+          },
+          "summary": {
+            "type": "string",
+            "description": "What the save changed, in a few words"
+          },
+          "step_count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "revision",
+          "created_at",
+          "summary",
+          "step_count"
+        ]
+      },
+      "SequenceVersionPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceVersionDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "SequenceVersionStepDto": {
+        "type": "object",
+        "properties": {
+          "step_key": {
+            "type": "string",
+            "description": "Stable id of the step. Edges name steps by it."
+          },
+          "step_index": {
+            "type": "number"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms",
+              "wait",
+              "task"
+            ]
+          },
+          "delay_minutes": {
+            "type": "number"
+          },
+          "timing_mode": {
+            "type": "string",
+            "enum": [
+              "relative",
+              "anchor"
+            ],
+            "description": "`relative` runs `delay_minutes` after the previous step. `anchor` runs `offset_minutes` from an event."
+          },
+          "offset_minutes": {
+            "type": "number",
+            "nullable": true
+          },
+          "subject_template": {
+            "type": "string",
+            "nullable": true
+          },
+          "body_template": {
+            "type": "string",
+            "nullable": true
+          },
+          "preheader_template": {
+            "type": "string",
+            "nullable": true
+          },
+          "body_document": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true
+          },
+          "ai_enabled": {
+            "type": "boolean"
+          },
+          "ai_prompt": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string",
+            "description": "The step's step_key: a version keeps no step rows."
+          }
+        },
+        "required": [
+          "step_key",
+          "step_index",
+          "channel",
+          "delay_minutes",
+          "timing_mode",
+          "ai_enabled",
+          "id"
+        ]
+      },
+      "SequenceAtVersionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "automation",
+              "broadcast"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "inactive"
+            ],
+            "description": "`active` sends. `paused` holds every enrollment in place. `inactive` is off."
+          },
+          "paused_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "When it was paused. Null unless paused."
+          },
+          "trigger_type": {
+            "type": "string"
+          },
+          "trigger_config": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "triggers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceTriggerDto"
+            }
+          },
+          "audience_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "send_schedule_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "location_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The location the sequence runs for; null is organization-wide"
+          },
+          "send_window": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SendWindowDto"
+              }
+            ]
+          },
+          "is_system_managed": {
+            "type": "boolean",
+            "description": "A platform sequence. Its copy can change, but its trigger, kind, steps and timing cannot."
+          },
+          "definition_revision": {
+            "type": "number",
+            "description": "Goes up on every change to the sequence, its steps or its edges. Send it as `expected_revision` on `sequences_update`."
+          },
+          "edges": {
+            "description": "Empty for a straight sequence",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceEdgeDto"
+            }
+          },
+          "exit_conditions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceExitConditionDto"
+            }
+          },
+          "variable_warnings": {
+            "description": "Unknown `{{variables}}`. Advice only.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceVariableWarningDto"
+            }
+          },
+          "activation_warnings": {
+            "description": "Only on the write that turned the sequence on: email setup that may keep mail from landing",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceActivationWarningDto"
+            }
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceVersionStepDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "status",
+          "trigger_type",
+          "trigger_config",
+          "triggers",
+          "location_id",
+          "is_system_managed",
+          "definition_revision",
+          "edges",
+          "exit_conditions",
+          "variable_warnings",
+          "created_at",
+          "updated_at",
+          "steps"
+        ]
+      },
+      "SequenceRevertVersionDto": {
+        "type": "object",
+        "properties": {
+          "confirm": {
+            "type": "boolean",
+            "enum": [
+              true
+            ],
+            "description": "Must be true: the revert replaces the steps and edges"
+          }
+        },
+        "required": [
+          "confirm"
+        ]
+      },
+      "SequenceRevertResultDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "automation",
+              "broadcast"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "inactive"
+            ],
+            "description": "`active` sends. `paused` holds every enrollment in place. `inactive` is off."
+          },
+          "paused_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "When it was paused. Null unless paused."
+          },
+          "trigger_type": {
+            "type": "string"
+          },
+          "trigger_config": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "triggers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceTriggerDto"
+            }
+          },
+          "audience_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "send_schedule_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "location_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The location the sequence runs for; null is organization-wide"
+          },
+          "send_window": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SendWindowDto"
+              }
+            ]
+          },
+          "is_system_managed": {
+            "type": "boolean",
+            "description": "A platform sequence. Its copy can change, but its trigger, kind, steps and timing cannot."
+          },
+          "definition_revision": {
+            "type": "number",
+            "description": "Goes up on every change to the sequence, its steps or its edges. Send it as `expected_revision` on `sequences_update`."
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceStepDto"
+            }
+          },
+          "edges": {
+            "description": "Empty for a straight sequence",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceEdgeDto"
+            }
+          },
+          "exit_conditions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceExitConditionDto"
+            }
+          },
+          "variable_warnings": {
+            "description": "Unknown `{{variables}}`. Advice only.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceVariableWarningDto"
+            }
+          },
+          "activation_warnings": {
+            "description": "Only on the write that turned the sequence on: email setup that may keep mail from landing",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceActivationWarningDto"
+            }
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "previous_revision": {
+            "type": "number",
+            "description": "The revision before the revert, kept as a version too. Send it to `sequences_revert_version` to undo the revert"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "status",
+          "trigger_type",
+          "trigger_config",
+          "triggers",
+          "location_id",
+          "is_system_managed",
+          "definition_revision",
+          "steps",
+          "edges",
+          "exit_conditions",
+          "variable_warnings",
+          "created_at",
+          "updated_at",
+          "previous_revision"
+        ]
+      },
+      "SequenceRevertConflictDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "description": "HTTP status code, repeated in the body",
+            "example": 401
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "When the failure was answered",
+            "format": "date-time"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path the request asked for, without its query string",
+            "example": "/api/v1/contacts"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable explanation",
+            "example": "Invalid API key"
+          },
+          "error": {
+            "type": "string",
+            "description": "Machine-readable error code. `insufficient_scope` or `insufficient_role` on a 403.",
+            "example": "Unauthorized"
+          },
+          "required": {
+            "type": "string",
+            "description": "On a 403 only: the scope the key would need.",
+            "example": "contacts:write"
+          },
+          "active_enrollments": {
+            "type": "integer",
+            "description": "On `sequence_has_live_enrollments` only: how many enrollments are active or paused and block the revert.",
+            "example": 2
+          }
+        },
+        "required": [
+          "statusCode",
+          "timestamp",
+          "path"
+        ]
+      },
       "SequenceActivationBlockerDto": {
         "type": "object",
         "properties": {
@@ -40754,6 +41587,16 @@
               "type": "number"
             },
             "description": "Event counts for the whole sequence"
+          },
+          "step_counts_by_key": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "number"
+              }
+            },
+            "description": "Each step's event counts by its `step_key`. Use it to match counts to steps: a save can move a step to another `step_index`, but its key stays. Sends from before step keys are left out. With `since`, it counts only the runs created at or after it, as `paths` does."
           },
           "delivery_channels": {
             "type": "array",

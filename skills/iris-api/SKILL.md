@@ -177,8 +177,8 @@ A key carries scopes, one read and one write per noun:
 |---|---|
 | `contacts:read` | search and read contacts, export them as CSV (`contacts_export`), list suppressed addresses, and read a contact's company and owner at a location |
 | `contacts:write` | create and update contacts, notes, tags, suppression and SMS consent, enroll contacts in sequences or cancel them through events, set a contact's locations, company and owner, and suppress or lift an address |
-| `sequences:read` | read sequences, enrollments, send logs and totals, and a broadcast's schedule and runs |
-| `sequences:write` | create, change, activate, pause, resume and duplicate sequences, enroll and cancel, and set, start and pause a broadcast's schedule and cancel one run, and create and change send windows |
+| `sequences:read` | read sequences, their saved versions, enrollments, send logs and totals, and a broadcast's schedule and runs |
+| `sequences:write` | create, change, activate, pause, resume, duplicate and revert sequences, enroll and cancel, and set, start and pause a broadcast's schedule and cancel one run, and create and change send windows |
 | `appointments:read` | read appointments, calendars, locations, booking options, open slots and territories, and list the appointments that need attention |
 | `appointments:write` | book, change, reschedule and cancel appointments, change their place, all-day flag, status and time zone, and keep a conflicted appointment |
 | `conversations:read` | read conversations and their messages |
@@ -314,7 +314,7 @@ only when the user wants a contact created or changed.
 
 To go the other way (who is in one sequence), call `sequences_list` to find the sequence, then
 `sequences_list_enrollments` with its `sequenceId`. Filter with `status`, `contact_id` or
-`email`.
+`email`. To list who reached one step, pass its `step_key` as `reached_step_key`.
 
 ### 3. Enroll a contact without double-enrolling
 
@@ -365,14 +365,18 @@ enrollment, and resume cannot bring them back.
 ### 7. Read sequence totals
 
 1. Call `sequences_analytics` with the `sequenceId`.
-2. Report the per-step counts and the rollup.
+2. Report the per-step counts and the rollup. To name the step behind each count, read
+   `step_counts_by_key` and match its keys to each step's `step_key` from `sequences_get`. A save
+   can move a step to another `step_index`, but its key stays.
 3. Read `email_delivery_reporting` before you report email numbers:
    - `supported`: delivery and bounce counts are real.
    - `unsupported`: the sending provider does not report delivery. A zero means "unknown", not
      "none". Say so.
    - `not_applicable`: the sequence sends no email.
 4. To say where contacts went, read `paths`. `nodes` counts runs per `step_key`, `edges` and
-   `exits` count traversals per `edge_key`, and `implied` counts moves to the next step.
+   `exits` count traversals per `edge_key`, and `implied` counts moves to the next step. Pass
+   `since` to count only the runs from that instant on in `paths` and `step_counts_by_key`. The
+   per-step counts and the rollup ignore it.
 
 ### 8. Build a draft sequence and activate it
 
@@ -970,6 +974,25 @@ delete one with `email_design_update_frame_part`, `email_design_duplicate_frame_
 
 Ask the user before a delete. The default header or footer answers 409: make another part the
 default first. Every write but the test send needs an owner or admin.
+
+### 41. Go back to an earlier version of a sequence
+
+Every save of a sequence keeps a version: the steps, edges and settings as they were saved.
+
+1. Call `sequences_list_versions` with the `sequenceId`. Each item has a `revision`, when and by
+   whom it was saved, a `summary` and a `step_count`. The newest is first.
+2. To see one version, call `sequences_get_version` with its `revision`. It answers in the shape of
+   `sequences_get`.
+3. Show the user the version and ask before you revert.
+4. Call `sequences_revert_version` with the `revision` and `confirm: true`. It replaces the steps,
+   edges, name, description, triggers, exit conditions and send schedule. The location stays.
+5. On 409 `sequence_has_live_enrollments`, people are in the sequence: `active_enrollments` says
+   how many. Nothing changed. Tell the user to cancel or finish those enrollments first, and stop.
+   Do not cancel them yourself unless the user asks.
+6. On 409 `system_managed_revert_unsupported`, Iris manages the sequence from SMS settings and
+   platform copy. Nothing changed. Tell the user to change those settings instead, and stop.
+7. The answer is the sequence after the revert. To undo the revert, revert to its
+   `previous_revision`.
 
 ## Other operations
 
