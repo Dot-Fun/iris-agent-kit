@@ -1167,6 +1167,15 @@ Delete a link
 
 Get the kind of business Iris treats the organization as
 
+### context_engine_get_fact
+
+`GET /api/v1/context-engine/facts/{entityId}/{slotId}`. Scope: `context_engine:read`. Member: `open`.
+
+Get one fact of a record
+
+- `entityId` (path, string uuid, required)
+- `slotId` (path, string, required)
+
 ### context_engine_get_relationship
 
 `GET /api/v1/context-engine/relationships/{relationshipId}`. Scope: `context_engine:read`. Member: `deny`.
@@ -1212,6 +1221,26 @@ List the fact snapshots
 Publish a captured snapshot
 
 - `snapshotId` (path, string uuid, required)
+
+### context_engine_remove_fact
+
+`POST /api/v1/context-engine/facts/remove`. Scope: `context_engine:write`. Member: `deny`. Confirm: required. Changes: `context_engine`.
+
+Remove a fact that is wrong or no longer true
+
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `slot_id` (body, string, required): The field, a `slot_id` of `context_engine_list_facts`
+- `entity_id` (body, string uuid, required): The record the value belongs to
+
+### context_engine_restore_fact
+
+`POST /api/v1/context-engine/facts/restore`. Scope: `context_engine:write`. Member: `deny`. Changes: `context_engine`.
+
+Restore a removed fact
+
+- `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
+- `slot_id` (body, string, required): The field, a `slot_id` of `context_engine_list_facts`
+- `entity_id` (body, string uuid, required): The record the value belongs to
 
 ### context_engine_review_relationship_suggestions
 

@@ -224,8 +224,8 @@ A key carries scopes, one read and one write per noun:
 | `staff:write` | read and change where a staff member hears about their appointments, and your own |
 | `assistant:write` | delete your own private Assistant note |
 | `feedback:write` | send product feedback to Iris as yourself |
-| `context_engine:read` | read the facts Iris knows about the business, the links between its records, the archetype, the suggested links and the snapshots |
-| `context_engine:write` | write facts and their sharing, set the archetype, add, change and delete links, run and review suggested links, and capture and publish snapshots |
+| `context_engine:read` | read the facts Iris knows about the business, one fact at a time or all of them, the links between its records, the archetype, the suggested links and the snapshots |
+| `context_engine:write` | write, remove and restore facts and their sharing, set the archetype, add, change and delete links, run and review suggested links, and capture and publish snapshots |
 | `context_access:read` | read what each AI agent can read and write |
 | `context_access:write` | grant or deny an agent access to facts, set its ceiling, pin it to a snapshot, and remove an add-on agent |
 | `crm_imports:read` | read the CRM import jobs, the records waiting for a review decision, and the import merge policy |
@@ -822,15 +822,21 @@ gets 403 `insufficient_role`. An organization key gets 403 `no_acting_user` on
    get the new value.
 3. To change who may hear a fact, call `context_engine_set_fact_sharing` with `slot_id`,
    `entity_id` and `sensitivity`: `public`, `customer` or `internal`.
-4. Call `context_engine_list_relationships`. `entities` lists the records, and
+4. To remove a fact that is wrong or no longer true, ask the user first, then call
+   `context_engine_remove_fact` with `slot_id` and `entity_id`. The agents stop sharing it. To
+   put it back, call `context_engine_restore_fact` with the same body. A 409 means a newer value
+   replaced it, or nothing was removed. A field with a `derived_from` answers 400: change it in
+   its settings. `context_engine_get_fact` reads one fact with the `updated_at` both take as
+   `expected_updated_at`.
+5. Call `context_engine_list_relationships`. `entities` lists the records, and
    `relationship_types` the link types with the record kinds each joins.
-5. Call `context_engine_create_relationship` with `from_entity_id`, `to_entity_id`, `rel_type` and
+6. Call `context_engine_create_relationship` with `from_entity_id`, `to_entity_id`, `rel_type` and
    an `idempotency_key`.
-6. To change a link, read it with `context_engine_get_relationship`, then call
+7. To change a link, read it with `context_engine_get_relationship`, then call
    `context_engine_update_relationship` with all three fields and its `updated_at` as
    `expected_updated_at`. A 409 `stale_revision` means it changed since you read it.
-7. Ask the user before `context_engine_delete_relationship`.
-8. To let the AI suggest links, call `context_engine_run_relationship_inference`. When its run is
+8. Ask the user before `context_engine_delete_relationship`.
+9. To let the AI suggest links, call `context_engine_run_relationship_inference`. When its run is
    `succeeded`, show the user `context_engine_list_relationship_suggestions`, and on the user's
    choice call `context_engine_review_relationship_suggestions` with `accept` or `reject`.
 

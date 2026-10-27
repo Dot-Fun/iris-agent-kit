@@ -19030,6 +19030,340 @@
         "x-member-access": "deny"
       }
     },
+    "/api/v1/context-engine/facts/{entityId}/{slotId}": {
+      "get": {
+        "description": "The value of one field on one record, with its `updated_at`.\n`context_engine_remove_fact` and `context_engine_restore_fact` take `updated_at` as `expected_updated_at`.",
+        "operationId": "context_engine_get_fact",
+        "parameters": [
+          {
+            "name": "entityId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "slotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineFactRecordDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such record in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Get one fact of a record",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-scope": "context_engine:read",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/context-engine/facts/remove": {
+      "post": {
+        "description": "The field has no value on the record after it, and the phone agents stop sharing it.\nThe old value stays in the history, and `context_engine_restore_fact` puts it back. Ask the user first.\nA field with a `derived_from` follows its settings, so it answers 400. Change it there.",
+        "operationId": "context_engine_remove_fact",
+        "parameters": [
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContextEngineFactTargetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineFactChangedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or a derived field"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such record in this organization, or the field has no value on it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Remove a fact that is wrong or no longer true",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "context_engine"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-reverse": {
+          "operation": "context_engine_restore_fact",
+          "args": {
+            "slot_id": "request.slot_id",
+            "entity_id": "request.entity_id"
+          },
+          "record": {
+            "operation": "context_engine_get_fact",
+            "args": {
+              "entityId": "request.entity_id",
+              "slotId": "request.slot_id"
+            }
+          }
+        },
+        "x-iris-scope": "context_engine:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/context-engine/facts/restore": {
+      "post": {
+        "description": "Puts back the values `context_engine_remove_fact` removed, with where each came from.\nOnce a newer value replaced the removed one, or when nothing was removed, it answers 409 and changes nothing.",
+        "operationId": "context_engine_restore_fact",
+        "parameters": [
+          {
+            "name": "expected_updated_at",
+            "required": false,
+            "in": "query",
+            "description": "The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContextEngineFactTargetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextEngineFactChangedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or a derived field"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `context_engine:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such record in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`stale_revision`: the record changed after the `expected_updated_at` you sent, and nothing changed. Read it again before you decide.\n\nNothing to restore: the fact was not removed, or a newer value replaced it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Restore a removed fact",
+        "tags": [
+          "Context engine",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "context_engine"
+        ],
+        "x-iris-reverse": {
+          "operation": "context_engine_remove_fact",
+          "args": {
+            "slot_id": "request.slot_id",
+            "entity_id": "request.entity_id"
+          },
+          "record": {
+            "operation": "context_engine_get_fact",
+            "args": {
+              "entityId": "request.entity_id",
+              "slotId": "request.slot_id"
+            }
+          }
+        },
+        "x-iris-scope": "context_engine:write",
+        "x-member-access": "deny"
+      }
+    },
     "/api/v1/context-engine/archetype": {
       "get": {
         "description": "The archetype decides which topics and fields apply. `options` lists every archetype `context_engine_set_archetype` takes.",
@@ -44960,6 +45294,106 @@
           "slot_id",
           "entity_id",
           "sensitivity"
+        ]
+      },
+      "ContextEngineFactRecordDto": {
+        "type": "object",
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slot_id": {
+            "type": "string"
+          },
+          "value": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "object",
+                "additionalProperties": true
+              },
+              {
+                "type": "array",
+                "items": {}
+              }
+            ],
+            "nullable": true,
+            "description": "The value. Null: the field has no value."
+          },
+          "source": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the value came from, such as `human`"
+          },
+          "filled": {
+            "type": "boolean"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the fact last changed. `context_engine_remove_fact` and `context_engine_restore_fact` take it as `expected_updated_at`. A remove moves it too, so a removed fact keeps a time. Null: the field never had a value on the record, or this key may not read the field."
+          }
+        },
+        "required": [
+          "entity_id",
+          "slot_id",
+          "value",
+          "source",
+          "filled",
+          "updated_at"
+        ]
+      },
+      "ContextEngineFactTargetDto": {
+        "type": "object",
+        "properties": {
+          "slot_id": {
+            "type": "string",
+            "description": "The field, a `slot_id` of `context_engine_list_facts`"
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The record the value belongs to"
+          }
+        },
+        "required": [
+          "slot_id",
+          "entity_id"
+        ]
+      },
+      "ContextEngineFactChangedDto": {
+        "type": "object",
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slot_id": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "retracted",
+              "filled"
+            ],
+            "description": "`retracted` after a remove, `filled` after a restore"
+          }
+        },
+        "required": [
+          "entity_id",
+          "slot_id",
+          "state"
         ]
       },
       "ContextEngineEffectiveArchetypeDto": {
