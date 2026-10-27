@@ -40545,6 +40545,23 @@
           "ai_prompt": {
             "type": "string",
             "nullable": true
+          },
+          "wait_kind": {
+            "type": "string",
+            "enum": [
+              "duration",
+              "until",
+              "window",
+              "anchor",
+              "event"
+            ],
+            "description": "What a `wait` step waits for. `duration`: `delay_minutes`. `until`: a date and time. `window`: the next open slot of a weekly window. `anchor`: a time before or after the appointment, in a sequence triggered by an appointment. `event`: a signal on the outgoing edges, or the timeout. Other channels are `duration`."
+          },
+          "wait_config": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true,
+            "description": "Settings for `wait_kind`. Its keys are camelCase, as stored, like a condition. `duration`: null, or `{ resumeWindow }` to resume inside a window. `until`: `{ at: \"YYYY-MM-DDTHH:mm\", zone }`, a local time with no offset. `window`: `{ weekdays, startMinute, endMinute, zone, skipWeekends? }`, weekdays 0 (Sunday) to 6. `anchor`: `{ edge: \"start\"|\"end\", direction: \"before\"|\"after\", offsetMinutes }`. `event`: `{ signal, params?, timeoutMinutes }`: signal `replied`, `clicked`, `booked`, `stage_reached` or `converted` (the two stage signals need `params.stage`, the destination stage value), and `timeoutMinutes` (1 or more) is saved as `delay_minutes`. The wait ends when the signal arrives or the stage changes to it. `zone` is `contact` or `org`. Settings that do not fit the kind answer 400."
           }
         },
         "required": [
@@ -40554,7 +40571,8 @@
           "channel",
           "delay_minutes",
           "timing_mode",
-          "ai_enabled"
+          "ai_enabled",
+          "wait_kind"
         ]
       },
       "SequenceEdgeDto": {
@@ -40864,6 +40882,23 @@
           "ai_prompt": {
             "type": "string",
             "description": "What the AI should write, when `ai_enabled`"
+          },
+          "wait_kind": {
+            "type": "string",
+            "enum": [
+              "duration",
+              "until",
+              "window",
+              "anchor",
+              "event"
+            ],
+            "description": "What a `wait` step waits for. `duration`: `delay_minutes`. `until`: a date and time. `window`: the next open slot of a weekly window. `anchor`: a time before or after the appointment, in a sequence triggered by an appointment. `event`: a signal on the outgoing edges, or the timeout. Other channels are `duration`. Omitted is `duration`."
+          },
+          "wait_config": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true,
+            "description": "Settings for `wait_kind`. Its keys are camelCase, as stored, like a condition. `duration`: null, or `{ resumeWindow }` to resume inside a window. `until`: `{ at: \"YYYY-MM-DDTHH:mm\", zone }`, a local time with no offset. `window`: `{ weekdays, startMinute, endMinute, zone, skipWeekends? }`, weekdays 0 (Sunday) to 6. `anchor`: `{ edge: \"start\"|\"end\", direction: \"before\"|\"after\", offsetMinutes }`. `event`: `{ signal, params?, timeoutMinutes }`: signal `replied`, `clicked`, `booked`, `stage_reached` or `converted` (the two stage signals need `params.stage`, the destination stage value), and `timeoutMinutes` (1 or more) is saved as `delay_minutes`. The wait ends when the signal arrives or the stage changes to it. `zone` is `contact` or `org`. Settings that do not fit the kind answer 400."
           }
         },
         "required": [
@@ -41369,6 +41404,23 @@
             "type": "string",
             "nullable": true
           },
+          "wait_kind": {
+            "type": "string",
+            "enum": [
+              "duration",
+              "until",
+              "window",
+              "anchor",
+              "event"
+            ],
+            "description": "What a `wait` step waits for. `duration`: `delay_minutes`. `until`: a date and time. `window`: the next open slot of a weekly window. `anchor`: a time before or after the appointment, in a sequence triggered by an appointment. `event`: a signal on the outgoing edges, or the timeout. Other channels are `duration`."
+          },
+          "wait_config": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true,
+            "description": "Settings for `wait_kind`. Its keys are camelCase, as stored, like a condition. `duration`: null, or `{ resumeWindow }` to resume inside a window. `until`: `{ at: \"YYYY-MM-DDTHH:mm\", zone }`, a local time with no offset. `window`: `{ weekdays, startMinute, endMinute, zone, skipWeekends? }`, weekdays 0 (Sunday) to 6. `anchor`: `{ edge: \"start\"|\"end\", direction: \"before\"|\"after\", offsetMinutes }`. `event`: `{ signal, params?, timeoutMinutes }`: signal `replied`, `clicked`, `booked`, `stage_reached` or `converted` (the two stage signals need `params.stage`, the destination stage value), and `timeoutMinutes` (1 or more) is saved as `delay_minutes`. The wait ends when the signal arrives or the stage changes to it. `zone` is `contact` or `org`. Settings that do not fit the kind answer 400."
+          },
           "id": {
             "type": "string",
             "description": "The step's step_key: a version keeps no step rows."
@@ -41381,6 +41433,7 @@
           "delay_minutes",
           "timing_mode",
           "ai_enabled",
+          "wait_kind",
           "id"
         ]
       },

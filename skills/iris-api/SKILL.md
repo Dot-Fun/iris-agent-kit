@@ -386,7 +386,11 @@ enrollment, and resume cannot bring them back.
    `sequences_get_condition_vocabulary`. Use only the step kinds, triggers, variables and
    conditions they return.
 2. Call `sequences_create` with the name, trigger, steps and delays. It always creates an
-   inactive draft. Do not send `is_active: true`: it returns 400.
+   inactive draft. Do not send `is_active: true`: it returns 400. A `wait` step waits
+   `delay_minutes` unless its `wait_kind` says otherwise: `until`, `window`, `anchor` (only in a
+   sequence triggered by an appointment) or `event`. An `event` wait needs a positive edge on its
+   `wait_config.signal` and `params`, plus a timeout edge, and `timeoutMinutes` becomes its
+   `delay_minutes`. `stage_reached` and `converted` need `params.stage`.
 3. To start from a sequence that works, call `sequences_duplicate` instead and change the copy.
 4. Call `sequences_update` to change steps, delays or copy. `steps`, `edges` and
    `exit_conditions` each replace the whole list, so start from `sequences_get`, edit, and send
