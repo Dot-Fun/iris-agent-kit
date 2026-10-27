@@ -1097,6 +1097,7 @@ Create or update a contact by email
   - `supersedes` (body, array of ContactCancelEventDto): Events whose running enrollments this one REPLACES. Cancelled after this event claims its `key` and before it enrolls, so a redelivery with the same `key` cancels nothing and enrolls nothing. Use this for mutually exclusive states of one subject; use the top-level `cancel_events` for an unconditional exit.
     - `name` (body, string, required): Event name whose enrollments should be cancelled for this contact.
     - `reason` (body, string, one of `replied`, `booked`, `opted_out`, `manual`, `sequence_deactivated`, `converted`, `stage_reached`, `goal_met`, `schedule_cancelled`, `assessment_retake`): Why the journey ended. Defaults to `goal_met`.
+- `skip_automations` (body, boolean): When true, the upsert itself starts nothing. A new contact starts no "New lead" (lead_created) sequence and sends no `crm.lead.created` event to integrations. An updated contact sends no `crm.contact.updated` event. `events` and `cancel_events` still run as named. Use it to load existing customers. Defaults to false.
 
 ### contacts_upsert_company
 

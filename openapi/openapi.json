@@ -3,7 +3,7 @@
   "paths": {
     "/api/v1/contacts": {
       "post": {
-        "description": "Upserts a contact in the organization the API key belongs to, keyed on email.\n\n`cancel_events` are processed first, then `events` are fired, so one request can replace\nthe journey a contact is on. Cancellations and other events are best effort.\n`assessment_abandoned` requires transactional acceptance: failures fail the request even if\nthe contact was already upserted. Only a matching `assessmentAbandonment` receipt with\n`status: accepted` confirms durable enrollment acceptance; delivery is not guaranteed.\nAn event whose name no active sequence subscribes to leaves its `key` unspent, so a later\nretry still enrolls.",
+        "description": "Upserts a contact in the organization the API key belongs to, keyed on email.\n\n`cancel_events` are processed first, then `events` are fired, so one request can replace\nthe journey a contact is on. Cancellations and other events are best effort.\n`assessment_abandoned` requires transactional acceptance: failures fail the request even if\nthe contact was already upserted. Only a matching `assessmentAbandonment` receipt with\n`status: accepted` confirms durable enrollment acceptance; delivery is not guaranteed.\nAn event whose name no active sequence subscribes to leaves its `key` unspent, so a later\nretry still enrolls.\n\n`skip_automations: true` makes the upsert itself start nothing: no \"New lead\" sequence, no\n`crm.lead.created` or `crm.contact.updated` event. Named `events` and `cancel_events` still run.",
         "operationId": "contacts_upsert",
         "parameters": [],
         "requestBody": {
@@ -34947,6 +34947,11 @@
             "items": {
               "$ref": "#/components/schemas/ContactEventDto"
             }
+          },
+          "skip_automations": {
+            "type": "boolean",
+            "default": false,
+            "description": "When true, the upsert itself starts nothing. A new contact starts no \"New lead\" (lead_created) sequence and sends no `crm.lead.created` event to integrations. An updated contact sends no `crm.contact.updated` event. `events` and `cancel_events` still run as named. Use it to load existing customers. Defaults to false."
           }
         },
         "required": [

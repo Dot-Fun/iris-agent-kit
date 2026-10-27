@@ -1019,6 +1019,18 @@ retry. A price that is not in `billing_list_plans` answers 400, and no subscript
 To start a subscription, enter a card, or cancel, send the user to the dashboard Subscription
 page: those stay in Stripe.
 
+### 43. Load existing customers
+
+Use this for a bulk load or an ETL of people who are already customers.
+
+1. Call `contacts_upsert` once per customer with `skip_automations: true`. No "New lead" sequence
+   starts and no new-lead integration event goes out.
+2. Leave `events` empty unless the user names one.
+3. Tell the user that later broadcasts and sequences can still reach these contacts.
+
+With the flag, a customer who is already a contact sends no `crm.contact.updated` event either.
+
+
 ## Other operations
 
 These follow the same rules. Their parameters are in `references/endpoints.md`.
