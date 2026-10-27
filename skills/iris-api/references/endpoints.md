@@ -3031,6 +3031,20 @@ Change the organization’s industry, website or timezone
 - `website_url` (body, string): An http or https URL. An empty string clears it.
 - `timezone` (body, string): IANA timezone, such as America/Chicago
 
+## Organizations
+
+### organizations_create
+
+`POST /api/v1/organizations`. Scope: `organizations:write`. Member: `open`. Confirm: required. Changes: `organizations`. Idempotent: send `idempotency_key`.
+
+Create a new organization owned by the person behind the credential
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `name` (body, string, required): The new organization’s name
+- `industry` (body, string, required): A suggested industry or a typed one
+- `website_url` (body, string): An http or https URL
+- `terms_accepted` (body, boolean, required): The person accepted the Iris privacy policy and terms. Must be true.
+
 ## Phone lines
 
 ### phone_lines_add_location

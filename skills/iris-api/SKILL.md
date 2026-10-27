@@ -240,6 +240,7 @@ A key carries scopes, one read and one write per noun:
 | `email_design:write` | change the brand frame, templates and headers and footers, and send a designed email to yourself |
 | `billing:read` | read the subscription and list the plans it can switch to |
 | `billing:write` | switch the subscription's plan and keep a subscription that is set to cancel |
+| `organizations:write` | create another organization you own |
 
 Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
 `/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
@@ -1034,6 +1035,17 @@ Use this for a bulk load or an ETL of people who are already customers.
 
 With the flag, a customer who is already a contact sends no `crm.contact.updated` event either.
 
+
+### 44. Create an organization
+
+1. To start another business, call `organizations_create` with `name`, `industry`,
+   `terms_accepted` true and an `idempotency_key`. It needs confirm: the call accepts the Iris
+   privacy policy and terms for the user, so the user confirms it first. The user owns the new organization, but this credential cannot reach it: to
+   work there, the user signs in to it or makes a credential of it.
+2. The API cannot delete an organization. An owner deletes it from Organization settings in the
+   dashboard, which asks for their password.
+
+Any role creates. An organization key gets 403 `no_acting_user`.
 
 ## Other operations
 

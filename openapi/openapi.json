@@ -13884,6 +13884,108 @@
         "x-member-access": "deny"
       }
     },
+    "/api/v1/organizations": {
+      "post": {
+        "description": "Makes a new organization, separate from this one, with the person behind the credential as its\nOWNER, and sends them the welcome email. Any role may call it, as in the dashboard. This\ncredential stays bound to its own organization and cannot reach the new one. The name needs 2\ncharacters, and terms_accepted must be true. It accepts the Iris terms for the person, so ask\nthem to confirm before you call it. An organization key gets 403 `no_acting_user`: an\norganization is created by a person.",
+        "operationId": "organizations_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationCreatedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A short name, an invalid industry or website, or terms not accepted"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key has no person to own the new organization\n\nThe key does not carry the `organizations:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Create a new organization owned by the person behind the credential",
+        "tags": [
+          "Organizations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "organizations"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "The new organization is outside this credential, so rewind cannot reach it. Its owner deletes it from Organization settings in the dashboard."
+        },
+        "x-iris-scope": "organizations:write",
+        "x-member-access": "open"
+      }
+    },
     "/api/v1/members": {
       "get": {
         "description": "Every membership, active and deactivated, oldest first. Any credential may call it. A MEMBER’s or\nMANAGER’s credential sees a colleague’s locations only when the dashboard shows them to it.\nA member’s `id` is the `membershipId` of `members_get` and every members write.",
@@ -36340,7 +36442,8 @@
                 "email_design:read",
                 "email_design:write",
                 "billing:read",
-                "billing:write"
+                "billing:write",
+                "organizations:write"
               ]
             }
           },
@@ -36483,7 +36586,8 @@
                 "email_design:read",
                 "email_design:write",
                 "billing:read",
-                "billing:write"
+                "billing:write",
+                "organizations:write"
               ]
             }
           }
@@ -36597,7 +36701,8 @@
               "email_design:read",
               "email_design:write",
               "billing:read",
-              "billing:write"
+              "billing:write",
+              "organizations:write"
             ]
           },
           "label": {
@@ -43316,6 +43421,59 @@
         },
         "required": [
           "disabled_roles"
+        ]
+      },
+      "OrganizationCreateDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "description": "The new organization’s name"
+          },
+          "industry": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "description": "A suggested industry or a typed one"
+          },
+          "website_url": {
+            "type": "string",
+            "description": "An http or https URL"
+          },
+          "terms_accepted": {
+            "type": "boolean",
+            "description": "The person accepted the Iris privacy policy and terms. Must be true."
+          }
+        },
+        "required": [
+          "name",
+          "industry",
+          "terms_accepted"
+        ]
+      },
+      "OrganizationCreatedDto": {
+        "type": "object",
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The new organization. This credential cannot reach it."
+          },
+          "membership_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The caller’s OWNER membership of the new organization"
+          }
+        },
+        "required": [
+          "organization_id",
+          "membership_id"
         ]
       },
       "PublicMemberDerivedLocationsDto": {
