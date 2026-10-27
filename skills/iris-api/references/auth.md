@@ -133,6 +133,8 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `email_settings:write` | Save, delete, check and test the email sending settings |
 | `email_design:read` | Read the email brand frame, templates, headers and footers |
 | `email_design:write` | Change the email brand frame, templates, headers and footers, and send a designed email to yourself |
+| `billing:read` | Read the subscription and the plans it can switch to |
+| `billing:write` | Switch the subscription's plan and reactivate a subscription set to cancel (owner only) |
 
 `me_get` returns the live catalog. When this table and `me_get` differ, trust `me_get`.
 

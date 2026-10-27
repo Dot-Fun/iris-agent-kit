@@ -398,6 +398,37 @@ Change an audience
   - `exclude_opted_out` (body, boolean): Stored with the audience. Counts and contact lists do not apply it: opted-out contacts are removed when a message is sent.
 - `is_archived` (body, boolean): `false` restores an archived audience. Archive with `audiences_archive`.
 
+## Billing
+
+### billing_get_subscription
+
+`GET /api/v1/billing/subscription`. Scope: `billing:read`. Member: `open`.
+
+Read the organization’s subscription: its plan, status and renewal date
+
+### billing_list_plans
+
+`GET /api/v1/billing/plans`. Scope: `billing:read`. Member: `open`.
+
+List the plans the subscription can switch to, with their prices
+
+### billing_reactivate
+
+`POST /api/v1/billing/subscription/reactivate`. Scope: `billing:write`. Member: `deny`. Confirm: required. Changes: `billing`. Idempotent: send `idempotency_key`.
+
+Keep a subscription that is set to cancel, so it renews again
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+
+### billing_switch_plan
+
+`POST /api/v1/billing/subscription/switch-plan`. Scope: `billing:write`. Member: `deny`. Confirm: required. Changes: `billing`. Idempotent: send `idempotency_key`.
+
+Switch the subscription to another plan, which moves money
+
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `price_id` (body, string, required): A `price_id` from `billing_list_plans`
+
 ## Booking widgets
 
 ### booking_widgets_get

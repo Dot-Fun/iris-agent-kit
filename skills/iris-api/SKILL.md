@@ -238,6 +238,8 @@ A key carries scopes, one read and one write per noun:
 | `email_settings:write` | save and delete the email sending settings, check the connection and the domain, and send a test email |
 | `email_design:read` | read the email brand frame, the saved templates and the headers and footers |
 | `email_design:write` | change the brand frame, templates and headers and footers, and send a designed email to yourself |
+| `billing:read` | read the subscription and list the plans it can switch to |
+| `billing:write` | switch the subscription's plan and keep a subscription that is set to cancel |
 
 Each operation in `references/endpoints.md` names its scope. The OpenAPI document at
 `/api/v1/docs-json` carries it as `x-iris-scope` on each operation, null when any live key may
@@ -999,6 +1001,23 @@ Every save of a sequence keeps a version: the steps, edges and settings as they 
    platform copy. Nothing changed. Tell the user to change those settings instead, and stop.
 7. The answer is the sequence after the revert. To undo the revert, revert to its
    `previous_revision`.
+
+### 42. Change the subscription plan
+
+1. Call `billing_get_subscription` for the current plan (`product_id`) and its renewal date.
+2. Call `billing_list_plans`. Show the user each plan's `name` and its prices. An `amount` is in
+   the smallest unit of the currency, such as cents.
+3. Ask the user, and say that Stripe prorates the change at once and can charge the card on file.
+   Then call `billing_switch_plan` with the chosen `price_id` and an `idempotency_key`. The answer
+   holds the subscription after the switch.
+4. When `cancel_at_period_end` is true and the user wants to keep the subscription, ask the user,
+   then call `billing_reactivate` with an `idempotency_key`. A 400 means it is not set to cancel.
+
+Only an owner's personal credential changes the subscription. Another role gets 403
+`insufficient_role` and an organization key 403 `no_acting_user`: tell the user, and do not
+retry. A price that is not in `billing_list_plans` answers 400, and no subscription answers 404.
+To start a subscription, enter a card, or cancel, send the user to the dashboard Subscription
+page: those stay in Stripe.
 
 ## Other operations
 

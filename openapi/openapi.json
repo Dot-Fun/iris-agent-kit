@@ -34413,6 +34413,352 @@
         "x-member-access": "deny"
       }
     },
+    "/api/v1/billing/subscription": {
+      "get": {
+        "description": "`product_id` names the plan in `billing_list_plans`. `cancel_at_period_end` true means the\nsubscription ends at `current_period_end` instead of renewing. Every field is null when the\norganization has no subscription. Any member may read it.",
+        "operationId": "billing_get_subscription",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingSubscriptionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `billing:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Read the organization’s subscription: its plan, status and renewal date",
+        "tags": [
+          "Billing",
+          "Public API"
+        ],
+        "x-iris-scope": "billing:read",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/billing/plans": {
+      "get": {
+        "description": "Each plan has one or more prices. A `price_id` here is what `billing_switch_plan` takes, and no\nother price is accepted. Amounts are in the smallest unit of the currency, such as cents.",
+        "operationId": "billing_list_plans",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingPlanListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `billing:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the plans the subscription can switch to, with their prices",
+        "tags": [
+          "Billing",
+          "Public API"
+        ],
+        "x-iris-scope": "billing:read",
+        "x-member-access": "open"
+      }
+    },
+    "/api/v1/billing/subscription/switch-plan": {
+      "post": {
+        "description": "Moves the subscription to `price_id`, a price from `billing_list_plans`. Stripe prorates the\nchange at once, so it can charge the card on file. Ask the user first. Only an owner’s personal\ncredential: any other role answers 403 `insufficient_role`, and an organization key 403\n`no_acting_user`. A price that is not in the plan list answers 400, no subscription 404. Retry\nwith the same `idempotency_key` to read the first answer rather than switch again.",
+        "operationId": "billing_switch_plan",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillingSwitchPlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingActionResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The price is not in the plan list, or the subscription is not active"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key has no person, and billing consent is recorded under one. `insufficient_role`: the person is not an owner\n\nThe key does not carry the `billing:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The organization has no subscription",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The subscription changed under the switch\n\n`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Switch the subscription to another plan, which moves money",
+        "tags": [
+          "Billing",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "billing"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "Stripe prorates the plan change at once. To go back, switch again with billing_switch_plan to the earlier price; a proration already charged stays."
+        },
+        "x-iris-scope": "billing:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/billing/subscription/reactivate": {
+      "post": {
+        "description": "Clears `cancel_at_period_end`: the subscription renews and bills again at `current_period_end`.\nAsk the user first. Only an owner’s personal credential: any other role answers 403\n`insufficient_role`, and an organization key 403 `no_acting_user`. A subscription that is not set\nto cancel answers 400, no subscription 404.",
+        "operationId": "billing_reactivate",
+        "parameters": [],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdempotencyKeyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingActionResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The subscription is not set to cancel"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`no_acting_user`: an organization key has no person, and billing consent is recorded under one. `insufficient_role`: the person is not an owner\n\nThe key does not carry the `billing:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The organization has no subscription",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Keep a subscription that is set to cancel, so it renews again",
+        "tags": [
+          "Billing",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "billing"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "The subscription renews again and bills at the end of the period. To cancel again, the owner uses Manage billing on the dashboard Subscription page (the Stripe billing portal)."
+        },
+        "x-iris-scope": "billing:write",
+        "x-member-access": "deny"
+      }
+    },
     "/api/v1/mcp": {
       "post": {
         "description": "The Iris MCP server, over stateless Streamable HTTP. Point an MCP client at this URL with\nthe key as a bearer token. Every other operation in this document is a tool named by its\noperationId, and `tools/list` shows only the tools the key’s scopes allow (and, for a\nmember’s credential, only the tools a member may call). A tool call runs\nthe REST operation, so it answers what the REST call answers. A failing call has\n`isError: true` and the REST error body as its text. Send\n`Accept: application/json, text/event-stream`. Answers 404 while the organization does\nnot have the MCP server turned on.",
@@ -35987,7 +36333,9 @@
                 "email_settings:read",
                 "email_settings:write",
                 "email_design:read",
-                "email_design:write"
+                "email_design:write",
+                "billing:read",
+                "billing:write"
               ]
             }
           },
@@ -36128,7 +36476,9 @@
                 "email_settings:read",
                 "email_settings:write",
                 "email_design:read",
-                "email_design:write"
+                "email_design:write",
+                "billing:read",
+                "billing:write"
               ]
             }
           }
@@ -36240,7 +36590,9 @@
               "email_settings:read",
               "email_settings:write",
               "email_design:read",
-              "email_design:write"
+              "email_design:write",
+              "billing:read",
+              "billing:write"
             ]
           },
           "label": {
@@ -52438,6 +52790,149 @@
         },
         "required": [
           "name"
+        ]
+      },
+      "BillingSubscriptionDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "nullable": true,
+            "description": "The subscription status, such as `active`, `trialing` or `past_due`. Null when there is none"
+          },
+          "product_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The current plan, a `product_id` of `billing_list_plans`. Null when there is no subscription"
+          },
+          "current_period_end": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the current billing period ends and the subscription renews"
+          },
+          "cancel_at_period_end": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "True when the subscription ends at `current_period_end` instead of renewing"
+          }
+        },
+        "required": [
+          "status",
+          "product_id",
+          "current_period_end",
+          "cancel_at_period_end"
+        ]
+      },
+      "BillingPlanPriceDto": {
+        "type": "object",
+        "properties": {
+          "price_id": {
+            "type": "string",
+            "description": "The price to send to `billing_switch_plan` as `price_id`"
+          },
+          "amount": {
+            "type": "number",
+            "nullable": true,
+            "description": "The amount in the smallest unit of the currency, such as cents. Null when the catalog does not know it"
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true,
+            "example": "usd",
+            "description": "ISO 4217 currency code, lower case"
+          },
+          "interval": {
+            "type": "string",
+            "nullable": true,
+            "example": "month",
+            "description": "How often it bills: `month` or `year`"
+          },
+          "interval_count": {
+            "type": "integer",
+            "nullable": true,
+            "example": 1,
+            "description": "How many intervals one billing period spans: 3 with `month` bills every three months. Null when the catalog does not know it"
+          }
+        },
+        "required": [
+          "price_id",
+          "amount",
+          "currency",
+          "interval",
+          "interval_count"
+        ]
+      },
+      "BillingPlanDto": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "description": "The plan, as `product_id` in `billing_get_subscription`"
+          },
+          "name": {
+            "type": "string"
+          },
+          "prices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillingPlanPriceDto"
+            }
+          }
+        },
+        "required": [
+          "product_id",
+          "name",
+          "prices"
+        ]
+      },
+      "BillingPlanListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillingPlanDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "BillingSwitchPlanDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
+          "price_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "A `price_id` from `billing_list_plans`"
+          }
+        },
+        "required": [
+          "price_id"
+        ]
+      },
+      "BillingActionResultDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "What happened, in words to show the user"
+          },
+          "subscription": {
+            "$ref": "#/components/schemas/BillingSubscriptionDto"
+          }
+        },
+        "required": [
+          "message",
+          "subscription"
         ]
       }
     }
