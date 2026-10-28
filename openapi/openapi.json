@@ -2228,7 +2228,7 @@
             }
           },
           "404": {
-            "description": "No such audience in this organization",
+            "description": "No such audience or send schedule in this organization",
             "content": {
               "application/json": {
                 "schema": {
@@ -10418,7 +10418,7 @@
             }
           },
           "404": {
-            "description": "No such sequence in this organization\n\nNo such audience in this organization",
+            "description": "No such sequence in this organization\n\nNo such audience or send schedule in this organization",
             "content": {
               "application/json": {
                 "schema": {
@@ -10655,7 +10655,7 @@
             }
           },
           "404": {
-            "description": "No such sequence in this organization",
+            "description": "No such audience or send schedule in this organization\n\nNo such sequence in this organization",
             "content": {
               "application/json": {
                 "schema": {
