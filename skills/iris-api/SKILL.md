@@ -425,8 +425,10 @@ enrollment, and resume cannot bring them back.
    `slot_taken`, `no_team_member_available` or `outside_hours`: check availability again and
    offer another time. `team_member_not_eligible`: offer another team member.
    `address_out_of_area`: tell the user the address is not covered. `duration_mismatch`: make
-   the end time match the service's `duration_minutes`. Another 409 with no code means the key
-   was used with other details: use a new key.
+   the end time match the service's `duration_minutes`. `start_in_past`: the time has passed.
+   Check availability again and offer a later time. If you retried a key, call
+   `appointments_list` first to see if the first try booked. Another 409 with no code means the
+   key was used with other details: use a new key.
 8. Tell the user the appointment's time, service and team member.
 
 A location that is not staffed can also be booked with `calendar_id` from `calendars_list`

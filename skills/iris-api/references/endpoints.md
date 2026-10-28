@@ -175,7 +175,7 @@ Book an appointment for a contact
 - `start_time` (body, string date-time, required)
 - `end_time` (body, string date-time, required)
 - `title` (body, string)
-- `idempotency_key` (body, string, required): Your own key for this booking. A retry with the same key and the same details returns the first booking. The same key with other details is a 409.
+- `idempotency_key` (body, string, required): Your own key for this booking. A retry with the same key and the same details returns the first booking until its start passes, then answers 409 `start_in_past`. The same key with other details is a 409.
 
 ### appointments_get
 
