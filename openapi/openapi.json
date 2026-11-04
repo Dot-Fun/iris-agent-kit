@@ -16179,7 +16179,7 @@
         "x-member-access": "open"
       },
       "put": {
-        "description": "Replaces the whole list: send every field that stays on, in order. A field left out is turned\noff, and contacts keep its stored values. Every phone agent’s prompt is refreshed with the new\nlist. On an enum field the option `value`s are ids: on the stage field they are the stage ids\n`contacts_list_stages` lists and `contacts_update` takes as `stage_id`. Answers the new list.",
+        "description": "Replaces the whole list: send every field that stays on, in order. A field left out is turned\noff, and contacts keep its stored values. Every phone agent’s prompt is refreshed with the new\nlist. On an enum field the option `value`s are ids: on the stage field they are the stage ids\n`contacts_list_stages` lists and `contacts_update` takes as `stage_id`. Answers the new list. A label or `field_name` that matches a built-in contact column (Name, Phone, Email) is invalid.",
         "operationId": "crm_fields_set",
         "parameters": [
           {
@@ -16215,7 +16215,7 @@
             }
           },
           "400": {
-            "description": "An invalid field, or a `field_name` sent twice",
+            "description": "An invalid field, a `field_name` sent twice, or a label or `field_name` that matches a built-in contact column (Name, Phone, Email)",
             "content": {
               "application/json": {
                 "schema": {

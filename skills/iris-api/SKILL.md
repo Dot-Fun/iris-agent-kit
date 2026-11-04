@@ -626,7 +626,8 @@ the user to use a personal key or an agent connection.
 3. Call `crm_fields_set` with every field from step 1, in order, and the edited stage field. It
    replaces the whole list: a field you leave out is turned off. Ask the user first. Send the
    list's `updated_at` as `expected_updated_at`. A 409 `stale_revision` means someone changed the
-   fields: start again from step 1.
+   fields: start again from step 1. A 400 that names a built-in column means a field reuses Name,
+   Phone or Email: ask the user, then rename that field or leave it out.
 4. Call `crm_fields_set_stage_config` with `stage_field`, and the `booking_stage_id` and
    `no_booking_stage_id` a call moves its contact to, or null. A stage id you leave out is cleared,
    so send both. Send the stage setup's `updated_at` as `expected_updated_at`. A 400 means the field is
