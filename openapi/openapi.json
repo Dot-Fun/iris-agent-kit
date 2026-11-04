@@ -13677,7 +13677,7 @@
         "x-member-access": "open"
       },
       "patch": {
-        "description": "Changes only the fields sent. The name cannot change here: the Context Engine owns it. An\ninvalid industry, website or timezone answers 400 and changes nothing.",
+        "description": "Changes only the fields sent. The name cannot change here: the Context Engine owns it. An\ninvalid industry, website or timezone answers 400 and changes nothing.\nAfter onboarding, an industry that differs from the stored generation starts an automatic setup rebuild. Save again to retry if it could not start.",
         "operationId": "organization_update",
         "parameters": [
           {

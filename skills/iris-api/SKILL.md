@@ -550,7 +550,9 @@ user, and do not retry.
 1. Call `organization_get` and keep its `updated_at`.
 2. Call `organization_update` with only the fields to change (`industry`, `website_url`,
    `timezone`) and `expected_updated_at`. An empty `website_url` clears it. The name cannot
-   change here: tell the user to change it in the Context Engine.
+   change here: tell the user to change it in the Context Engine. After an industry change,
+   setup is rebuilt: new fields are enabled, unchanged empty generated fields are disabled,
+   and untouched scenarios are replaced.
 3. To turn agent access off for a role, send the whole list to `organization_set_agent_access`
    as `disabled_roles`. Ask the user first: people in those roles lose their personal keys,
    agent connections and Assistant until the role is turned back on. Only an owner's credential
