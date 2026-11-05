@@ -516,6 +516,12 @@ start it again after a change. Do not use `sequences_pause` on a broadcast: it a
    owns, never to a customer. Or send `contact_id` to fill the variables from a contact: the
    message then goes to that contact, so ask the user first.
 4. Read `success`. When false, `error` and `reason_code` say why, for example `opted_out`.
+5. To choose who an email step comes from, call `sequences_list_sender_addresses`. Pass an
+   `email` whose `can_send` is true as the step's `sender_email` on `sequences_create` or
+   `sequences_update`. Null sends from `default_from_email`; leaving it out keeps the step's
+   sender. An address with `can_send` false cannot be saved: show the user its `blocked_reason`.
+   A non-admin credential sees and may pick only its own address, and a 403 means the step names
+   someone else's. Adding and checking addresses is done in the dashboard, in Settings › Email.
 
 ### 15. Change a phone agent and publish it
 

@@ -10042,6 +10042,67 @@
         "x-member-access": "deny"
       }
     },
+    "/api/v1/sequences/sender-addresses": {
+      "get": {
+        "description": "Use an `email` whose `can_send` is true as a step's `sender_email` on `sequences_create` or\n`sequences_update`. A step with a null `sender_email` sends from `default_from_email`. An OWNER or ADMIN\ngets every address of the organization; any other role gets only the one equal to their own login\nemail, the only one they may pick. An address whose domain has not passed its SPF and DMARC check\ncannot send, and `blocked_reason` says why. Admins add and check addresses in the dashboard.",
+        "operationId": "sequences_list_sender_addresses",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SequenceSenderAddressListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `sequences:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List the addresses an email step can come from",
+        "tags": [
+          "Sequences",
+          "Public API"
+        ],
+        "x-iris-scope": "sequences:read",
+        "x-member-access": "open"
+      }
+    },
     "/api/v1/sequences/send-schedules/{sendScheduleId}": {
       "put": {
         "description": "Replaces every field of the window, for every sequence that uses it. Send the whole window, as\n`sequences_list_send_schedules` shows it. A credential limited to some locations changes only a\nwindow its own sequences use, and never the default.",
@@ -40399,6 +40460,107 @@
           "limit"
         ]
       },
+      "SequenceSenderAddressDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "description": "The address. Use it as a step `sender_email`."
+          },
+          "display_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The name shown beside the address"
+          },
+          "domain": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "unverified",
+              "verified",
+              "failed"
+            ],
+            "description": "`verified` when the domain passed its last SPF and DMARC check"
+          },
+          "spf_status": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "pass",
+              "fail"
+            ]
+          },
+          "dmarc_status": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "pass",
+              "fail"
+            ]
+          },
+          "check_detail": {
+            "type": "string",
+            "nullable": true,
+            "description": "What failed at the last check"
+          },
+          "checked_at": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "can_send": {
+            "type": "boolean",
+            "description": "True when a step may send from the address"
+          },
+          "blocked_reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the address cannot send, when it cannot"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "domain",
+          "status",
+          "can_send"
+        ]
+      },
+      "SequenceSenderAddressListDto": {
+        "type": "object",
+        "properties": {
+          "default_from_email": {
+            "type": "string",
+            "nullable": true,
+            "description": "What a step with a null `sender_email` sends from"
+          },
+          "default_from_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "own_email": {
+            "type": "string",
+            "nullable": true,
+            "description": "The caller's own login email"
+          },
+          "addresses": {
+            "description": "Every address of the organization for an OWNER or ADMIN; only the caller's own for other roles",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceSenderAddressDto"
+            }
+          }
+        },
+        "required": [
+          "addresses"
+        ]
+      },
       "SendScheduleSaveDto": {
         "type": "object",
         "properties": {
@@ -40667,6 +40829,11 @@
             "nullable": true,
             "additionalProperties": true,
             "description": "Settings for `wait_kind`. Its keys are camelCase, as stored, like a condition. `duration`: null, or `{ resumeWindow }` to resume inside a window. `until`: `{ at: \"YYYY-MM-DDTHH:mm\", zone }`, a local time with no offset. `window`: `{ weekdays, startMinute, endMinute, zone, skipWeekends? }`, weekdays 0 (Sunday) to 6. `anchor`: `{ edge: \"start\"|\"end\", direction: \"before\"|\"after\", offsetMinutes }`. `event`: `{ signal, params?, timeoutMinutes }`: signal `replied`, `clicked`, `booked`, `stage_reached` or `converted` (the two stage signals need `params.stage`, the destination stage value), and `timeoutMinutes` (1 or more) is saved as `delay_minutes`. The wait ends when the signal arrives or the stage changes to it. `zone` is `contact` or `org`. Settings that do not fit the kind answer 400."
+          },
+          "sender_email": {
+            "type": "string",
+            "nullable": true,
+            "description": "Who an `email` step comes from. Null sends from the organization's default address."
           }
         },
         "required": [
@@ -41004,6 +41171,12 @@
             "additionalProperties": true,
             "nullable": true,
             "description": "Settings for `wait_kind`. Its keys are camelCase, as stored, like a condition. `duration`: null, or `{ resumeWindow }` to resume inside a window. `until`: `{ at: \"YYYY-MM-DDTHH:mm\", zone }`, a local time with no offset. `window`: `{ weekdays, startMinute, endMinute, zone, skipWeekends? }`, weekdays 0 (Sunday) to 6. `anchor`: `{ edge: \"start\"|\"end\", direction: \"before\"|\"after\", offsetMinutes }`. `event`: `{ signal, params?, timeoutMinutes }`: signal `replied`, `clicked`, `booked`, `stage_reached` or `converted` (the two stage signals need `params.stage`, the destination stage value), and `timeoutMinutes` (1 or more) is saved as `delay_minutes`. The wait ends when the signal arrives or the stage changes to it. `zone` is `contact` or `org`. Settings that do not fit the kind answer 400."
+          },
+          "sender_email": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 320,
+            "description": "Who an `email` step comes from: an `email` from `sequences_list_sender_addresses` whose `can_send` is true. Null sends from the organization's default address. Omit to keep the stored one. An OWNER or ADMIN may name any of the organization's addresses, any other role only their own login email (403). An address that is not verified, or not one of the organization's, answers 400."
           }
         },
         "required": [
@@ -41525,6 +41698,11 @@
             "nullable": true,
             "additionalProperties": true,
             "description": "Settings for `wait_kind`. Its keys are camelCase, as stored, like a condition. `duration`: null, or `{ resumeWindow }` to resume inside a window. `until`: `{ at: \"YYYY-MM-DDTHH:mm\", zone }`, a local time with no offset. `window`: `{ weekdays, startMinute, endMinute, zone, skipWeekends? }`, weekdays 0 (Sunday) to 6. `anchor`: `{ edge: \"start\"|\"end\", direction: \"before\"|\"after\", offsetMinutes }`. `event`: `{ signal, params?, timeoutMinutes }`: signal `replied`, `clicked`, `booked`, `stage_reached` or `converted` (the two stage signals need `params.stage`, the destination stage value), and `timeoutMinutes` (1 or more) is saved as `delay_minutes`. The wait ends when the signal arrives or the stage changes to it. `zone` is `contact` or `org`. Settings that do not fit the kind answer 400."
+          },
+          "sender_email": {
+            "type": "string",
+            "nullable": true,
+            "description": "Who an `email` step comes from. Null sends from the organization's default address."
           },
           "id": {
             "type": "string",

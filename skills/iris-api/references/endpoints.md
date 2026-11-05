@@ -3228,6 +3228,7 @@ Create a draft sequence
   - `ai_prompt` (body, string): What the AI should write, when `ai_enabled`
   - `wait_kind` (body, string, one of `duration`, `until`, `window`, `anchor`, `event`): What a `wait` step waits for. `duration`: `delay_minutes`. `until`: a date and time. `window`: the next open slot of a weekly window. `anchor`: a time before or after the appointment, in a sequence triggered by an appointment. `event`: a signal on the outgoing edges, or the timeout. Other channels are `duration`. Omitted is `duration`.
   - `wait_config` (body, object): Settings for `wait_kind`. Its keys are camelCase, as stored, like a condition. `duration`: null, or `{ resumeWindow }` to resume inside a window. `until`: `{ at: "YYYY-MM-DDTHH:mm", zone }`, a local time with no offset. `window`: `{ weekdays, startMinute, endMinute, zone, skipWeekends? }`, weekdays 0 (Sunday) to 6. `anchor`: `{ edge: "start"|"end", direction: "before"|"after", offsetMinutes }`. `event`: `{ signal, params?, timeoutMinutes }`: signal `replied`, `clicked`, `booked`, `stage_reached` or `converted` (the two stage signals need `params.stage`, the destination stage value), and `timeoutMinutes` (1 or more) is saved as `delay_minutes`. The wait ends when the signal arrives or the stage changes to it. `zone` is `contact` or `org`. Settings that do not fit the kind answer 400.
+  - `sender_email` (body, string): Who an `email` step comes from: an `email` from `sequences_list_sender_addresses` whose `can_send` is true. Null sends from the organization's default address. Omit to keep the stored one. An OWNER or ADMIN may name any of the organization's addresses, any other role only their own login email (403). An address that is not verified, or not one of the organization's, answers 400.
 - `exit_conditions` (body, array of SequenceExitConditionInputDto): Replaces the exit conditions. An enrollment stops when any of them is met.
   - `condition` (body, object, required): A condition in the DSL `sequences_get_condition_vocabulary` describes, e.g. `{ "signal": "replied" }`
   - `cancel_reason` (body, string, required, one of `goal_met`, `converted`, `stage_reached`, `replied`, `booked`, `opted_out`): Recorded on the enrollment when this exit fires
@@ -3359,6 +3360,12 @@ List the send windows a sequence can use
 - `page` (query, number): 1-based page number, at most 1000
 - `limit` (query, number): Page size (capped at 100)
 
+### sequences_list_sender_addresses
+
+`GET /api/v1/sequences/sender-addresses`. Scope: `sequences:read`. Member: `open`.
+
+List the addresses an email step can come from
+
 ### sequences_list_triggers
 
 `GET /api/v1/sequences/triggers`. Scope: `sequences:read`. Member: `open`.
@@ -3429,6 +3436,7 @@ Preview what an update would do to enrolled contacts
   - `ai_prompt` (body, string): What the AI should write, when `ai_enabled`
   - `wait_kind` (body, string, one of `duration`, `until`, `window`, `anchor`, `event`): What a `wait` step waits for. `duration`: `delay_minutes`. `until`: a date and time. `window`: the next open slot of a weekly window. `anchor`: a time before or after the appointment, in a sequence triggered by an appointment. `event`: a signal on the outgoing edges, or the timeout. Other channels are `duration`. Omitted is `duration`.
   - `wait_config` (body, object): Settings for `wait_kind`. Its keys are camelCase, as stored, like a condition. `duration`: null, or `{ resumeWindow }` to resume inside a window. `until`: `{ at: "YYYY-MM-DDTHH:mm", zone }`, a local time with no offset. `window`: `{ weekdays, startMinute, endMinute, zone, skipWeekends? }`, weekdays 0 (Sunday) to 6. `anchor`: `{ edge: "start"|"end", direction: "before"|"after", offsetMinutes }`. `event`: `{ signal, params?, timeoutMinutes }`: signal `replied`, `clicked`, `booked`, `stage_reached` or `converted` (the two stage signals need `params.stage`, the destination stage value), and `timeoutMinutes` (1 or more) is saved as `delay_minutes`. The wait ends when the signal arrives or the stage changes to it. `zone` is `contact` or `org`. Settings that do not fit the kind answer 400.
+  - `sender_email` (body, string): Who an `email` step comes from: an `email` from `sequences_list_sender_addresses` whose `can_send` is true. Null sends from the organization's default address. Omit to keep the stored one. An OWNER or ADMIN may name any of the organization's addresses, any other role only their own login email (403). An address that is not verified, or not one of the organization's, answers 400.
 - `exit_conditions` (body, array of SequenceExitConditionInputDto): Replaces the exit conditions. An enrollment stops when any of them is met.
   - `condition` (body, object, required): A condition in the DSL `sequences_get_condition_vocabulary` describes, e.g. `{ "signal": "replied" }`
   - `cancel_reason` (body, string, required, one of `goal_met`, `converted`, `stage_reached`, `replied`, `booked`, `opted_out`): Recorded on the enrollment when this exit fires
@@ -3534,6 +3542,7 @@ Change a sequence
   - `ai_prompt` (body, string): What the AI should write, when `ai_enabled`
   - `wait_kind` (body, string, one of `duration`, `until`, `window`, `anchor`, `event`): What a `wait` step waits for. `duration`: `delay_minutes`. `until`: a date and time. `window`: the next open slot of a weekly window. `anchor`: a time before or after the appointment, in a sequence triggered by an appointment. `event`: a signal on the outgoing edges, or the timeout. Other channels are `duration`. Omitted is `duration`.
   - `wait_config` (body, object): Settings for `wait_kind`. Its keys are camelCase, as stored, like a condition. `duration`: null, or `{ resumeWindow }` to resume inside a window. `until`: `{ at: "YYYY-MM-DDTHH:mm", zone }`, a local time with no offset. `window`: `{ weekdays, startMinute, endMinute, zone, skipWeekends? }`, weekdays 0 (Sunday) to 6. `anchor`: `{ edge: "start"|"end", direction: "before"|"after", offsetMinutes }`. `event`: `{ signal, params?, timeoutMinutes }`: signal `replied`, `clicked`, `booked`, `stage_reached` or `converted` (the two stage signals need `params.stage`, the destination stage value), and `timeoutMinutes` (1 or more) is saved as `delay_minutes`. The wait ends when the signal arrives or the stage changes to it. `zone` is `contact` or `org`. Settings that do not fit the kind answer 400.
+  - `sender_email` (body, string): Who an `email` step comes from: an `email` from `sequences_list_sender_addresses` whose `can_send` is true. Null sends from the organization's default address. Omit to keep the stored one. An OWNER or ADMIN may name any of the organization's addresses, any other role only their own login email (403). An address that is not verified, or not one of the organization's, answers 400.
 - `exit_conditions` (body, array of SequenceExitConditionInputDto): Replaces the exit conditions. An enrollment stops when any of them is met.
   - `condition` (body, object, required): A condition in the DSL `sequences_get_condition_vocabulary` describes, e.g. `{ "signal": "replied" }`
   - `cancel_reason` (body, string, required, one of `goal_met`, `converted`, `stage_reached`, `replied`, `booked`, `opted_out`): Recorded on the enrollment when this exit fires
