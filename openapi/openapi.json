@@ -9750,7 +9750,7 @@
     },
     "/api/v1/sequences/capabilities": {
       "get": {
-        "description": "Read before you build a sequence. `multi_trigger_writes_enabled` says whether a sequence may carry more than one trigger.",
+        "description": "Read before you build a sequence. `multi_trigger_writes_enabled` says whether a sequence may carry more than one trigger. `step_channels` lists the channels a step may take.",
         "operationId": "sequences_capabilities",
         "parameters": [],
         "responses": {
@@ -40282,10 +40282,25 @@
           "multi_trigger_writes_enabled": {
             "type": "boolean",
             "description": "True when a sequence may carry more than one trigger"
+          },
+          "step_channels": {
+            "type": "array",
+            "description": "Every channel a step may take. `add_to_sequence` enrolls the contact in another sequence.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "email",
+                "sms",
+                "wait",
+                "task",
+                "add_to_sequence"
+              ]
+            }
           }
         },
         "required": [
-          "multi_trigger_writes_enabled"
+          "multi_trigger_writes_enabled",
+          "step_channels"
         ]
       },
       "SequenceTriggerEventOptionDto": {
@@ -40771,7 +40786,8 @@
               "email",
               "sms",
               "wait",
-              "task"
+              "task",
+              "add_to_sequence"
             ]
           },
           "delay_minutes": {
@@ -40834,6 +40850,12 @@
             "type": "string",
             "nullable": true,
             "description": "Who an `email` step comes from. Null sends from the organization's default address."
+          },
+          "target_sequence_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The sequence an `add_to_sequence` step enrolls the contact in. Null on the other steps, and once that sequence is deleted."
           }
         },
         "required": [
@@ -41114,9 +41136,10 @@
               "email",
               "sms",
               "wait",
-              "task"
+              "task",
+              "add_to_sequence"
             ],
-            "description": "`email` and `sms` message the contact. `wait` only waits. `task` notifies the team: its subject is the title and its body the note."
+            "description": "`email` and `sms` message the contact. `wait` only waits. `task` notifies the team: its subject is the title and its body the note. `add_to_sequence` enrolls the contact in the sequence `target_sequence_id` names, and the contact moves on to the next step."
           },
           "delay_minutes": {
             "type": "number",
@@ -41177,6 +41200,12 @@
             "nullable": true,
             "maxLength": 320,
             "description": "Who an `email` step comes from: an `email` from `sequences_list_sender_addresses` whose `can_send` is true. Null sends from the organization's default address. Omit to keep the stored one. An OWNER or ADMIN may name any of the organization's addresses, any other role only their own login email (403). An address that is not verified, or not one of the organization's, answers 400."
+          },
+          "target_sequence_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The sequence an `add_to_sequence` step enrolls the contact in: the `id` of another automation of the organization from `sequences_list`. Required on an `add_to_sequence` step and ignored on the others. The sequence itself, a broadcast, a team notice (it sends to the team), or an id that names no sequence of the organization answers 400. A credential that acts as a member limited to some locations may name only a sequence at one of them or an organization-wide one, and any other answers the same 400. An inactive or paused target saves, and the step then skips the contact. The step never enrolls a contact twice from the same source sequence, which stops a loop."
           }
         },
         "required": [
@@ -41640,7 +41669,8 @@
               "email",
               "sms",
               "wait",
-              "task"
+              "task",
+              "add_to_sequence"
             ]
           },
           "delay_minutes": {
@@ -41703,6 +41733,12 @@
             "type": "string",
             "nullable": true,
             "description": "Who an `email` step comes from. Null sends from the organization's default address."
+          },
+          "target_sequence_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The sequence an `add_to_sequence` step enrolls the contact in. Null on the other steps, and once that sequence is deleted."
           },
           "id": {
             "type": "string",

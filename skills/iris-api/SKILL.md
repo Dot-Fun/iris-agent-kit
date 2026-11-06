@@ -392,6 +392,13 @@ enrollment, and resume cannot bring them back.
    sequence triggered by an appointment) or `event`. An `event` wait needs a positive edge on its
    `wait_config.signal` and `params`, plus a timeout edge, and `timeoutMinutes` becomes its
    `delay_minutes`. `stage_reached` and `converted` need `params.stage`.
+   To chain sequences, add an `add_to_sequence` step with `target_sequence_id`: the `id` of
+   another automation from `sequences_list`. It sends nothing. It enrolls the contact in that
+   automation, after its `delay_minutes`. The sequence itself, a broadcast, a team notice or an
+   id that is not the organization's returns 400, as does a sequence at another location for a
+   key that acts as a member limited to some locations. When the step runs, it skips the contact and moves on while
+   the target is off or paused, already holds the contact, or already took the contact from this
+   sequence once.
 3. To start from a sequence that works, call `sequences_duplicate` instead and change the copy.
 4. Call `sequences_update` to change steps, delays or copy. `steps`, `edges` and
    `exit_conditions` each replace the whole list, so start from `sequences_get`, edit, and send
