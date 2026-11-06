@@ -1010,7 +1010,7 @@
     },
     "/api/v1/contacts/{contactId}/locations/{locationId}/affiliation": {
       "get": {
-        "description": "GoHighLevel organizations only. The contact’s owner, customer company and additional emails and\nphones at one location, with the companies and owners to choose from. `affiliation` is null until\nthe first change. Needs a person: an organization key answers 403 `no_acting_user`.",
+        "description": "GoHighLevel organizations only. The contact’s owner, customer company and additional emails and\nphones at one location, with the companies and owners to choose from. `affiliation` is null until\nthe first change. Needs a person: an organization key answers 403 `no_acting_user`.\nA MEMBER at the own-records level reaches only the clients of their own appointments (404 otherwise).",
         "operationId": "contacts_get_affiliation",
         "parameters": [
           {
@@ -1098,7 +1098,7 @@
         "x-member-access": "scoped"
       },
       "put": {
-        "description": "GoHighLevel organizations only. Changes only the fields sent. Send `expected_revision` from\n`contacts_get_affiliation`, or 0 when its `affiliation` is null: another change since answers 409.\n`business_id` names a company from `companies`. Create one with `contacts_upsert_company`.\nThe primary email and phone never change here.",
+        "description": "GoHighLevel organizations only. Changes only the fields sent. Send `expected_revision` from\n`contacts_get_affiliation`, or 0 when its `affiliation` is null: another change since answers 409.\n`business_id` names a company from `companies`. Create one with `contacts_upsert_company`.\nThe primary email and phone never change here.\nA MEMBER at the own-records level reaches only the clients of their own appointments (404 otherwise).",
         "operationId": "contacts_update_affiliation",
         "parameters": [
           {
@@ -1210,7 +1210,7 @@
     },
     "/api/v1/contacts/{contactId}/locations/{locationId}/affiliation/companies/{companyId}": {
       "put": {
-        "description": "GoHighLevel organizations only. With `expected_revision` 0, creates the company under a new\n`companyId` you choose (a UUID). Otherwise renames it: send its `revision` from\n`contacts_get_affiliation`, and another change since answers 409. Then link it with\n`contacts_update_affiliation` `business_id`.",
+        "description": "GoHighLevel organizations only. With `expected_revision` 0, creates the company under a new\n`companyId` you choose (a UUID). Otherwise renames it: send its `revision` from\n`contacts_get_affiliation`, and another change since answers 409. Then link it with\n`contacts_update_affiliation` `business_id`.\nA MEMBER at the own-records level reaches only the clients of their own appointments (404 otherwise).",
         "operationId": "contacts_upsert_company",
         "parameters": [
           {
@@ -23836,7 +23836,7 @@
     },
     "/api/v1/integrations/ghl/mappings/{mappingId}/engagement/contacts/{contactId}/context": {
       "get": {
-        "description": "The last thirty days of GoHighLevel messages of a linked contact, which Iris reads from GoHighLevel on each call. `complete` is false when GoHighLevel did not return the whole period. The mapping needs `conversations` on.",
+        "description": "The last thirty days of GoHighLevel messages of a linked contact, which Iris reads from GoHighLevel on each call. `complete` is false when GoHighLevel did not return the whole period. The mapping needs `conversations` on.\nA MEMBER at the own-records level reaches only the clients of their own appointments (404 otherwise).",
         "operationId": "ghl_get_conversation_context",
         "parameters": [
           {
