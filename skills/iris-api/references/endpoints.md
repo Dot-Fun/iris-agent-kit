@@ -476,6 +476,7 @@ Create or replace the booking widget settings of a location
 - `availability_end_time` (body, string, required): HH:MM, not equal to the start
 - `enabled_weekdays` (body, array of number, required): Unique days, 0 (Sunday) to 6
 - `google_integration_id` (body, string uuid, required): A Google Calendar connected at this location. Null: the Iris calendar.
+- `redirect_url` (body, string): HTTPS page opened after a successful booking. Omit to keep the stored value. Null keeps the confirmation page.
 
 ## Business data
 

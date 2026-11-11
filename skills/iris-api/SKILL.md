@@ -654,7 +654,7 @@ the user to use a personal key or an agent connection.
    means the location has no booking widget yet.
 2. Call `booking_widgets_update` with every setting: `slug`, `title`, `enabled`,
    `allowed_origins`, `timezone`, `duration_minutes`, the availability window,
-   `enabled_weekdays` and `google_integration_id` (null for none). Send the `updated_at` from
+   `enabled_weekdays`, and `google_integration_id` (null for none). The optional `redirect_url` sets an HTTPS page after booking. Omit it to keep the stored value. Null keeps the confirmation page. Send the `updated_at` from
    `booking_widgets_get` as `expected_updated_at` when the widget exists. A 409 on a new widget
    means the slug is taken: ask the user for another one.
 3. To change the sections or the questions, take `layout` from `booking_widgets_get`, change it,
