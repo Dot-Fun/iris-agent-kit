@@ -654,7 +654,11 @@ the user to use a personal key or an agent connection.
    means the location has no booking widget yet.
 2. Call `booking_widgets_update` with every setting: `slug`, `title`, `enabled`,
    `allowed_origins`, `timezone`, `duration_minutes`, the availability window,
-   `enabled_weekdays`, and `google_integration_id` (null for none). The optional `redirect_url` sets an HTTPS page after booking. Omit it to keep the stored value. Null keeps the confirmation page. Send the `updated_at` from
+   `enabled_weekdays`, and `google_integration_id` (null for none). The optional `redirect_url` sets an HTTPS page after booking. Omit it to keep the stored value. Null keeps the confirmation page.
+   The optional positive integers `min_notice_minutes`, `max_bookings_per_day` and `max_days_ahead` set booking limits.
+   They mean minimum notice in minutes, bookings per person per day, and how many days ahead a person may book.
+   Omit each to keep it. Null means no limit. Limits also apply to bookings Iris takes by phone, chat and text.
+   Staff bookings are not limited. Send the `updated_at` from
    `booking_widgets_get` as `expected_updated_at` when the widget exists. A 409 on a new widget
    means the slug is taken: ask the user for another one.
 3. To change the sections or the questions, take `layout` from `booking_widgets_get`, change it,

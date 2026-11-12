@@ -16613,7 +16613,7 @@
         "x-member-access": "deny"
       },
       "put": {
-        "description": "Send every setting: the call replaces them all. The layout stays as it is.\nThe first call at a location creates its booking widget with the default layout.\nIris adds its own app origin to `allowed_origins`, as the dashboard does, so the hosted booking link works.\nThe list holds at most 25 origins, the Iris app origin included, so at most 24 others.\nThe slug is unique across Iris.\nSet `redirect_url` to an HTTPS page to open after booking, or null to keep the confirmation page.\nA MANAGER with the location settings power may call it at their own locations.",
+        "description": "Send every setting: the call replaces them all. The layout stays as it is.\nThe first call at a location creates its booking widget with the default layout.\nIris adds its own app origin to `allowed_origins`, as the dashboard does, so the hosted booking link works.\nThe list holds at most 25 origins, the Iris app origin included, so at most 24 others.\nThe slug is unique across Iris.\nSet `redirect_url` to an HTTPS page to open after booking, or null to keep the confirmation page.\nOptional min_notice_minutes, max_bookings_per_day and max_days_ahead require positive integers. Null clears a limit. Omit to keep it.\nLimits also apply to bookings Iris takes by phone, chat and text. Staff bookings are not limited.\nA MANAGER with the location settings power may call it at their own locations.",
         "operationId": "booking_widgets_update",
         "parameters": [
           {
@@ -16737,7 +16737,10 @@
               "slug",
               "description",
               "google_integration_id",
-              "redirect_url"
+              "redirect_url",
+              "min_notice_minutes",
+              "max_bookings_per_day",
+              "max_days_ahead"
             ]
           ]
         },
@@ -44731,6 +44734,27 @@
             "maxLength": 2048,
             "description": "HTTPS page opened after a successful booking. Null keeps the confirmation page."
           },
+          "min_notice_minutes": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 2147483647,
+            "description": "Minimum notice in minutes. Null means no limit. Applies to bookings Iris takes by phone, chat and text. Staff bookings are not limited."
+          },
+          "max_bookings_per_day": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 2147483647,
+            "description": "Maximum bookings per person per day. Null means no limit. Applies to bookings Iris takes by phone, chat and text. Staff bookings are not limited."
+          },
+          "max_days_ahead": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 2147483647,
+            "description": "How many days ahead a person may book. Null means no limit. Applies to bookings Iris takes by phone, chat and text. Staff bookings are not limited."
+          },
           "layout": {
             "$ref": "#/components/schemas/PublicBookingWidgetLayoutDto"
           },
@@ -44772,6 +44796,9 @@
           "enabled_weekdays",
           "google_integration_id",
           "redirect_url",
+          "min_notice_minutes",
+          "max_bookings_per_day",
+          "max_days_ahead",
           "layout",
           "effective_style",
           "fallback_reason",
@@ -44857,6 +44884,27 @@
             "nullable": true,
             "maxLength": 2048,
             "description": "HTTPS page opened after a successful booking. Omit to keep the stored value. Null keeps the confirmation page."
+          },
+          "min_notice_minutes": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 2147483647,
+            "description": "Minimum notice in minutes. Null means no limit. Applies to bookings Iris takes by phone, chat and text. Staff bookings are not limited."
+          },
+          "max_bookings_per_day": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 2147483647,
+            "description": "Maximum bookings per person per day. Null means no limit. Applies to bookings Iris takes by phone, chat and text. Staff bookings are not limited."
+          },
+          "max_days_ahead": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 2147483647,
+            "description": "How many days ahead a person may book. Null means no limit. Applies to bookings Iris takes by phone, chat and text. Staff bookings are not limited."
           }
         },
         "required": [

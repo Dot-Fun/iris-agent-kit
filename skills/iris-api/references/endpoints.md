@@ -477,6 +477,9 @@ Create or replace the booking widget settings of a location
 - `enabled_weekdays` (body, array of number, required): Unique days, 0 (Sunday) to 6
 - `google_integration_id` (body, string uuid, required): A Google Calendar connected at this location. Null: the Iris calendar.
 - `redirect_url` (body, string): HTTPS page opened after a successful booking. Omit to keep the stored value. Null keeps the confirmation page.
+- `min_notice_minutes` (body, integer): Minimum notice in minutes. Null means no limit. Applies to bookings Iris takes by phone, chat and text. Staff bookings are not limited.
+- `max_bookings_per_day` (body, integer): Maximum bookings per person per day. Null means no limit. Applies to bookings Iris takes by phone, chat and text. Staff bookings are not limited.
+- `max_days_ahead` (body, integer): How many days ahead a person may book. Null means no limit. Applies to bookings Iris takes by phone, chat and text. Staff bookings are not limited.
 
 ## Business data
 
