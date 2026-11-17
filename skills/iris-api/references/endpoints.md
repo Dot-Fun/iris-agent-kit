@@ -124,7 +124,7 @@ Change a phone agent’s name, greeting or prompt fields
 - `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
 - `name` (body, string)
 - `first_message` (body, string): The greeting. Null clears it.
-- `prompt_template` (body, string)
+- `prompt_template` (body, string): The prompt, with its placeholders. For a write that changes the template, Iris adds the line `<!-- iris-prompt-template: v2 -->` first when a non-empty template does not start with it.
 - `custom_notes` (body, string)
 - `agent_instructions` (body, string)
 - `transfer_condition` (body, string)

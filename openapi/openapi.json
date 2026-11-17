@@ -43168,7 +43168,7 @@
           "prompt_template": {
             "type": "string",
             "nullable": true,
-            "description": "The prompt, with its placeholders"
+            "description": "The prompt, with its placeholders. When a write that changes the template saves a non-empty template that does not start with the line `<!-- iris-prompt-template: v2 -->`, Iris adds that line first, so a read returns it."
           },
           "custom_notes": {
             "type": "string",
@@ -43374,7 +43374,8 @@
           },
           "prompt_template": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "description": "The prompt, with its placeholders. For a write that changes the template, Iris adds the line `<!-- iris-prompt-template: v2 -->` first when a non-empty template does not start with it."
           },
           "custom_notes": {
             "type": "string",
