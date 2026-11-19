@@ -47350,6 +47350,16 @@
               }
             }
           },
+          "400": {
+            "description": "Attachment metadata is invalid or blank",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
             "content": {
@@ -49025,6 +49035,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WorkRecordAttachmentCreateDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Attachment metadata is invalid or blank",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
                 }
               }
             }
