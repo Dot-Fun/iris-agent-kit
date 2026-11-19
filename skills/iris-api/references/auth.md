@@ -75,11 +75,13 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `sequences:read` | Read sequences, enrollments, send logs and totals, and a broadcast's schedule and runs |
 | `sequences:write` | Author, activate, pause, resume and duplicate sequences, enroll and cancel, and set, start and pause a broadcast's schedule and cancel one run, and create and change send windows |
 | `appointments:read` | Read appointments, open slots, calendars, locations, booking options and territories, and list the appointments that need attention |
-| `appointments:write` | Book, change, reschedule and cancel appointments, including attendee details, place, all-day flag, status and time zone, get or reset an appointment’s self-service link, and keep a conflicted appointment |
+| `appointments:write` | Book or reschedule through a hold, create holds with staff preference or recurrence, change and cancel appointments, including attendee details, place, all-day flag, status and time zone, get or reset an appointment’s self-service link, and keep a conflicted appointment |
 | `conversations:read` | Read conversations and messages |
 | `conversations:write` | Send an SMS, reply in a conversation, and hold or resume its AI. A staff member acts only for their own clients, while their SMS setting is on |
 | `calls:read` | Read calls and transcripts |
 | `calls:write` | Delete calls and their recordings. An owner or admin only |
+| `offerings:read` | Read offering terms and staff preference configuration |
+| `offerings:write` | Configure offering terms and staff preference configuration |
 | `audiences:read` | Read audiences |
 | `audiences:write` | Add and remove audience members, and delete an audience (an owner only) |
 | `forms:read` | Read forms, their fields and their submissions |
@@ -110,7 +112,7 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `knowledge_base:write` | Add and delete knowledge base documents, and generate suggestions |
 | `business_data:read` | Read the status of a website re-scrape or an agent resync |
 | `business_data:write` | Re-scrape the website, and resync the business data to every phone agent |
-| `integrations:read` | Read the integrations |
+| `integrations:read` | Read GoHighLevel, HubSpot, Zapier and Google Calendar, plus connected provider accounts and bindings. A MANAGER may grant this scope. MANAGER and MEMBER keys pass `open` and `scoped` route checks, subject to location and acting-user requirements. Both get 403 on `deny` reads. |
 | `integrations:write` | Run the integrations |
 | `phone_lines:read` | Read the phone lines and the locations each one answers for |
 | `phone_lines:write` | Add, route, disconnect, reconnect, retry and delete phone lines |
@@ -136,6 +138,17 @@ Call `me_get` to see the organization, the key's scopes and the full scope catal
 | `billing:read` | Read the subscription and the plans it can switch to |
 | `billing:write` | Switch the subscription's plan and reactivate a subscription set to cancel (owner only) |
 | `organizations:write` | Create another organization you own |
+| `groups:read` | Read groups and their type labels |
+| `fields:read` | Read custom fields and the labels of each record kind |
+| `task_types:read` | Read task types, their statuses and moves, and the task templates |
+| `task_types:write` | Configure task types and workflows, archive and restore. OWNER, ADMIN or unrestricted organization key only |
+| `tax_rates:read` | Read tax rates and the subjects each is the default of |
+| `tax_rates:write` | Create, change and archive tax rates, and set subject defaults. Owners, admins and organization keys with no role only |
+| `tasks:read` | List and read tasks with their type, status, assignees, due date, subtasks and linked records |
+| `tasks:write` | Create, update, transition, assign, reclassify, link, unlink, archive and restore tasks. A member's or manager's key creates them at its own locations or with no location |
+| `changes:read` | Read who changed a record, when and why. Also needs the record's own read scope, such as `contacts:read` |
+| `staff:read` | Read the staff members, with or without a login, archived ones included, and where each works |
+| `staff:write` | Add staff, read and change their notification settings and login, activate and deactivate them, and set their services, order, weekly hours and time off |
 
 `me_get` returns the live catalog. When this table and `me_get` differ, trust `me_get`.
 
@@ -203,3 +216,22 @@ locations only, never an organization-wide one. An operation whose member access
 admits a MEMBER only while their SMS setting is on, and only for their own clients, and a MANAGER
 only with the `contacts` power. While a person may not text, the consent
 page leaves `conversations:write` out and the grant drops it, and a personal key cannot take it.
+
+## Action access
+
+Operations with `x-member-access: action` publish their SQL action key as `x-iris-action`.
+Some operations also publish `x-iris-action-by-body`. On those, `x-iris-action` names only the default
+action, and a request body field can select another one. For example, `customer_subscriptions_change`
+publishes `subscriptions.change`, but an `immediate` or `on_date` `timing` selects
+`subscriptions.change_now`. Read `x-iris-action-by-body` to find the action your request needs.
+A credential needs both its scope and a passing SQL request decision. Personal keys and OAuth grants use fresh membership and capability roles.
+An organization key keeps its frozen role, powers and location limits. It does not inherit its creator's capability roles.
+MCP `tools/list` uses the same resolution and may list a record-bearing action before a record is selected.
+A call still checks every selected record. A 403 names the SQL `reason` and `approvals_required`.
+The exception is `record_not_accessible`, which answers the usual 404 `not_found` with no decision
+details, so the response does not show whether the record exists.
+A `needs_approval` decision does not execute. Keep that reason and count for approval integration.
+SMS settings, own-client limits and identity-only contact responses still apply.
+
+Other operations still use the older `deny`, `scoped`, `open` and `sms_setting` rules.
+IRIS-6866's follow-up converts these rules to action access after launch.
