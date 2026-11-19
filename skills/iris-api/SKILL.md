@@ -2117,6 +2117,10 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
   `offerings_set_options`, `offerings_set_requirements`, `offerings_set_bookable_groups`. Read offerings before booking. Configuration writes replace the
   complete requirements or bookable group set and require `offerings:write`.
 - Appointments: `appointments_detach_occurrence` detaches one date from a series. It returns the same appointment on a retry. `appointment_series_list` shows each occurrence state, `appointment_series_get` reads the rule, `appointment_series_replace` replaces the rule and template while preserving the source event id, and `appointment_series_end` stops future dates. Send `rule: null` to return the source to a single appointment.
+  Series get, occurrence list, end, replace and occurrence detach return `404 series_not_found` for a superseded recurrence series id.
+  Call `appointments_get` with the stable source event id to obtain the current `recurrence_series_id` before editing.
+  Do not retry a write against an unread replacement.
+  A stale `recurrence_series_id` in a replacement body returns `409 series_edit_requires_replace`.
 - Conversations: `conversations_list`, `conversations_get` (with messages),
   `conversations_reply`, `conversations_hold`, `conversations_resume`, `conversations_send_sms`.
   The channels are `email`, `sms` and `chat` (web chat). A search (`q`) skips chat.

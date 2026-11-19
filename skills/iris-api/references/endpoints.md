@@ -212,7 +212,7 @@ Transfer available units to one contact or group when sold terms allow it; prese
 
 `POST /api/v1/appointment-series/{seriesId}/end`. Scope: `appointments:write`. Member: `action`. Action (`x-iris-action`): `appointment.edit`. Changes: `appointments`.
 
-End an appointment series
+End a live or ended appointment series
 
 - `seriesId` (path, string uuid, required)
 - `ends_at` (body, string date-time, required)
@@ -221,7 +221,7 @@ End an appointment series
 
 `GET /api/v1/appointment-series/{seriesId}`. Scope: `appointments:read`. Member: `action`. Action (`x-iris-action`): `appointment.list`.
 
-Get one appointment series
+Get one live or ended appointment series
 
 - `seriesId` (path, string uuid, required)
 
@@ -229,7 +229,7 @@ Get one appointment series
 
 `GET /api/v1/appointment-series/{seriesId}/occurrences`. Scope: `appointments:read`. Member: `action`. Action (`x-iris-action`): `appointment.list`.
 
-List appointment series occurrences
+List live or ended appointment series occurrences
 
 - `seriesId` (path, string uuid, required)
 - `from` (query, string date-time)
@@ -239,7 +239,7 @@ List appointment series occurrences
 
 `PUT /api/v1/appointment-series/{seriesId}`. Scope: `appointments:write`. Member: `scoped`. Action (`x-iris-action`): `appointment.edit`. Changes: `appointments`.
 
-Replace an appointment series
+Replace a live or ended appointment series
 
 - `seriesId` (path, string uuid, required)
 - `recurrence_series_id` (body, string uuid): Optional live series id; the path source id is stable.

@@ -5761,7 +5761,7 @@
             }
           },
           "404": {
-            "description": "Appointment series not found\n\nNo such appointment series in this organization",
+            "description": "Appointment series not found. Superseded series ids return `series_not_found`.\n\nNo such appointment series in this organization",
             "content": {
               "application/json": {
                 "schema": {
@@ -6907,7 +6907,7 @@
     },
     "/api/v1/appointment-series/{seriesId}/occurrences": {
       "get": {
-        "description": "Lists active series occurrences in a time window with their reservation state.",
+        "description": "Lists live or ended series occurrences in a time window with their reservation state.",
         "operationId": "appointment_series_list",
         "parameters": [
           {
@@ -6970,7 +6970,7 @@
             }
           },
           "404": {
-            "description": "Appointment series not found\n\nNo such appointment series in this organization",
+            "description": "Appointment series not found. Superseded ids return `series_not_found`.\n\nNo such appointment series in this organization",
             "content": {
               "application/json": {
                 "schema": {
@@ -6995,7 +6995,7 @@
             "apiKey": []
           }
         ],
-        "summary": "List appointment series occurrences",
+        "summary": "List live or ended appointment series occurrences",
         "tags": [
           "Appointments",
           "Public API"
@@ -7051,7 +7051,7 @@
             }
           },
           "404": {
-            "description": "Appointment series not found\n\nNo such appointment series in this organization",
+            "description": "Appointment series not found. Superseded ids return `series_not_found`.\n\nNo such appointment series in this organization",
             "content": {
               "application/json": {
                 "schema": {
@@ -7076,7 +7076,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Get one appointment series",
+        "summary": "Get one live or ended appointment series",
         "tags": [
           "Appointments",
           "Public API"
@@ -7151,7 +7151,7 @@
             }
           },
           "404": {
-            "description": "Appointment series not found\n\nNo such appointment series in this organization",
+            "description": "Appointment series not found. Superseded ids return `series_not_found`.\n\nNo such appointment series in this organization",
             "content": {
               "application/json": {
                 "schema": {
@@ -7186,7 +7186,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Replace an appointment series",
+        "summary": "Replace a live or ended appointment series",
         "tags": [
           "Appointments",
           "Public API"
@@ -7258,7 +7258,7 @@
             }
           },
           "404": {
-            "description": "Appointment series not found\n\nNo such appointment series in this organization",
+            "description": "Appointment series not found. Superseded ids return `series_not_found`.\n\nNo such appointment series in this organization",
             "content": {
               "application/json": {
                 "schema": {
@@ -7283,7 +7283,7 @@
             "apiKey": []
           }
         ],
-        "summary": "End an appointment series",
+        "summary": "End a live or ended appointment series",
         "tags": [
           "Appointments",
           "Public API"
