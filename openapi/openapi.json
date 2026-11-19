@@ -978,7 +978,7 @@
     },
     "/api/v1/contacts": {
       "post": {
-        "description": "Upserts a contact in the organization the API key belongs to. Send an email, a phone, or both.\n\nWith an email, the email is the key, matched without regard to case. A phone sent with it is\nstored as an extra phone of that contact.\n\nWith no email, the phone alone is the key. It must start with + and a country code. Iris\nupdates the one active contact that holds the number, or creates a contact when none does.\nWhen more than one contact holds it, the call writes nothing. For a 409, find them with\n`contacts_find_by_endpoint` and update one with `contacts_update`. When no active contact holds\nit and an archived contact has it as its main phone, the call answers 409 and writes nothing:\nrestore that contact with `contacts_restore`. An archived contact never matches otherwise.\n\nA match outside the key's reach (its location scope or own-records limit) answers 404, as a missing contact does, before any write.\nWith no email, a reach-limited key gets 404 if any phone holder is outside its reach. It gets 409 for several holders only when all are reachable.\nA contact outside the key's reach answers 404 even when this key created it, for example when unlinked at its location or not yet the member's client.\nDuring concurrent creates, the second call can return 404 until the first links the contact, so retry with the same key.\nThis is the same existence signal Zapier upsert gives. An unknown email or phone still creates a contact.\n\nOnly contacts this call creates get a location link. Matched contacts keep their links.\nSend optional `location_id` within the key scope and organization, or receive 403 `insufficient_role`.\nA key with one location implies it. Several locations require `location_id` on creation, or 400 `location_id_required`.\nAn explicit inactive location answers 400 `location_inactive` on creation. An inactive implied location creates unlinked.\nOrganization-wide keys without `location_id` and keys with no locations create unlinked.\nIf linking fails after creation, the call still answers 200 with `created: true`, and the contact stays unlinked. A location-scoped key cannot read it, and its retry answers 404. An organization-wide key can link it with `contacts_set_locations`.\n\n`cancel_events` are processed first, then `events` are fired, so one request can replace\nthe journey a contact is on. Cancellations and other events are best effort.\n`assessment_abandoned` requires transactional acceptance: failures fail the request even if\nthe contact was already upserted. Only a matching `assessmentAbandonment` receipt with\n`status: accepted` confirms durable enrollment acceptance; delivery is not guaranteed.\nAn event whose name no active sequence subscribes to leaves its `key` unspent, so a later\nretry still enrolls.\n\n`skip_automations: true` makes the upsert itself start nothing: no \"New lead\" sequence, no\n`crm.lead.created` or `crm.contact.updated` event. Named `events` and `cancel_events` still run.\nexternal_sync keeps token-loss outages as disconnected with their last sync time. Retired bindings are omitted.",
+        "description": "Upserts a contact in the organization the API key belongs to. Send an email, a phone, or both.\n\nWith an email, the email is the key, matched without regard to case. A phone sent with it is\nstored as an extra phone of that contact.\n\nWith no email, the phone alone is the key. It must start with + and a country code. Iris\nupdates the one active contact that holds the number, or creates a contact when none does.\nWhen more than one contact holds it, the call writes nothing. For a 409, find them with\n`contacts_find_by_endpoint` and update one with `contacts_update`. When no active contact holds\nit and an archived contact has it as its main phone, the call answers 409 and writes nothing:\nrestore that contact with `contacts_restore`. An archived contact never matches otherwise.\n\nA match outside the key's reach (its location scope or own-records limit) answers 404, as a missing contact does, before any write.\nWith no email, a reach-limited key gets 404 if any phone holder is outside its reach. It gets 409 for several holders only when all are reachable.\nThe holder reach check covers every holder in one database call.\nA contact outside the key's reach answers 404 even when this key created it, for example when unlinked at its location or not yet the member's client.\nFor a location key, a concurrent create of the same contact at the caller's location merges into that contact.\nAn own-records key gets 404 until the contact is the member's client.\nThis is the same existence signal Zapier upsert gives. An unknown email or phone still creates a contact.\n\nOnly contacts this call creates get a location link. Matched contacts keep their links.\nSend optional `location_id` within the key scope and organization, or receive 403 `insufficient_role`.\nA key with one location implies it. Several locations require `location_id` on creation, or 400 `location_id_required`.\nAn explicit inactive location answers 400 `location_inactive` on creation. An inactive implied location creates unlinked.\nOrganization-wide keys without `location_id` and keys with no locations create unlinked.\nA create and its location link are one write. A failed link leaves no contact and answers an error the caller can retry.\n\nA stage value in `fields` must be a pipeline stage string. Empty strings and null clear it. Whitespace-only strings clear it and are stored as an empty string.\nChanging the stage on an existing contact fires `stage_changed` automations and the\n`crm.contact.stage_changed` event. A new contact fires only lead-created automations.\n\n`cancel_events` are processed first, then `events` are fired, so one request can replace\nthe journey a contact is on. Cancellations and other events are best effort.\n`assessment_abandoned` requires transactional acceptance: failures fail the request even if\nthe contact was already upserted. Only a matching `assessmentAbandonment` receipt with\n`status: accepted` confirms durable enrollment acceptance; delivery is not guaranteed.\nAn event whose name no active sequence subscribes to leaves its `key` unspent, so a later\nretry still enrolls.\n\n`skip_automations: true` makes the upsert itself start nothing: no \"New lead\" sequence, no\n`crm.lead.created`, `crm.contact.updated` or `crm.contact.stage_changed` event, or stage-change automation.\nNamed `events` and `cancel_events` still run.\nexternal_sync keeps token-loss outages as disconnected with their last sync time. Retired bindings are omitted.",
         "operationId": "contacts_upsert",
         "parameters": [],
         "requestBody": {
@@ -1003,7 +1003,7 @@
             }
           },
           "400": {
-            "description": "Invalid request body, neither email nor valid phone, `location_id_required` for creation with several locations, or `location_inactive` for an explicit inactive location on creation",
+            "description": "Invalid request body, neither email nor valid phone, a non-string stage, unknown pipeline stage in `fields` or a live stage field with no options, `location_id_required` for creation with several locations, `location_inactive` for an explicit inactive location on creation, or a create-time link to a location that is no longer active in this organization",
             "content": {
               "application/json": {
                 "schema": {
@@ -1043,7 +1043,14 @@
             }
           },
           "409": {
-            "description": "No email was sent and multiple reachable contacts hold the phone, or an archived reachable contact has it as its main phone"
+            "description": "`stage_config_changed`: the live stage key changed and `fields` includes the new key. Retry the request. Also returned when no email was sent and multiple reachable contacts hold the phone, or an archived reachable contact has it as its main phone.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
           },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
@@ -1061,7 +1068,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Create or update a contact by email or phone",
+        "summary": "Upsert a contact by email or phone, checking pipeline stages",
         "tags": [
           "Contacts",
           "Public API"
@@ -59475,7 +59482,7 @@
           },
           "fields": {
             "type": "object",
-            "description": "Arbitrary key/value data merged into the contact's CRM field values. At most 200 keys, each at most 255 characters long. With assessment_abandoned, user_message_count must be a numeric nonnegative safe integer when present. Cohort routing uses this request's count: started requires a positive count, never_started requires zero, and missing counts match only unfiltered triggers.",
+            "description": "Arbitrary key/value data merged into the contact's CRM field values. Empty strings and null clear the live stage. Whitespace-only stage strings clear it and are stored as an empty string. At most 200 keys, each at most 255 characters long. With assessment_abandoned, user_message_count must be a numeric nonnegative safe integer when present. Cohort routing uses this request's count: started requires a positive count, never_started requires zero, and missing counts match only unfiltered triggers.",
             "additionalProperties": true,
             "maxProperties": 200,
             "propertyNames": {
@@ -59501,7 +59508,7 @@
           "skip_automations": {
             "type": "boolean",
             "default": false,
-            "description": "When true, the upsert itself starts nothing. A new contact starts no \"New lead\" (lead_created) sequence and sends no `crm.lead.created` event to integrations. An updated contact sends no `crm.contact.updated` event. `events` and `cancel_events` still run as named. Use it to load existing customers. Defaults to false."
+            "description": "When true, the upsert itself starts nothing. A new contact starts no \"New lead\" (lead_created) sequence and sends no `crm.lead.created` event to integrations. An updated contact sends no `crm.contact.updated` or `crm.contact.stage_changed` event and starts no `stage_changed` automation. `events` and `cancel_events` still run as named. Use it to load existing customers. Defaults to false."
           }
         },
         "required": [

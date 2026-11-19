@@ -818,8 +818,10 @@ phone as its main phone: ask the user before you restore it, then retry.
 For `contacts_upsert`, a 404 means the match is outside the key's location scope or own-records reach.
 It writes nothing. Do not retry with another key or guess another contact.
 With no email, a reach-limited key gets 404 if any phone holder is outside its reach. It gets 409 for several holders only when all are reachable.
+The holder reach check covers every holder in one database call.
 A contact outside the key's reach answers 404 even when this key created it, for example when unlinked at its location or not yet the member's client.
-During concurrent creates, the second call can return 404 until the first links the contact, so retry with the same key.
+For a location key, a concurrent create of the same contact at the caller's location merges into that contact.
+An own-records key gets 404 until the contact is the member's client.
 An unknown email or phone still creates a contact. This is the same existence signal Zapier upsert gives.
 
 For `contacts_upsert`, send optional UUID `location_id` within the key scope and organization.
@@ -829,7 +831,19 @@ A 403 `insufficient_role` with message `Location access denied` means the locati
 A 400 `location_inactive` means an explicit location is inactive on creation. Choose an active location before retrying.
 A sole inactive implied location creates unlinked. An organization-wide key without `location_id`, or a key with no locations, creates unlinked.
 Only new contacts get the link. Matched contacts keep their links, including when `location_id` is supplied.
-If linking fails after creation, the call still answers 200 with `created: true`, and the contact stays unlinked. A location-scoped key cannot read it, and its retry answers 404. An organization-wide key can link it with `contacts_set_locations`.
+A create and its location link are one write. A failed link leaves no contact and answers an error the caller can retry.
+
+For a stage in `contacts_upsert.fields`, read `crm_fields_get_stage_config` for the stage key and
+`contacts_list_stages` for valid stage ids. Send a stage id under that key. An unknown non-empty value
+or a live enum stage field without options answers 400 before writing. Empty strings and null clear the stage.
+Whitespace-only stage strings clear it and are stored as an empty string.
+A non-string, non-null stage value answers 400 `Stage must be a string`. Null or non-array enum options count as no options.
+Malformed option items are skipped, so a null item no longer causes a 500, and an item whose `value` is not a string drops out of `crm_fields_list` and `contacts_list_stages`.
+A changed live stage key returns 409 `stage_config_changed` if `fields` contains the new key.
+Read the current stage configuration and retry.
+A stale stage key remains an ordinary field. A changed, non-empty stage on an existing contact fires
+`stage_changed` automations and `crm.contact.stage_changed`. A new contact fires only lead-created automations.
+`skip_automations: true` suppresses these stage-change effects.
 
 A contact can hold several phone numbers, email addresses and postal addresses, each with a label
 and a primary flag.
@@ -1121,6 +1135,7 @@ values. Every member may read the catalog. No key can change a field yet.
 ### 12. Report assessment abandonment
 
 1. Call `contacts_upsert` with the contact, `fields.user_message_count`, and an `assessment_abandoned` event with a stable session key.
+   If `fields` includes the configured stage key, send a pipeline stage id. A changed stage on an existing contact fires `stage_changed` automations.
 2. Count nonempty user answers in the current session. Send numeric zero for a session with no answers.
 3. Read `assessmentAbandonment`. `accepted` confirms a durable receipt. Keep retry eligibility for `no_subscriber` or a request failure.
 4. Record `legacy_unverified` for operator reconciliation. Do not invent a new key to bypass an existing receipt.
@@ -1304,6 +1319,7 @@ the user to use a personal key or an agent connection.
    the field that holds the stage. Keep both `updated_at` values.
 2. To change the stages, edit the `enum_options` of the stage field. Each option's `value` is the
    stage id that `contacts_update` takes as `stage_id`, and its `label` is the name people see.
+   `contacts_upsert` accepts the same stage id in `fields` under the configured stage key.
    Do not change the `value` of a stage contacts are on: they stay on the old id.
 3. Call `crm_fields_set` with every field from step 1, in order, and the edited stage field. It
    replaces the whole list: a field you leave out is turned off. Ask the user first. Send the
@@ -1724,7 +1740,9 @@ Use this for a bulk load or an ETL of people who are already customers.
 2. Leave `events` empty unless the user names one.
 3. Tell the user that later broadcasts and sequences can still reach these contacts.
 
-With the flag, a customer who is already a contact sends no `crm.contact.updated` event either.
+With the flag, an existing contact sends no `crm.contact.updated` or `crm.contact.stage_changed` event and starts no `stage_changed` automation.
+Stage values in `fields` must still be pipeline stage ids, or empty string or null to clear the stage.
+Whitespace-only stage strings clear it and are stored as an empty string.
 
 
 ### 44. Create an organization

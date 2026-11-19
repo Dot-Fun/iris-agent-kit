@@ -1584,14 +1584,14 @@ Update an endpoint label or primary flag
 
 `POST /api/v1/contacts`. Scope: `contacts:write`. Member: `action`. Action (`x-iris-action`): `contacts.ingest`. Confirm: required. Changes: `contacts`, `sequences`.
 
-Create or update a contact by email or phone
+Upsert a contact by email or phone, checking pipeline stages
 
 - `name` (body, string, required): Contact full name
 - `location_id` (body, string uuid): Location to link only when this call creates a contact. Must belong to the key scope and organization. One scoped location is implied. Several scoped locations require this field on creation. Explicit inactive locations answer location_inactive. An inactive implied location creates unlinked. Matched contacts keep their links.
 - `email` (body, string email): Contact email address. When present it is the upsert key, matched case-insensitively. Send an email, a phone, or both.
 - `phone` (body, string): Contact phone number. With an email, it is stored as a non-primary lead endpoint and the contact stays email-keyed with phone_number NULL. With no email, it is the upsert key: it must start with + and a country code, and it matches every active contact that holds the number.
 - `source` (body, string, required): Attribution source
-- `fields` (body, object): Arbitrary key/value data merged into the contact's CRM field values. At most 200 keys, each at most 255 characters long. With assessment_abandoned, user_message_count must be a numeric nonnegative safe integer when present. Cohort routing uses this request's count: started requires a positive count, never_started requires zero, and missing counts match only unfiltered triggers.
+- `fields` (body, object): Arbitrary key/value data merged into the contact's CRM field values. Empty strings and null clear the live stage. Whitespace-only stage strings clear it and are stored as an empty string. At most 200 keys, each at most 255 characters long. With assessment_abandoned, user_message_count must be a numeric nonnegative safe integer when present. Cohort routing uses this request's count: started requires a positive count, never_started requires zero, and missing counts match only unfiltered triggers.
 - `cancel_events` (body, array of ContactCancelEventDto): Sequence events to CANCEL for this contact, unconditionally. Processed before `events`, and idempotent because a second call cancels nothing. Use it for a goal exit, such as ending a win-back nurture once the contact converts.
   - `name` (body, string, required): Event name whose enrollments should be cancelled for this contact.
   - `reason` (body, string, one of `replied`, `booked`, `opted_out`, `manual`, `sequence_deactivated`, `converted`, `stage_reached`, `goal_met`, `schedule_cancelled`, `assessment_retake`): Why the journey ended. Defaults to `goal_met`.
@@ -1601,7 +1601,7 @@ Create or update a contact by email or phone
   - `supersedes` (body, array of ContactCancelEventDto): Events whose running enrollments this one REPLACES. Cancelled after this event claims its `key` and before it enrolls, so a redelivery with the same `key` cancels nothing and enrolls nothing. Use this for mutually exclusive states of one subject; use the top-level `cancel_events` for an unconditional exit.
     - `name` (body, string, required): Event name whose enrollments should be cancelled for this contact.
     - `reason` (body, string, one of `replied`, `booked`, `opted_out`, `manual`, `sequence_deactivated`, `converted`, `stage_reached`, `goal_met`, `schedule_cancelled`, `assessment_retake`): Why the journey ended. Defaults to `goal_met`.
-- `skip_automations` (body, boolean): When true, the upsert itself starts nothing. A new contact starts no "New lead" (lead_created) sequence and sends no `crm.lead.created` event to integrations. An updated contact sends no `crm.contact.updated` event. `events` and `cancel_events` still run as named. Use it to load existing customers. Defaults to false.
+- `skip_automations` (body, boolean): When true, the upsert itself starts nothing. A new contact starts no "New lead" (lead_created) sequence and sends no `crm.lead.created` event to integrations. An updated contact sends no `crm.contact.updated` or `crm.contact.stage_changed` event and starts no `stage_changed` automation. `events` and `cancel_events` still run as named. Use it to load existing customers. Defaults to false.
 
 ### contacts_upsert_company
 
