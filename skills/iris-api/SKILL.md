@@ -793,7 +793,7 @@ It may book a new client: any contact at its locations whose id it has.
    entries with each provider's status and last sync time; they never include provider ids.
 5. To see what happened with the contact, call `contacts_list_interactions` with the `contactId`.
    It lists calls, chats and SMS threads, newest first. Email is in `conversations_list`. Filter with `channel` or `status`. A `page` past the last interaction answers 400.
-   To read the contact's notes, call `contacts_list_notes` with the `contactId`. It pages newest first, with `limit` at most 100. A `page` past the last note answers 400. If the `contact.notes` view grant is denied, it returns an empty page and `restricted_fields: ["contact.notes"]`.
+   To read the contact's notes, call `contacts_list_notes` with the `contactId`. It pages newest first, with `limit` at most 100. A `page` past the last note answers 400. If the `contact.notes` view grant is denied, it returns an empty page and `restricted_fields: ["contact.notes"]`. A denied page always reports `page: 1`.
    A MEMBER, and a MANAGER without the contacts power, get `insufficient_role` there. Notes that belong to one location (dashboard notes and GoHighLevel syncs) are not listed.
    Keep a token-loss entry with `status: disconnected` and its last sync time. Ask the owner to reconnect.
    Retired bindings are omitted. Google integration account health uses calendar bindings, so event bindings cannot hide token loss.
@@ -1956,7 +1956,8 @@ A staff member is a person who works for the business. A staff member needs no l
 archived one stays readable.
 
 1. Call `staff_list`. Each staff member has an `id`, a `name`, a `status` (`active` takes bookings,
-   `inactive` does not), `has_login`, `location_ids`, `offering_ids`, `archived_at` and
+   `inactive` does not), `has_login` (true only when an active login is linked), `location_ids`,
+   `offering_ids`, `archived_at` and
    `updated_at`. The list is sorted by name and pages with `page` and `limit`.
 2. Skip a staff member with `archived_at` set when you pick someone to book: the business archived
    them. Their past appointments still name them.

@@ -4154,7 +4154,7 @@
         "x-member-access": "action"
       },
       "get": {
-        "description": "The organization-shared notes on one contact, newest first: those `contacts_add_note` and Zapier write. `contacts_get` counts every note, so its `notes_count` can exceed `total` here.\nEach note gives its `body`, its `source` (`user`, `zapier`, `system` or `api`), its author when a team member wrote it or the API acted for one, and when it was written.\nSource `api` is a note added through /api/v1 (`contacts_add_note`). Its author is the user the credential acted for: the user who granted an OAuth client, or a personal key’s owner. A note added with an organization key has no author.\nPage with `page` and `limit`. `limit` is at most 100 and defaults to 25: a larger `limit` answers 400.\nA `page` past the last note answers 400.\nA contact outside the credential’s record reach, including a missing contact, answers 404.\nWhen the contact notes view grant is denied, the answer is an empty page with `restricted_fields: [\"contact.notes\"]`.\nNotes that belong to one location are not listed: the ones a team member writes in the dashboard and the ones synced from GoHighLevel. They are private to their location and revisioned.\nA principal without `contacts.details` answers 403 `action_not_held`. A MANAGER with the contacts power reads notes within the credential’s record reach.",
+        "description": "The organization-shared notes on one contact, newest first: those `contacts_add_note` and Zapier write. `contacts_get` counts every note, so its `notes_count` can exceed `total` here.\nEach note gives its `body`, its `source` (`user`, `zapier`, `system` or `api`), its author when a team member wrote it or the API acted for one, and when it was written.\nSource `api` is a note added through /api/v1 (`contacts_add_note`). Its author is the user the credential acted for: the user who granted an OAuth client, or a personal key’s owner. A note added with an organization key has no author.\nPage with `page` and `limit`. `limit` is at most 100 and defaults to 25: a larger `limit` answers 400.\nA `page` past the last note answers 400.\nA contact outside the credential’s record reach, including a missing contact, answers 404.\nWhen the contact notes view grant is denied, the answer is an empty page with `restricted_fields: [\"contact.notes\"]`.\nA denied page always reports `page: 1`.\nNotes that belong to one location are not listed: the ones a team member writes in the dashboard and the ones synced from GoHighLevel. They are private to their location and revisioned.\nA principal without `contacts.details` answers 403 `action_not_held`. A MANAGER with the contacts power reads notes within the credential’s record reach.",
         "operationId": "contacts_list_notes",
         "parameters": [
           {
@@ -37936,7 +37936,7 @@
     },
     "/api/v1/staff": {
       "get": {
-        "description": "Every staff member of the organization by name: the people who do the work and can be booked.\nA staff member needs no login, and `has_login` says whether one is linked. `status` says whether\nthe person takes bookings. An archived staff member stays in the list with `archived_at` set.\n`location_ids` lists where the person works. The `id` is the `team_member_id` that appointments\nand availability name. `offering_ids` lists the services the person handles.\n\nA member’s or manager’s credential, and a location-limited key, read only the staff who work at one of its locations, each with only those locations. Any other staff member answers 404.",
+        "description": "Every staff member of the organization by name: the people who do the work and can be booked.\nA staff member needs no login, and `has_login` says whether an active one is linked. `status` says whether\nthe person takes bookings. An archived staff member stays in the list with `archived_at` set.\n`location_ids` lists where the person works. The `id` is the `team_member_id` that appointments\nand availability name. `offering_ids` lists the services the person handles.\n\nA member’s or manager’s credential, and a location-limited key, read only the staff who work at one of its locations, each with only those locations. Any other staff member answers 404.",
         "operationId": "staff_list",
         "parameters": [
           {
@@ -79899,7 +79899,7 @@
           },
           "has_login": {
             "type": "boolean",
-            "description": "Whether a login of the organization is linked to the staff member. A staff member needs no login."
+            "description": "Whether an active login of the organization is linked to the staff member. A login whose membership is deactivated counts as none. A staff member needs no login."
           },
           "location_ids": {
             "description": "The locations the staff member works at, in the order the business books them. A member’s or manager’s credential sees only its own locations here.",
