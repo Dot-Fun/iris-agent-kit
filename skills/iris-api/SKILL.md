@@ -982,6 +982,8 @@ enrollment, and resume cannot bring them back.
    key that acts as a member limited to some locations. When the step runs, it skips the contact and moves on while
    the target is off or paused, already holds the contact, or already took the contact from this
    sequence once.
+   An invoice reminder sequence refuses `add_to_sequence` with 400 `invoice_reminder_add_to_sequence` because it has no contact to enroll.
+   Remove the Add to sequence step to save.
 3. To start from a sequence that works, call `sequences_duplicate` instead and change the copy.
 4. Call `sequences_update` to change steps, delays or copy. `steps`, `edges` and
    `exit_conditions` each replace the whole list, so start from `sequences_get`, edit, and send

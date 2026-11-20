@@ -5203,7 +5203,14 @@
             }
           },
           "400": {
-            "description": "Not exactly one of contact_id, email and document_id, an unknown start step, or a broadcast"
+            "description": "Not exactly one of contact_id, email and document_id, an unknown start step, a broadcast, or document_id enrollment into an active, unpaused billing sequence containing add_to_sequence, unless the invoice is already enrolled in it (`invoice_reminder_add_to_sequence`). An invoice reminder has no contact to enroll.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
@@ -18077,7 +18084,14 @@
             }
           },
           "400": {
-            "description": "Invalid body"
+            "description": "Invalid body, or an invoice reminder sequence refuses add_to_sequence with `invoice_reminder_add_to_sequence` because it has no contact to enroll.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
@@ -18314,7 +18328,14 @@
             }
           },
           "400": {
-            "description": "The update would be refused"
+            "description": "The update would be refused. An invoice reminder sequence refuses add_to_sequence with `invoice_reminder_add_to_sequence` because it has no contact to enroll.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
@@ -18635,7 +18656,14 @@
             }
           },
           "400": {
-            "description": "The version no longer passes the save rules, for example its audience is gone"
+            "description": "The version no longer passes the save rules. An invoice reminder sequence refuses add_to_sequence with `invoice_reminder_add_to_sequence` because it has no contact to enroll.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
@@ -69627,7 +69655,7 @@
               "add_to_sequence",
               "create_task"
             ],
-            "description": "`email` and `sms` message the contact. `wait` only waits. `task` notifies the team: its subject is the title and its body the note. `add_to_sequence` enrolls the contact in the sequence `target_sequence_id` names, and the contact moves on to the next step. `create_task` creates a follow-up task from `task_config`."
+            "description": "`email` and `sms` message the contact. `wait` only waits. `task` notifies the team: its subject is the title and its body the note. `add_to_sequence` enrolls the contact in the sequence `target_sequence_id` names, and the contact moves on to the next step. An invoice reminder sequence refuses add_to_sequence because it has no contact to enroll. `create_task` creates a follow-up task from `task_config`."
           },
           "task_config": {
             "description": "Required when channel is create_task.",
@@ -69701,7 +69729,7 @@
             "type": "string",
             "format": "uuid",
             "nullable": true,
-            "description": "The sequence an `add_to_sequence` step enrolls the contact in: the `id` of another automation of the organization from `sequences_list`. Required on an `add_to_sequence` step and ignored on the others. The sequence itself, a broadcast, a team notice (it sends to the team), or an id that names no sequence of the organization answers 400. A credential that acts as a member limited to some locations may name only a sequence at one of them or an organization-wide one, and any other answers the same 400. An inactive or paused target saves, and the step then skips the contact. The step never enrolls a contact twice from the same source sequence, which stops a loop."
+            "description": "The sequence an `add_to_sequence` step enrolls the contact in: the `id` of another automation of the organization from `sequences_list`. Required on an `add_to_sequence` step and ignored on the others. The sequence itself, a broadcast, a team notice (it sends to the team), or an id that names no sequence of the organization answers 400. A credential that acts as a member limited to some locations may name only a sequence at one of them or an organization-wide one, and any other answers the same 400. An inactive or paused target saves, and the step then skips the contact. The step never enrolls a contact twice from the same source sequence, which stops a loop. An invoice reminder sequence refuses add_to_sequence because it has no contact to enroll."
           }
         },
         "required": [
