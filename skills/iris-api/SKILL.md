@@ -1080,6 +1080,7 @@ A member can reserve only their own times at a staffed location. Holds use appoi
    a home visit, and an `idempotency_key` of your own. Leave out `team_member_id` to book the
    first team member who is free.
 7. On 409, read `error`. `offering_required`: choose from the `booking_options` in the body.
+   `preferred_staff_unavailable`: ask before choosing another person, including after `appointments_reschedule`.
    `slot_taken`, `no_team_member_available` or `outside_hours`: check availability again and
    offer another time. `team_member_not_eligible`: offer another team member.
    `address_out_of_area`: tell the user the address is not covered. `duration_mismatch`: make

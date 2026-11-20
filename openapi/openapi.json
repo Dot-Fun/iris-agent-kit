@@ -6583,7 +6583,7 @@
             }
           },
           "409": {
-            "description": "`recurring_series_not_supported`: the appointment repeats. Change it in the Iris dashboard.\n\n`appointment_cancelled`: the appointment is cancelled. Book a new one. `appointment_started`: the appointment has started. `hold_not_found`, `hold_expired`, `invalid_request` or `slot_taken`: the hold cannot confirm."
+            "description": "`recurring_series_not_supported`: the appointment repeats. Change it in the Iris dashboard.\n\n`appointment_cancelled`: the appointment is cancelled. Book a new one. `appointment_started`: the appointment has started. `preferred_staff_unavailable`: the kept staff calendar cannot be verified. `slot_taken`: live busy time overlaps the requested slot. `hold_not_found`, `hold_expired`, `invalid_request` or `slot_taken`: the hold cannot confirm."
           },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
