@@ -57143,7 +57143,7 @@
             }
           },
           "403": {
-            "description": "SQL action access is required. Denials return the decision reason and approvals_required. A needs_approval decision never executes. The key does not carry the `customer_subscriptions:write` scope; `required` names it",
+            "description": "SQL action access is required. Denials return the decision reason and approvals_required. A needs_approval decision never executes. The key does not carry the `customer_subscriptions:write` scope; `required` names it\n\nAn Iris-issued sale drafts an invoice under the caller. Missing `invoices.draft_write` returns `action_not_held`. A second-person control on it returns `second_person`. Nothing is created or changed.",
             "content": {
               "application/json": {
                 "schema": {
@@ -57586,7 +57586,7 @@
             }
           },
           "403": {
-            "description": "SQL action access is required. Denials return the decision reason and approvals_required. A needs_approval decision never executes. The key does not carry the `customer_subscriptions:write` scope; `required` names it",
+            "description": "SQL action access is required. Denials return the decision reason and approvals_required. A needs_approval decision never executes. The key does not carry the `customer_subscriptions:write` scope; `required` names it\n\nAn immediate upgrade drafts an invoice under the caller. Missing `invoices.draft_write` returns `action_not_held`. A second-person control on it returns `second_person`. Nothing is created or changed.",
             "content": {
               "application/json": {
                 "schema": {
@@ -57870,7 +57870,7 @@
             }
           },
           "403": {
-            "description": "SQL action access is required. Denials return the decision reason and approvals_required. A needs_approval decision never executes. The key does not carry the `customer_subscriptions:write` scope; `required` names it",
+            "description": "SQL action access is required. Denials return the decision reason and approvals_required. A needs_approval decision never executes. The key does not carry the `customer_subscriptions:write` scope; `required` names it\n\nAn immediate resume drafts an invoice under the caller. Missing `invoices.draft_write` returns `action_not_held`. A second-person control on it returns `second_person`. Nothing is created or changed.",
             "content": {
               "application/json": {
                 "schema": {

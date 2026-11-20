@@ -415,6 +415,8 @@ To pause and resume:
    Both are machine gated and return 403 `needs_approval` for a key. The resume undo target accepts
    optional `expected_updated_at` from the subscription read. A stale value answers 409 `stale_revision`.
 
+Immediate upgrades through `customer_subscriptions_change` and immediate `customer_subscriptions_resume` draft invoices under the caller, answering 403 `action_not_held` or `second_person` instead of 500.
+
 A refused pause can return 409 `pause_not_allowed`, `subscription_change_pause_conflict`, or
 `issuer_conflict`. Invalid change fields, tax rates, allowance owner scope, or dates return 400
 `subscription_change_tax_mismatch`, `allowance_owner_scope_invalid`, or their field error code.
@@ -445,6 +447,8 @@ A part-paid or credited issued first invoice leaves the subscription pending and
 `invoice_settled` or `invoice_credited`. The cancel succeeds once the money is released or credited.
 
 `customer_subscriptions_create` answers 400 with the documents module's invoice-issue codes.
+An Iris-issued create drafts period 1's invoice under the caller: missing `invoices.draft_write` answers 403 `action_not_held`, while second-person control on that action answers 403 `second_person`.
+Either refusal creates nothing.
 
 Use `customer_subscriptions_list` for `issuer`, state, plan, quantity and `next_boundary_at`; filter by
 `bill_to_contact_id` or `bill_to_group_id`;
