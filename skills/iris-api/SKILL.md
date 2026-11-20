@@ -341,6 +341,17 @@ Use `service_plans_list`, `service_plans_get`, `service_plans_create`, `service_
 `service_plans_set_price` and `service_plans_set_offerings` for plan configuration. Use
 `allowances_list`, `allowances_get`, `allowances_get_balance`, `allowances_list_entries` and
 `allowances_grant` for grants and their append-only ledger.
+Send an `idempotency_key` when setting a price with `service_plans_set_price`.
+The same key and details within 24 hours return the first answer without another price or terms version.
+Receipts belong to one credential and operation. Changed details return 409 `idempotency_key_reused`.
+Unavailable Redis returns 503 `idempotency_unavailable` before any keyed write. Retry later with the same key.
+Without a key, each price call writes again.
+`service_plans_set_offerings` returns 400 `duplicate_offering_ids` when the list repeats an offering id,
+or another call changed this plan's offerings at the same time.
+Remove duplicate ids. Read the plan and send the set again.
+All four service-plan writes can return 409 `allowance_conflict` on their allowance-plan path.
+Grant, transfer and direct-use writes can return the same code.
+It means the allowance write conflicts with an existing record. Read the current state before retrying.
 `allowances_record_usage` records units used for work on a work record or task without an appointment.
 Send the grant, recipient, quantity, source, reason and your `idempotency_key`.
 The key is scoped to your API key or OAuth connection.
@@ -417,8 +428,9 @@ plan. Set them up in this order:
 1. Create a subscription plan with `service_plans_create`, `plan_type: "subscription"`, a
    `billing_interval` and, to grant units each period, an `allowance_plan_id` with
    `units_per_period`.
-2. Price it with `service_plans_set_price` in each currency you sell it in. A price is at least 1
-   minor unit, and a zero price answers 400 `subscription_price_invalid`.
+2. Price it with `service_plans_set_price` and an `idempotency_key` in each currency you sell it in.
+   Retry the same key and details to receive the first answer without another price or terms version.
+   A price is at least 1 minor unit. A zero price answers 400 `subscription_price_invalid`.
 3. Ask a staff member to sell it in the Iris dashboard. A key's `customer_subscriptions_create`
    answers 403 `needs_approval` and creates nothing, because selling a subscription needs approval.
 4. Read `customer_subscriptions_list_periods` to find period 1's `invoice_id`. The subscription

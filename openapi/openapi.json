@@ -55877,7 +55877,7 @@
             }
           },
           "409": {
-            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key\n\n`allowance_conflict`: the allowance write conflicts with an existing record. Read the current state before retrying.",
             "content": {
               "application/json": {
                 "schema": {
@@ -55918,7 +55918,7 @@
           "Public API"
         ],
         "x-iris-changes": [
-          "payments"
+          "service_plans"
         ],
         "x-iris-confirm": true,
         "x-iris-idempotent": true,
@@ -56062,6 +56062,16 @@
               }
             }
           },
+          "409": {
+            "description": "`allowance_conflict`: the allowance write conflicts with an existing record. Read the current state before retrying.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
             "content": {
@@ -56084,7 +56094,7 @@
           "Public API"
         ],
         "x-iris-changes": [
-          "payments"
+          "service_plans"
         ],
         "x-iris-confirm": true,
         "x-iris-reverse": {
@@ -56096,6 +56106,7 @@
     },
     "/api/v1/service-plans/{id}/price": {
       "post": {
+        "description": "Retry with the same idempotency_key to receive the first answer. The same key and details within 24 hours return the first answer without another price or terms version. Without a key, every call writes a new price.",
         "operationId": "service_plans_set_price",
         "parameters": [
           {
@@ -56113,7 +56124,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SetPlanPriceDto"
+                "$ref": "#/components/schemas/SetPublicPlanPriceDto"
               }
             }
           }
@@ -56159,8 +56170,28 @@
               }
             }
           },
+          "409": {
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key\n\n`allowance_conflict`: the allowance write conflicts with an existing record. Read the current state before retrying.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
             "content": {
               "application/json": {
                 "schema": {
@@ -56181,9 +56212,10 @@
           "Public API"
         ],
         "x-iris-changes": [
-          "payments"
+          "service_plans"
         ],
         "x-iris-confirm": true,
+        "x-iris-idempotent": true,
         "x-iris-reverse": {
           "irreversible": "A published price remains in terms history."
         },
@@ -56216,6 +56248,16 @@
           }
         },
         "responses": {
+          "400": {
+            "description": "`duplicate_offering_ids`: the list repeats an offering id, or another call changed this plan's offerings at the same time. Remove duplicate ids. Read the plan and send the set again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
             "content": {
@@ -56238,6 +56280,16 @@
           },
           "404": {
             "description": "No such service plan in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`allowance_conflict`: the allowance write conflicts with an existing record. Read the current state before retrying.",
             "content": {
               "application/json": {
                 "schema": {
@@ -56278,7 +56330,7 @@
           "Public API"
         ],
         "x-iris-changes": [
-          "payments"
+          "service_plans"
         ],
         "x-iris-confirm": true,
         "x-iris-reverse": {
@@ -56396,7 +56448,7 @@
             }
           },
           "409": {
-            "description": "`idempotency_conflict`: the key names another plan, owner, origin or payment. `allowance_source_already_granted`: the payment already funds a grant",
+            "description": "`idempotency_conflict`: the key names another plan, owner, origin or payment. `allowance_source_already_granted`: the payment already funds a grant. `allowance_conflict`: the allowance write conflicts with an existing record. Read the current state before retrying.",
             "content": {
               "application/json": {
                 "schema": {
@@ -56676,7 +56728,7 @@
             }
           },
           "409": {
-            "description": "`allowance_insufficient`, `allowance_subscription_pending`, `idempotency_conflict`, or `allowance_conflict`: no units moved",
+            "description": "`allowance_insufficient`, `allowance_subscription_pending`, or `idempotency_conflict`: no units moved. `allowance_conflict`: the allowance write conflicts with an existing record. Read the current state before retrying.",
             "content": {
               "application/json": {
                 "schema": {
@@ -56909,7 +56961,7 @@
             }
           },
           "409": {
-            "description": "`allowance_insufficient`, `idempotency_conflict`, or `allowance_conflict`: no use was recorded",
+            "description": "`allowance_insufficient` or `idempotency_conflict`: no use was recorded. `allowance_conflict`: the allowance write conflicts with an existing record. Read the current state before retrying.",
             "content": {
               "application/json": {
                 "schema": {
@@ -87852,9 +87904,14 @@
           }
         }
       },
-      "SetPlanPriceDto": {
+      "SetPublicPlanPriceDto": {
         "type": "object",
         "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+          },
           "currency": {
             "type": "string"
           },

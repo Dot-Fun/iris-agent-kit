@@ -5519,7 +5519,7 @@ Change a send window
 
 ### service_plans_create
 
-`POST /api/v1/service-plans`. Scope: `service_plans:write`. Member: `deny`. Confirm: required. Changes: `payments`. Idempotent: send `idempotency_key`.
+`POST /api/v1/service-plans`. Scope: `service_plans:write`. Member: `deny`. Confirm: required. Changes: `service_plans`. Idempotent: send `idempotency_key`.
 
 Create a service plan: an allowance plan, or a subscription plan with plan_type subscription
 
@@ -5559,7 +5559,7 @@ List service plans with plan_type, live prices and offering_ids
 
 ### service_plans_set_offerings
 
-`POST /api/v1/service-plans/{id}/offerings`. Scope: `service_plans:write`. Member: `deny`. Confirm: required. Changes: `payments`.
+`POST /api/v1/service-plans/{id}/offerings`. Scope: `service_plans:write`. Member: `deny`. Confirm: required. Changes: `service_plans`.
 
 Set the offerings an allowance plan covers
 
@@ -5568,17 +5568,18 @@ Set the offerings an allowance plan covers
 
 ### service_plans_set_price
 
-`POST /api/v1/service-plans/{id}/price`. Scope: `service_plans:write`. Member: `deny`. Confirm: required. Changes: `payments`.
+`POST /api/v1/service-plans/{id}/price`. Scope: `service_plans:write`. Member: `deny`. Confirm: required. Changes: `service_plans`. Idempotent: send `idempotency_key`.
 
 Set a service plan price. A subscription already sold keeps the price it was sold at
 
 - `id` (path, string uuid, required)
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
 - `currency` (body, string, required)
 - `amount_minor` (body, number, required)
 
 ### service_plans_update
 
-`PATCH /api/v1/service-plans/{id}`. Scope: `service_plans:write`. Member: `deny`. Confirm: required. Changes: `payments`.
+`PATCH /api/v1/service-plans/{id}`. Scope: `service_plans:write`. Member: `deny`. Confirm: required. Changes: `service_plans`.
 
 Update a service plan
 
