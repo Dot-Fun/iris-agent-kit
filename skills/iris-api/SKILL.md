@@ -2070,6 +2070,8 @@ A new service is inactive and has no duration, so customers cannot book it until
    them. It changes only the fields sent. Null `duration_minutes` clears the duration and turns the
    service off.
 3. Call `offerings_update_pricing` with `price_kind`, `price_minor` and `price_currency`.
+   `price_minor_exponent` applies to `price_currency`, or to the organization default when `price_currency` is null.
+   A price write must send `price_currency`.
 4. Call `offerings_set_locations` with every `location_ids` that offers it. It replaces the set.
 5. Call `offerings_activate`, after the user confirms: customers can then book it. A service with
    no duration, or one already active, answers 409 and changes nothing.
