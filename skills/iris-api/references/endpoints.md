@@ -2127,7 +2127,7 @@ Cancel a customer subscription at period end, or at once when the business allow
 
 `POST /api/v1/customer-subscriptions/{id}/change`. Scope: `customer_subscriptions:write`. Member: `action`. Action (`x-iris-action`): `subscriptions.change`. Confirm: required. Changes: `customer_subscriptions`, `invoices`, `allowances`.
 
-Next-period changes replace same-kind schedules and need subscriptions.change. Immediate or dated changes withdraw overlapping schedules, return withdrawn_change_ids and need subscriptions.change_now. Stripe-issued subscriptions refuse next_period and on_date, including omitted timing, so use immediate. Charges can remain draft, extra units wait for payment and credits stay unapplied. Machine gated: a key gets 403 needs_approval and nothing changes
+Next-period changes replace same-kind schedules and need subscriptions.change. Immediate or dated changes withdraw overlapping schedules, return withdrawn_change_ids and need subscriptions.change_now. Stripe-issued subscriptions refuse next_period and on_date, including omitted timing, so use immediate. Charges can remain draft, extra units wait for payment and credits stay unapplied. Machine gated: a key or OAuth token gets 403 needs_approval without execution, unless a matching enabled api_key or oauth_grant rule allows subscriptions.change_now. Scope, role, record access, amount limits and second-person controls still apply
 
 - `id` (path, string uuid, required)
 - `kind` (body, string, required, one of `plan`, `quantity`)

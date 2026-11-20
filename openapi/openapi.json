@@ -53482,6 +53482,7 @@
         "x-member-access": "scoped"
       },
       "post": {
+        "description": "The decision amount is the credit note total that the server calculates from the request lines on the invoice, in the invoice currency. API keys and OAuth grants need an enabled credit_notes.issue action rule whose max_minor, and the role limit, cover that total. Otherwise the call returns 403 machine_actor or amount_limit. Malformed lines return 400 and an unknown invoice returns 404 before any decision. If the invoice changes after the server reads it, for example when another credit note is issued, the call returns 409 stale_revision and writes nothing.",
         "operationId": "credit_notes_create",
         "parameters": [],
         "requestBody": {
@@ -53495,6 +53496,16 @@
           }
         },
         "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditNoteCreateResponseDto"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
             "content": {
@@ -53516,7 +53527,7 @@
             }
           },
           "409": {
-            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key\n\n`idempotency_conflict`: the key already names another invoice, reason or line set",
+            "description": "`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key\n\n`idempotency_conflict`: the key already names another invoice, reason or line set. `stale_revision`: the invoice changed after the server priced the lines",
             "content": {
               "application/json": {
                 "schema": {
@@ -53641,6 +53652,7 @@
     },
     "/api/v1/credit-notes/{id}/issue": {
       "post": {
+        "description": "The decision amount is the credit note total stored on its draft version, in the credit note currency. Issue recalculates the figures and returns 409 figures_changed if that total no longer matches. API keys and OAuth grants need an enabled credit_notes.issue action rule whose max_minor, and the role limit, cover that total. Otherwise the call returns 403 machine_actor or amount_limit.",
         "operationId": "credit_notes_issue",
         "parameters": [
           {
@@ -53664,6 +53676,16 @@
           }
         },
         "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditNoteIssueResponseDto"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
             "content": {
@@ -53750,6 +53772,7 @@
     },
     "/api/v1/invoices/{id}/void": {
       "post": {
+        "description": "The decision amount is the invoice total. Void refuses an invoice with any credited or settled amount, so it voids only an invoice whose whole total is open. An invoice that is not issued (a draft, for example) returns 409 document_not_issued once the decision admits the invoice, and a void invoice answers status exists. An invoice outside the reach of the credential, or an id that is not an invoice, returns 404. API keys and OAuth grants need an enabled invoices.void action rule whose max_minor, and the role limit, cover that total. Otherwise the call returns 403 machine_actor or amount_limit.",
         "operationId": "invoices_void",
         "parameters": [
           {
@@ -57517,7 +57540,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Next-period changes replace same-kind schedules and need subscriptions.change. Immediate or dated changes withdraw overlapping schedules, return withdrawn_change_ids and need subscriptions.change_now. Stripe-issued subscriptions refuse next_period and on_date, including omitted timing, so use immediate. Charges can remain draft, extra units wait for payment and credits stay unapplied. Machine gated: a key gets 403 needs_approval and nothing changes",
+        "summary": "Next-period changes replace same-kind schedules and need subscriptions.change. Immediate or dated changes withdraw overlapping schedules, return withdrawn_change_ids and need subscriptions.change_now. Stripe-issued subscriptions refuse next_period and on_date, including omitted timing, so use immediate. Charges can remain draft, extra units wait for payment and credits stay unapplied. Machine gated: a key or OAuth token gets 403 needs_approval without execution, unless a matching enabled api_key or oauth_grant rule allows subscriptions.change_now. Scope, role, record access, amount limits and second-person controls still apply",
         "tags": [
           "Customer subscriptions",
           "Public API"
@@ -86862,6 +86885,52 @@
           "invoice_id",
           "lines",
           "reason"
+        ]
+      },
+      "CreditNoteCreateResponseDto": {
+        "type": "object",
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/DocumentResponseDto"
+          },
+          "version": {
+            "$ref": "#/components/schemas/DocumentVersionDto"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "exists"
+            ]
+          }
+        },
+        "required": [
+          "document"
+        ]
+      },
+      "CreditNoteIssueResponseDto": {
+        "type": "object",
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/DocumentResponseDto"
+          },
+          "invoice": {
+            "$ref": "#/components/schemas/DocumentResponseDto"
+          },
+          "figures": {
+            "type": "object",
+            "description": "The credit note figures: lines, rates, tax and total. Present only with billing visibility."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "issued",
+              "exists"
+            ]
+          }
+        },
+        "required": [
+          "document",
+          "status"
         ]
       },
       "ReasonDto": {

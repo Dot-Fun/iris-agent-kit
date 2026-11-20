@@ -239,14 +239,14 @@ and `pdf_downloaded` are opens of its public link. Read on while `page * limit` 
 ## Correct invoices and close collection
 
 1. Call `credit_notes_list` or `credit_notes_get` with `invoices:read` to inspect issued and draft credit notes.
-2. Call `credit_notes_create` with the invoice id, line amounts in minor units, a reason and a unique `idempotency_key`.
-3. Call `credit_notes_issue` to freeze the note. The tax difference is rounded once per rate and the invoice balance is updated atomically.
+2. Call `credit_notes_create` with the invoice id, line amounts in minor units, a reason and a unique `idempotency_key`. API keys and OAuth grants need an enabled `credit_notes.issue` action rule and role limit that cover the note total that Iris calculates from the lines. This route takes no `expected_updated_at`: Iris reads the invoice token itself when it prices the lines. If the invoice changes before the write, for example when another credit note is issued, the call answers 409 `stale_revision` and writes nothing. Read the invoice again and retry with a new `idempotency_key`.
+3. Call `credit_notes_issue` to freeze the note. The tax difference is rounded once per rate and the invoice balance is updated atomically. The same `credit_notes.issue` rule must cover the draft note total.
 4. Call `credit_notes_send` with the issued note id, recipients and a unique `idempotency_key` to deliver it by email, SMS or PDF.
-5. Call `invoices_void` with a reason only for an issued invoice with no settlement or credit. The issued number remains.
+5. Call `invoices_void` with a reason only for an issued invoice with no settlement or credit. The issued number remains. API keys and OAuth grants need an enabled `invoices.void` action rule and role limit that cover the invoice total. A draft invoice answers 409 `document_not_issued`. Issue it first, or edit the draft instead.
 6. Call `invoices_close_unpaid` with a reason to stop collection while keeping the balance. Later payments can still allocate. API keys and OAuth grants need an enabled `invoices.close_unpaid` action rule and role limit that cover the open balance.
 7. Call `invoices_reopen` to return a closed invoice to active collection.
 
-Correction writes use `credit_notes.issue`, `credit_notes.send`, `invoices.void`, `invoices.close_unpaid` and `invoices.reopen`; OWNER and ADMIN hold these actions by default. Calls require confirmation and the matching action decision. They are irreversible except for reopening collection.
+Correction writes use `credit_notes.issue`, `credit_notes.send`, `invoices.void`, `invoices.close_unpaid` and `invoices.reopen`; OWNER and ADMIN hold these actions by default. Calls require confirmation and the matching action decision. Without a matching rule, a key gets 403 `machine_actor`. Below the amount, it gets 403 `amount_limit`. They are irreversible except for reopening collection.
 
 ## Pause and resume invoice collection
 
@@ -377,9 +377,11 @@ To preview or change an active subscription:
 2. Call `customer_subscriptions_preview_change` with a plan or quantity change. Its default timing
    is next period. Immediate and dated previews show a prorated charge or credit. This read requires
    `customer_subscriptions:read` and creates no change, invoice or grant. Amounts follow period financial access.
-3. Ask staff to apply the change through `/api/payments/customer-subscriptions/{id}/change`.
+3. Call `customer_subscriptions_change` if authorized, or ask staff to use `/api/payments/customer-subscriptions/{id}/change`.
    `customer_subscriptions_change` needs `subscriptions.change` for next period or `subscriptions.change_now`
-   for immediate and dated changes. A key receives 403 `needs_approval` and executes nothing.
+   for immediate and dated changes. A key or OAuth token receives 403 `needs_approval` without execution,
+   unless a matching enabled `api_key` or `oauth_grant` rule allows `subscriptions.change_now`.
+   Scope, role, record access, amount limits and second-person controls still apply.
    The server authorizes the absolute preview adjustment in the subscription currency. Preview errors retain their status.
    A changed adjustment answers 409 `subscription_change_stale` without a write. Read and preview again before retrying.
    A next-period plan or quantity change replaces only its same-kind schedule and returns
