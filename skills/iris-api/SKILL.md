@@ -110,6 +110,7 @@ If either operation answers 409 `approval_execution_conflict`, retry the request
 For `approvals_create`, keep the same body and idempotency key.
 Use `payments_create_claim` to report a payment claim with `payments.claim`.
 The claim checks document and contact locations without requiring record access. Omit an optional ID or send null when absent.
+A claim that answers 404 `record_not_accessible` did not file. Check the supplied IDs and the credential's organization and location scope.
 These actions require no contact, amount or machine approval. Decisions and payment verification keep their existing checks.
 
 Every starter role holds these actions and both draft-write actions below.
@@ -598,7 +599,7 @@ Branch on `statusCode` and `error`. Never branch on the text of `message`.
 | 409        | `stale_revision`                                                                                    | The record changed after the `expected_updated_at` you sent. Nothing changed. Read it again, then decide.                                                                                                                                     |
 | 409        | `deposit_set_changed`                                                                               | A linked deposit changed while an invoice was issuing. Retry the same request with the same idempotency key.                                                                        |
 | 429        |                                                                                                     | Too many requests. Wait 60 seconds, then retry.                                                                                                                                                                                               |
-| 5xx        |                                                                                                     | Retry once after a few seconds. Then stop and report.                                                                                                                                                                                         |
+| 5xx        |                                                                                                     | For other 5xx responses, retry once after a few seconds. Then stop and report. A read may retry a 503 with backoff. Read the current state before retrying a write whose outcome is unknown.                                                                                                                                                                                         |
 
 Over MCP, a failing tool call returns `isError: true` with the same envelope as its content.
 
@@ -1704,17 +1705,20 @@ Every save of a sequence keeps a version: the steps, edges and settings as they 
 1. Call `sequences_list_versions` with the `sequenceId`. Each item has a `revision`, when and by
    whom it was saved, a `summary` and a `step_count`. The newest is first.
 2. To see one version, call `sequences_get_version` with its `revision`. It answers in the shape of
-   `sequences_get`.
+   `sequences_get`, with the purpose that a revert to it would put back.
 3. Show the user the version and ask before you revert.
 4. Call `sequences_revert_version` with the `revision` and `confirm: true`. It replaces the steps,
-   edges, name, description, triggers, exit conditions and send schedule. The location stays.
+   edges, name, description, triggers, exit conditions and send schedule. It also puts back the
+   purpose when the version recorded one. A version kept before versions held the purpose, or kept
+   while no purpose was set, keeps the current purpose. The location stays.
 5. On 409 `sequence_has_live_enrollments`, people are in the sequence: `active_enrollments` says
    how many. Nothing changed. Tell the user to cancel or finish those enrollments first, and stop.
    Do not cancel them yourself unless the user asks.
 6. On 409 `system_managed_revert_unsupported`, Iris manages the sequence from SMS settings and
    platform copy. Nothing changed. Tell the user to change those settings instead, and stop.
 7. The answer is the sequence after the revert. To undo the revert, revert to its
-   `previous_revision`.
+   `previous_revision`. When that version recorded no purpose, the undo keeps the purpose the revert
+   put back.
 
 ### 42. Change the subscription plan
 

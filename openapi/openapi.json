@@ -18491,7 +18491,7 @@
     },
     "/api/v1/sequences/{sequenceId}/versions/{revision}": {
       "get": {
-        "description": "The sequence as `sequences_get` returns it, with the steps, edges, triggers, exit conditions and\nsend schedule of that version. `definition_revision` is the version’s revision, and each step’s\n`id` is its `step_key`: a version keeps no step rows. The status and `send_window` are the\nsequence’s now: a version keeps the send schedule id, not legacy send-window hours.",
+        "description": "The sequence as `sequences_get` returns it, with the steps, edges, triggers, exit conditions and\nsend schedule of that version, and its purpose when the version recorded one, as\n`sequences_revert_version` puts it back. `definition_revision` is the version’s revision, and each step’s\n`id` is its `step_key`: a version keeps no step rows. The status and `send_window` are the\nsequence’s now: a version keeps the send schedule id, not legacy send-window hours.",
         "operationId": "sequences_get_version",
         "parameters": [
           {
@@ -18581,7 +18581,7 @@
     },
     "/api/v1/sequences/{sequenceId}/versions/{revision}/revert": {
       "post": {
-        "description": "Replaces the steps, edges, name, description, triggers, exit conditions and send schedule with\nthose of the version. The location stays. Only while nobody is in the sequence: with an active or\npaused enrollment it answers 409 `sequence_has_live_enrollments` with `active_enrollments`, and\nnothing changes. Cancel or finish those enrollments first. The revert keeps the current definition\nas a version, then saves the old one as a new version. `previous_revision` undoes it.\nA system-managed sequence (an appointment automation that follows SMS settings and platform copy) answers 409 `system_managed_revert_unsupported` and changes nothing.",
+        "description": "Replaces the steps, edges, name, description, triggers, exit conditions and send schedule, and the\npurpose when the version recorded one, with those of the version. The location stays. Only while nobody is in the sequence: with an active or\npaused enrollment it answers 409 `sequence_has_live_enrollments` with `active_enrollments`, and\nnothing changes. Cancel or finish those enrollments first. The revert keeps the current definition\nas a version, then saves the old one as a new version. `previous_revision` undoes it.\nA version kept before versions held the purpose, or kept while no purpose was set, keeps the current\npurpose, and the undo of such a revert keeps the purpose the revert put back.\nA system-managed sequence (an appointment automation that follows SMS settings and platform copy) answers 409 `system_managed_revert_unsupported` and changes nothing.",
         "operationId": "sequences_revert_version",
         "parameters": [
           {
@@ -54520,6 +54520,16 @@
           },
           "403": {
             "description": "SQL action access is required. Denials return the decision reason and approvals_required. A needs_approval decision never executes. The key does not carry the `payments:write` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "record_not_accessible",
             "content": {
               "application/json": {
                 "schema": {
