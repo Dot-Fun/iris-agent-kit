@@ -2426,11 +2426,13 @@ These reads use `work_records:read`. Creation uses `work_records:write`. Work ty
 6. Call `work_records_link` or `work_records_unlink` with the record kind, record id and revision.
 7. Call `work_records_archive` or `work_records_restore` with `expected_revision` for lifecycle changes.
 8. Call `work_records_list_history`, `work_records_list_comments` or `work_records_list_attachments` to inspect the record.
+   Pass history `next_cursor` unchanged as `cursor`. Malformed cursors or values outside the positive signed 64-bit range return 400.
    Comment lists omit restricted comments without view access to the `restricted` class.
 9. Call `work_records_add_comment` with `body` and optional `restricted` to add a comment.
    Setting `restricted: true` requires edit access to that class. Otherwise, the call returns 403 `restricted_class_required`.
    An unreachable work record returns 404 before the class check.
 10. Call `work_records_add_attachment` with file metadata to create an upload URL.
+    Comment and attachment writes require `work_record.edit` and `work_records:write`. A missing action returns 403. An inaccessible record returns 404.
 11. On 409 `revision_conflict`, call `work_records_get` again and review the new revision before retrying.
 
 ### 60a. Close a job
@@ -2459,6 +2461,7 @@ If the request is rejected or expires, nothing closes. The agent may ask again.
 1. Call `work_types_list` and `work_types_get` to find an active work type and read its workflow.
 2. Call `work_types_create` with one template key or a complete workflow. Do not send both.
 3. Call `work_types_update` with changed labels or assignment field and `expected_revision`.
+   Send `assignment_field_id: null` to clear the assignment field. Omit it to keep the current field.
 4. Call `work_types_set_workflow` with the full status and transition arrays and `expected_revision`.
 5. Call `work_types_archive` or `work_types_restore` to change the work type lifecycle.
 6. These configuration writes require the `work_types:write` scope and an owner or admin role.

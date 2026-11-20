@@ -48718,6 +48718,7 @@
     },
     "/api/v1/work-records/{workRecordId}/history": {
       "get": {
+        "description": "Pass next_cursor unchanged. Non-numeric cursors and values outside the positive signed 64-bit range return 400.",
         "operationId": "work_records_list_history",
         "parameters": [
           {
@@ -48751,6 +48752,16 @@
           }
         ],
         "responses": {
+          "400": {
+            "description": "Invalid history cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
             "content": {
@@ -48797,7 +48808,7 @@
             "apiKey": []
           }
         ],
-        "summary": "List work record history",
+        "summary": "List work record history using the returned sequence cursor",
         "tags": [
           "Work records",
           "Public API"
@@ -48921,7 +48932,7 @@
             }
           },
           "403": {
-            "description": "`restricted_class_required`: restricted comments require edit access to the restricted class\n\nThe key does not carry the `work_records:write` scope; `required` names it",
+            "description": "Requires work_record.edit. `restricted_class_required`: restricted comments also require edit access to the restricted class\n\nSQL action access is required. Denials return the decision reason and approvals_required. A needs_approval decision never executes. The key does not carry the `work_records:write` scope; `required` names it",
             "content": {
               "application/json": {
                 "schema": {
@@ -48956,7 +48967,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Add a comment to a work record",
+        "summary": "Add a work record comment with work_record.edit permission",
         "tags": [
           "Work records",
           "Public API"
@@ -48969,7 +48980,7 @@
           "irreversible": "Comments are retained by the record history and cannot be removed through this API."
         },
         "x-iris-scope": "work_records:write",
-        "x-member-access": "scoped"
+        "x-member-access": "action"
       }
     },
     "/api/v1/work-records/{workRecordId}/attachments": {
@@ -49095,7 +49106,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `work_records:write` scope; `required` names it",
+            "description": "Requires work_record.edit\n\nSQL action access is required. Denials return the decision reason and approvals_required. A needs_approval decision never executes. The key does not carry the `work_records:write` scope; `required` names it",
             "content": {
               "application/json": {
                 "schema": {
@@ -49130,7 +49141,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Add an attachment to a work record",
+        "summary": "Create a work record attachment upload URL with work_record.edit permission",
         "tags": [
           "Work records",
           "Public API"
@@ -49143,7 +49154,7 @@
           "irreversible": "Attachments are retained and cannot be removed through this API."
         },
         "x-iris-scope": "work_records:write",
-        "x-member-access": "scoped"
+        "x-member-access": "action"
       }
     },
     "/api/v1/work-types": {
@@ -49461,7 +49472,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Update a work type label, description or owner field",
+        "summary": "Update work type details or clear its assignment field with null",
         "tags": [
           "Work types",
           "Public API"
@@ -85067,7 +85078,7 @@
             "type": "string"
           },
           "assignment_field_id": {
-            "type": "object",
+            "type": "string",
             "format": "uuid",
             "nullable": true
           }

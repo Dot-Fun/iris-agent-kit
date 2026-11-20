@@ -6244,9 +6244,9 @@ List the service territories, their postal codes and their priority
 
 ### work_records_add_attachment
 
-`POST /api/v1/work-records/{workRecordId}/attachments`. Scope: `work_records:write`. Member: `scoped`. Action (`x-iris-action`): `work_record.edit`. Changes: `work_records`.
+`POST /api/v1/work-records/{workRecordId}/attachments`. Scope: `work_records:write`. Member: `action`. Action (`x-iris-action`): `work_record.edit`. Changes: `work_records`.
 
-Add an attachment to a work record
+Create a work record attachment upload URL with work_record.edit permission
 
 - `workRecordId` (path, string, required)
 - `file_name` (body, string, required)
@@ -6255,9 +6255,9 @@ Add an attachment to a work record
 
 ### work_records_add_comment
 
-`POST /api/v1/work-records/{workRecordId}/comments`. Scope: `work_records:write`. Member: `scoped`. Action (`x-iris-action`): `work_record.edit`. Changes: `work_records`.
+`POST /api/v1/work-records/{workRecordId}/comments`. Scope: `work_records:write`. Member: `action`. Action (`x-iris-action`): `work_record.edit`. Changes: `work_records`.
 
-Add a comment to a work record
+Add a work record comment with work_record.edit permission
 
 - `workRecordId` (path, string, required)
 - `body` (body, string, required)
@@ -6343,7 +6343,7 @@ List comments on a work record
 
 `GET /api/v1/work-records/{workRecordId}/history`. Scope: `work_records:read`. Member: `scoped`. Action (`x-iris-action`): `work_record.view`.
 
-List work record history
+List work record history using the returned sequence cursor
 
 - `workRecordId` (path, string uuid, required)
 - `cursor` (query, string): The `next_cursor` of the page before. Leave out for the first page.
@@ -6460,10 +6460,10 @@ Replace a work type workflow
 
 `PATCH /api/v1/work-types/{workTypeId}`. Scope: `work_types:write`. Member: `deny`. Action (`x-iris-action`): `work_type.manage`. Changes: `work_types`.
 
-Update a work type label, description or owner field
+Update work type details or clear its assignment field with null
 
 - `workTypeId` (path, string uuid, required)
 - `expected_revision` (body, number, required)
 - `label` (body, string)
 - `description` (body, string)
-- `assignment_field_id` (body, object uuid)
+- `assignment_field_id` (body, string uuid)
