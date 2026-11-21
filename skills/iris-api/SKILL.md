@@ -2190,7 +2190,9 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
   text is `marketing`, which needs a marketing opt-in. Do not pass `service` for a promotion.
   Record SMS consent
   with `contacts_record_sms_consent` only when the contact gave it to the user. On 409
-  `sms_not_permitted`, do not send, and do not record consent to get past it. A `reason` of
+  `sms_not_permitted`, do not send, and do not record consent to get past it.
+  A `reason` of `communication_blocked` means a connected integration restricts the number,
+  and texting START does not help. `conversations_send_sms` names the same cause `restricted`. A `reason` of
   `no_opt_in` on a text sent without `purpose` means it went as `marketing`: if the text is a
   service text, send it again with `purpose: service`.
 - Calendar: `calendar_views_get`, `calendar_views_update`, `calendar_views_delete`,

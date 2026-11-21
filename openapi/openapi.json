@@ -12362,7 +12362,7 @@
     },
     "/api/v1/contacts/{contactId}/sms-consent": {
       "post": {
-        "description": "`opt_in` records consent the contact gave you, for example on your web form. Iris may text\nthe contact a one-time confirmation. A contact who texted STOP cannot be opted back in\nthis way: the answer is 409 `sms_not_permitted`, and the contact must text START.\n`opt_out` revokes consent, suppresses the number and cancels the contact’s SMS sequences.\nThe contact is not told. Both are safe to repeat.",
+        "description": "`opt_in` records consent the contact gave you, for example on your web form. Iris may text\nthe contact a one-time confirmation. A contact who texted STOP cannot be opted back in\nthis way: the answer is 409 `sms_not_permitted` with `reason: opted_out`, and the contact must text START.\nA connected integration restriction answers 409 `sms_not_permitted` with `reason: communication_blocked`. Texting START does not remove that restriction.\n`opt_out` revokes consent, suppresses the number and cancels the contact’s SMS sequences.\nThe contact is not told. Both are safe to repeat.",
         "operationId": "contacts_record_sms_consent",
         "parameters": [
           {
@@ -12430,7 +12430,7 @@
             }
           },
           "409": {
-            "description": "`sms_not_permitted`: the contact opted out by text\n\n`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "description": "`sms_not_permitted`: `reason: opted_out` means the contact opted out by text and must text START. `reason: communication_blocked` means a connected integration restricts the number.\n\n`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
             "content": {
               "application/json": {
                 "schema": {
