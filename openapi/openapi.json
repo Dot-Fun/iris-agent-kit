@@ -22805,7 +22805,7 @@
     },
     "/api/v1/invitations": {
       "get": {
-        "description": "Every invitation, newest first, with its status. A PENDING or EXPIRED one can be revoked with `invitations_revoke`.\nAn OWNER or ADMIN calls it. A MEMBER’s or MANAGER’s credential gets 403 `insufficient_role`, as in the dashboard.\nAn organization key also reads it.",
+        "description": "Every invitation, newest first, with its status. A PENDING or EXPIRED one can be sent again with `invitations_resend` or revoked with `invitations_revoke`.\nAn OWNER or ADMIN calls it. A MEMBER’s or MANAGER’s credential gets 403 `insufficient_role`, as in the dashboard.\nAn organization key also reads it.",
         "operationId": "invitations_list",
         "parameters": [],
         "responses": {
@@ -22867,7 +22867,7 @@
         "x-member-access": "deny"
       },
       "post": {
-        "description": "Creates a PENDING invitation, valid for 7 days, and emails the person a link to accept it.\nThe role is MEMBER unless you send ADMIN. After they accept, `members_list` shows them.\nAn OWNER or ADMIN calls it. A MEMBER’s or MANAGER’s credential gets 403 `insufficient_role`, as in the dashboard.\nAn organization key gets 403 `no_acting_user`: an invitation is sent by a person.\n409 `EMAIL_ALREADY_EXISTS`: the email is a member already, or has a PENDING invitation.\n500 `UNKNOWN_ERROR`: the email could not be sent, and no invitation was kept. Try again.",
+        "description": "Creates a PENDING invitation, valid for 7 days, and emails the person a link to accept it.\nThe role is MEMBER unless you send ADMIN. After they accept, `members_list` shows them.\nAn OWNER or ADMIN calls it. A MEMBER’s or MANAGER’s credential gets 403 `insufficient_role`, as in the dashboard.\nAn organization key gets 403 `no_acting_user`: an invitation is sent by a person.\n409 `EMAIL_ALREADY_EXISTS`: the email is a member already, or has a PENDING invitation. Send that one again with `invitations_resend`.\n500 `UNKNOWN_ERROR`: the email could not be sent, and no invitation was kept. Try again.",
         "operationId": "invitations_create",
         "parameters": [],
         "requestBody": {
@@ -22959,6 +22959,135 @@
         "x-iris-idempotent": true,
         "x-iris-reverse": {
           "irreversible": "The email is sent. Revoke the invitation with invitations_revoke."
+        },
+        "x-iris-scope": "invitations:write",
+        "x-member-access": "deny"
+      }
+    },
+    "/api/v1/invitations/{invitationId}/resend": {
+      "post": {
+        "description": "Cancels a PENDING or EXPIRED invitation and invites the same email again, in the same role.\nThe person gets a new email with a new link, valid for 7 days, and the old link stops working.\nAnswers the new invitation, which has a new `id`. Use it when the person lost the email, the\ninvitation expired, or `invitations_create` answered 409 for a PENDING invitation.\nAn OWNER or ADMIN calls it. A MEMBER’s or MANAGER’s credential gets 403 `insufficient_role`, as in the dashboard.\nAn organization key gets 403 `no_acting_user`. 404 `not_found`: no PENDING or EXPIRED invitation with that id.\n409 `ROLE_NOT_RESENDABLE`: the invitation holds a role other than ADMIN or MEMBER. Revoke it and create a new one.\n429 `RESEND_TOO_SOON`: the invitation was sent or changed less than a minute ago. Wait a minute and call again. The same `idempotency_key` works on the retry.\n500 `UNKNOWN_ERROR`: the email could not be sent. Iris then tries to restore the old invitation, as best effort only. The old one can stay cancelled, with the unsent new one PENDING or with no pending invitation for the email. Call `invitations_list` after a failed resend to see what is pending.",
+        "operationId": "invitations_resend",
+        "parameters": [
+          {
+            "name": "invitationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdempotencyKeyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicInvitationDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`insufficient_role` or `no_acting_user`\n\nThe key does not carry the `invitations:write` scope; `required` names it. A member’s credential gets `insufficient_role`: members cannot call this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`\n\nNo such pending invitation in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`ROLE_NOT_RESENDABLE`, or `EMAIL_ALREADY_EXISTS` when another PENDING invitation for the email took its place\n\n`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RESEND_TOO_SOON`\n\nMore than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`UNKNOWN_ERROR`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`idempotency_unavailable`: an `idempotency_key` was sent, but the store that keeps it is down. The call did not run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Send an invitation again, with a new link",
+        "tags": [
+          "Invitations",
+          "Public API"
+        ],
+        "x-iris-changes": [
+          "invitations"
+        ],
+        "x-iris-confirm": true,
+        "x-iris-idempotent": true,
+        "x-iris-reverse": {
+          "irreversible": "The email is sent and the old link no longer works. Revoke the new invitation with invitations_revoke."
         },
         "x-iris-scope": "invitations:write",
         "x-member-access": "deny"
@@ -35828,7 +35957,7 @@
             }
           },
           "403": {
-            "description": "The key does not carry the `integrations:write` scope; `required` names it",
+            "description": "The key does not carry the `integrations:write` scope; `required` names it. A member’s credential gets `insufficient_role`, except a manager holding the `location_settings` power, at their locations",
             "content": {
               "application/json": {
                 "schema": {
@@ -35876,7 +36005,8 @@
           "irreversible": "Iris cannot reconnect Google Calendar for the user. They connect it again in the dashboard’s calendar settings."
         },
         "x-iris-scope": "integrations:write",
-        "x-member-access": "scoped"
+        "x-manager-power": "location_settings",
+        "x-member-access": "deny"
       }
     },
     "/api/v1/integrations/google-calendar/locations/{locationId}/sync": {
@@ -72658,7 +72788,7 @@
           "id": {
             "type": "string",
             "format": "uuid",
-            "description": "The `invitationId` of `invitations_revoke`."
+            "description": "The `invitationId` of `invitations_resend` and `invitations_revoke`."
           },
           "email": {
             "type": "string"
@@ -72691,6 +72821,10 @@
           "updated_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "needs_resend": {
+            "type": "boolean",
+            "description": "True when the old link of this invitation no longer works, in any status: an OWNER or ADMIN could read it before IRIS-7233. `invitations_resend` sends a new link only for a PENDING or EXPIRED invitation whose role is ADMIN or MEMBER."
           }
         },
         "required": [
@@ -72700,7 +72834,8 @@
           "status",
           "expires_at",
           "created_at",
-          "updated_at"
+          "updated_at",
+          "needs_resend"
         ]
       },
       "InvitationCreateBodyDto": {

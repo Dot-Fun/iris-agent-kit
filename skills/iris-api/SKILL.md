@@ -2216,8 +2216,10 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
   `google_calendar_list_my_calendars`, `google_calendar_choose_my_calendar` and
   `google_calendar_disconnect_team_member` for a team member's own calendar. The user connects a
   calendar in the dashboard. `google_calendar_sync` answers `success: false` when the location has
-  no calendar. Only the person lists or chooses their own calendars. The person, or an owner or
-  admin, disconnects one. Ask the user before a disconnect: rewind cannot undo it. An
+  no calendar. Only an owner, an admin or a manager with the `location_settings` power
+  disconnects a location's calendar. Only the person lists or chooses their own calendars. The
+  person, or an owner or admin, disconnects one. Ask the user before a disconnect: rewind cannot
+  undo it. An
   organization key gets 403 `no_acting_user` on the disconnects and the team member operations.
 - Calls: `calls_list`, `calls_get` (with transcript). Filter `calls_list` with `contact_id` to
   see one contact's calls. `calls_delete` deletes calls with their recordings for good: ask the
@@ -2263,11 +2265,13 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
   `ghl_list_cutovers`, `ghl_preview_cutover`, `ghl_freeze_cutover`, `ghl_rollback_cutover`. A
   settling action on held work tells GoHighLevel nothing new: settle an item only after the user
   checked GoHighLevel. Ask the user before `ghl_rollback_cutover`.
-- Invitations: `invitations_list`, `invitations_create`, `invitations_revoke`. Only an owner or
-  admin invites, with their own credential. `invitations_create` emails the person at once, so
-  confirm the email and the role (`ADMIN` or `MEMBER`) with the user first, and send an
+- Invitations: `invitations_list`, `invitations_create`, `invitations_resend`, `invitations_revoke`.
+  Only an owner or admin invites, with their own credential. `invitations_create` emails the person
+  at once, so confirm the email and the role (`ADMIN` or `MEMBER`) with the user first, and send an
   `idempotency_key`. A 409 `EMAIL_ALREADY_EXISTS` means the person is a member already or has a
-  pending invitation. No response holds the invitation link: the person gets it by email.
+  pending invitation. To send a pending or expired invitation again, ask the user, then call
+  `invitations_resend` with an `idempotency_key`: it emails a new link and the old link stops
+  working. `needs_resend: true` records that the old link no longer works, in any status. `invitations_resend` sends a new link only for a pending or expired invitation whose role is `ADMIN` or `MEMBER`. No response holds the invitation link: the person gets it by email.
 
 ## Tag a sequence with its purpose
 

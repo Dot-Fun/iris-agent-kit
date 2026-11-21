@@ -3982,7 +3982,7 @@ Choose which of your Google calendars Iris reads
 
 ### google_calendar_disconnect
 
-`DELETE /api/v1/integrations/google-calendar/locations/{locationId}`. Scope: `integrations:write`. Member: `scoped`. Confirm: required. Changes: `integrations`.
+`DELETE /api/v1/integrations/google-calendar/locations/{locationId}`. Scope: `integrations:write`. Member: `deny`. Manager power: `location_settings`. Confirm: required. Changes: `integrations`.
 
 Disconnect a location’s Google Calendar
 
@@ -4228,6 +4228,15 @@ Invite a person to the organization by email
 `GET /api/v1/invitations`. Scope: `invitations:read`. Member: `deny`.
 
 List the organization’s invitations
+
+### invitations_resend
+
+`POST /api/v1/invitations/{invitationId}/resend`. Scope: `invitations:write`. Member: `deny`. Confirm: required. Changes: `invitations`. Idempotent: send `idempotency_key`.
+
+Send an invitation again, with a new link
+
+- `invitationId` (path, string uuid, required)
+- `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
 
 ### invitations_revoke
 
