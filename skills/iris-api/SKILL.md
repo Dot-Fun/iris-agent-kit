@@ -2224,6 +2224,7 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
 - Calls: `calls_list`, `calls_get` (with transcript). Filter `calls_list` with `contact_id` to
   see one contact's calls. `calls_delete` deletes calls with their recordings for good: ask the
   user first. It needs `calls:write` and an owner or admin. `deleted` counts what it removed.
+  Read `failed`, tell the user which calls were kept, and retry those ids later.
 - Audiences: `audiences_list`, `audiences_add_member`, `audiences_remove_member`. Both member
   writes are safe to repeat. Only a `static` audience takes members. To build or change an
   audience, follow recipe 14. `audiences_delete` removes an audience for good, for an owner only:

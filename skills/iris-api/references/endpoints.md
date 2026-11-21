@@ -1141,7 +1141,7 @@ Change a call forwarding number
 
 `POST /api/v1/calls/delete`. Scope: `calls:write`. Member: `deny`. Confirm: required. Changes: `calls`.
 
-Delete calls
+Delete calls, and list under failed each call kept after a provider error
 
 - `call_ids` (body, array of string, required): Call `id`s from `calls_list`
 - `location_id` (body, string uuid): Delete only the calls at this location

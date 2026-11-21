@@ -12697,7 +12697,7 @@
     },
     "/api/v1/calls/delete": {
       "post": {
-        "description": "Deletes each call with its transcript and recording, at the voice provider too. Only an OWNER or\nADMIN. An id that is not a call of the organization, or not at `location_id`, is skipped, so\n`deleted` can be lower than the ids sent. A deleted call cannot be restored.",
+        "description": "Deletes each call with its transcript and recording, at the voice provider too. Only an OWNER or\nADMIN. An id that is not a call of the organization, or not at `location_id`, is skipped, so\n`deleted` can be lower than the ids sent. An id the provider could not delete is listed under\n`failed` with a reason. Its call is kept. Send those ids again later to retry.\nA deleted call cannot be restored.",
         "operationId": "calls_delete",
         "parameters": [],
         "requestBody": {
@@ -12757,7 +12757,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Delete calls",
+        "summary": "Delete calls, and list under failed each call kept after a provider error",
         "tags": [
           "Calls",
           "Public API"
@@ -66769,16 +66769,46 @@
           "call_ids"
         ]
       },
+      "CallsDeleteFailureDto": {
+        "type": "object",
+        "properties": {
+          "call_id": {
+            "type": "string",
+            "description": "Call id kept after a provider deletion failure"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "provider_error",
+              "provider_unavailable",
+              "provider_not_configured"
+            ],
+            "description": "provider_error: the provider returned an error. provider_unavailable: the provider request failed. provider_not_configured: no provider key is configured."
+          }
+        },
+        "required": [
+          "call_id",
+          "reason"
+        ]
+      },
       "CallsDeleteResponseDto": {
         "type": "object",
         "properties": {
           "deleted": {
             "type": "number",
-            "description": "How many calls were deleted. An id not in the organization is skipped."
+            "description": "How many calls were deleted. An id that is not a call of the organization, or not at location_id, is skipped."
+          },
+          "failed": {
+            "description": "Calls kept after provider deletion failures, in request order. Retry these ids later.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CallsDeleteFailureDto"
+            }
           }
         },
         "required": [
-          "deleted"
+          "deleted",
+          "failed"
         ]
       },
       "AudienceSummaryDto": {
