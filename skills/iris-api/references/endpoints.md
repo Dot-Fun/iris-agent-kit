@@ -5253,7 +5253,7 @@ List the organization’s sequences
 
 `GET /api/v1/sequences/{sequenceId}/enrollments`. Scope: `sequences:read`. Member: `action`. Action (`x-iris-action`): `sequences.manage`.
 
-List the contacts and invoices enrolled in one sequence
+List the contacts and invoices enrolled in one sequence. `last_email_subject` is null for an invoice reminder when the caller has no billing access.
 
 - `sequenceId` (path, string uuid, required)
 - `page` (query, number): 1-based page number

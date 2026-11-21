@@ -5158,7 +5158,7 @@
             "apiKey": []
           }
         ],
-        "summary": "List the contacts and invoices enrolled in one sequence",
+        "summary": "List the contacts and invoices enrolled in one sequence. `last_email_subject` is null for an invoice reminder when the caller has no billing access.",
         "tags": [
           "Sequences",
           "Public API"
@@ -61698,7 +61698,7 @@
           "last_email_subject": {
             "type": "string",
             "nullable": true,
-            "description": "Subject of that last email"
+            "description": "Subject of that last email. Null for an invoice reminder when the caller has no billing access."
           },
           "next_step_due_at": {
             "type": "string",
