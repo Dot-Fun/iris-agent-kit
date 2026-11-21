@@ -54,7 +54,8 @@ parameter, no cookie, no body field.
 ## What the answers mean
 
 - **401** `Invalid API key`: the header is missing, uses another scheme, or the key is malformed,
-  unknown or revoked. All five cases give the same answer on purpose. A personal key or OAuth
+  unknown, revoked or expired. All six cases give the same answer on purpose. Every key expires
+  (IRIS-7240): 365 days after creation unless its creator chose 1 to 730 days. A personal key or OAuth
   token also gets it while the person's agent access is off. Ask the user to check My agent
   access, and for a new key only if the page does not say access is off.
 - **403** `insufficient_scope`: the key is live but lacks the scope named in `required`. The
