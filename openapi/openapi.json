@@ -35976,6 +35976,16 @@
               }
             }
           },
+          "409": {
+            "description": "`Conflict`: the location’s Google connection was replaced during every disconnect attempt. Nothing was disconnected, and the newer connection stays. Read `google_calendar_get_status`, then ask the user before you try again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
             "content": {

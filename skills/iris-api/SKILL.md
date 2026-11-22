@@ -2221,6 +2221,9 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
   person, or an owner or admin, disconnects one. Ask the user before a disconnect: rewind cannot
   undo it. An
   organization key gets 403 `no_acting_user` on the disconnects and the team member operations.
+  `google_calendar_disconnect` answers 409 when the location's connection was replaced during
+  every attempt: nothing was disconnected. Read `google_calendar_get_status` and ask the user
+  before you try again.
 - Calls: `calls_list`, `calls_get` (with transcript). Filter `calls_list` with `contact_id` to
   see one contact's calls. `calls_delete` deletes calls with their recordings for good: ask the
   user first. It needs `calls:write` and an owner or admin. `deleted` counts what it removed.
