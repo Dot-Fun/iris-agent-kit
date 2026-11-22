@@ -1600,9 +1600,9 @@ Every context access operation needs an owner or admin, and its own `context_acc
 
 ### 34. Import contacts from a CRM
 
-1. Call `crm_imports_get_settings` and tell the user the `merge_policy`. To change it, call
-   `crm_imports_update_settings` with `merge_policy` and the `updated_at` you read as
-   `expected_updated_at`.
+1. Call `crm_imports_get_settings` and tell the user the `merge_policy`. To change it, ask the
+   user, then call `crm_imports_update_settings` with `merge_policy` and the `updated_at` you read
+   as `expected_updated_at`.
 2. Call `crm_imports_list` to see an import already queued, running or paused. Only one import
    per provider runs at a time.
 3. Ask the user, then call `crm_imports_start` with `provider`, optional `object_types` and an
@@ -1615,7 +1615,7 @@ Every context access operation needs an owner or admin, and its own `context_acc
    to read the failed records again.
 6. Call `crm_imports_list_review_items` for the records the import could not match, and
    `crm_imports_get_review_item` for one of them. Show the user the `record` and its
-   `candidates`, then call `crm_imports_resolve_review_item` with `merge`
+   `candidates`. Ask the user, then call `crm_imports_resolve_review_item` with `merge`
    and a `contact_id`, `create` or `dismiss`. A decision is final.
 
 Only an owner or admin calls these, except `crm_imports_get_settings`, which any member reads. A
@@ -1682,7 +1682,7 @@ A MANAGER with the contacts power moves contacts at their own locations only.
 ### 39. Set up the email provider
 
 1. Call `email_settings_get`. A 404 means no settings are saved yet.
-2. Call `email_settings_update` with the `provider`, `from_email`, `from_name` and the
+2. Ask the user, then call `email_settings_update` with the `provider`, `from_email`, `from_name` and the
    `credentials` the user gives you. Send `expected_updated_at` from the read when there was one.
    No answer carries the credential back: `has_credentials` says one is stored.
 3. Call `email_settings_verify_connection`. When `success` is false, show the user the `error`.

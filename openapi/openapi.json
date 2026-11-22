@@ -40627,6 +40627,7 @@
           "crm_imports",
           "contacts"
         ],
+        "x-iris-confirm": true,
         "x-iris-reverse": {
           "irreversible": "A merge or create writes a contact, and rewind cannot take it back."
         },
@@ -40784,6 +40785,7 @@
         "x-iris-changes": [
           "crm_imports"
         ],
+        "x-iris-confirm": true,
         "x-iris-reverse": {
           "restore": {
             "operation": "crm_imports_get_settings",
@@ -41902,6 +41904,7 @@
         "x-iris-changes": [
           "email_settings"
         ],
+        "x-iris-confirm": true,
         "x-iris-reverse": {
           "restore": {
             "operation": "email_settings_get",

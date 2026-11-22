@@ -2066,7 +2066,7 @@ Pause a CRM import
 
 ### crm_imports_resolve_review_item
 
-`POST /api/v1/crm-imports/review-items/{itemId}/resolve`. Scope: `crm_imports:write`. Member: `deny`. Changes: `crm_imports`, `contacts`.
+`POST /api/v1/crm-imports/review-items/{itemId}/resolve`. Scope: `crm_imports:write`. Member: `deny`. Confirm: required. Changes: `crm_imports`, `contacts`.
 
 Decide which contact an imported record is
 
@@ -2105,7 +2105,7 @@ Start a CRM import
 
 ### crm_imports_update_settings
 
-`PUT /api/v1/crm-imports/settings`. Scope: `crm_imports:write`. Member: `deny`. Changes: `crm_imports`.
+`PUT /api/v1/crm-imports/settings`. Scope: `crm_imports:write`. Member: `deny`. Confirm: required. Changes: `crm_imports`.
 
 Set the CRM import merge policy
 
@@ -2913,7 +2913,7 @@ Send a test email
 
 ### email_settings_update
 
-`PUT /api/v1/email-settings`. Scope: `email_settings:write`. Member: `deny`. Changes: `email_settings`.
+`PUT /api/v1/email-settings`. Scope: `email_settings:write`. Member: `deny`. Confirm: required. Changes: `email_settings`.
 
 Save the email sending settings
 
