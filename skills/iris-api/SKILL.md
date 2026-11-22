@@ -205,7 +205,18 @@ A new send key files a new request.
 Follow `approval_request_id` with `approvals_get` and `approvals:read`, or ask staff to review it in Iris.
 Read the approval outcome and the document before reporting a send. Do not repeat the send with a new key while approval is pending.
 For `invoices_send`, retry with the same caller arguments, including defaults or `select_all`, to replay the stored send result.
-It creates no new deliveries. A changed request or resolved recipient list answers 409 `idempotency_conflict`.
+It creates no new deliveries when the resolved recipients are unchanged.
+The server expands groups and defaults, normalizes endpoints, and hashes who each recipient is and the endpoint value it reaches.
+A contact rename does not change that set.
+A recipient with no contact, endpoint or value counts by its name, so renaming it is a change.
+After a completed send, a same-key retry answers 409 `idempotency_conflict` when the set changed: a group member joined or left, a default recipient changed, an endpoint was archived, an endpoint value changed, or a contact got a new primary email.
+Switching between `select_all` and an explicit list is a changed request and also answers 409.
+The same applies to `proposals_send`, `credit_notes_send` and `receipts_send`.
+For `proposals_send` and `credit_notes_send`, a pending same-key retry answers 202 again. After approval, a changed or renamed recipient list answers 403 `approval_denied`. A changed explicit list that resolves to the same recipients replays with 200.
+For `invoices_send`, a pending retry of the same request answers 202 again. After approval, a changed caller list gets a new send key, files a new approval and answers 202. Only an unchanged request whose resolved recipients changed, or whose contact was renamed under `select_all` or defaults, answers 403 `approval_denied`.
+`receipts_send` replays its stored answer for 24 hours without sending again. For those 24 hours a changed request answers 409 `idempotency_key_reused`, also while approval is pending and after it. Only an unchanged request, or a retry after the 24 hours, reaches the recipient check and can answer 403 `approval_denied`.
+Once one body under a key has deliveries, another body under that key answers 409 `idempotency_key_reused`, also while the first send still runs.
+Only one body is delivered. A body that waits for approval or resolves no recipients has no deliveries and does not reserve the key.
 With a new key, `invoices_send` answers `409 hosted_invoice_blocked` while the business's Stripe
 account lets the hosted invoice page save a payment method. It sends nothing. With `reason`
 `hosted_payment_method_save_not_never`, tell the user to set "Save payment method on hosted invoice
@@ -352,6 +363,8 @@ Remove duplicate ids. Read the plan and send the set again.
 All four service-plan writes can return 409 `allowance_conflict` on their allowance-plan path.
 Grant, transfer and direct-use writes can return the same code.
 It means the allowance write conflicts with an existing record. Read the current state before retrying.
+`allowances_list_entries` returns `{items, next_cursor}`. Follow cursors for that grant until null.
+Use `limit` from 1 to 100 (default 25). Invalid input answers 400.
 `allowances_record_usage` records units used for work on a work record or task without an appointment.
 Send the grant, recipient, quantity, source, reason and your `idempotency_key`.
 The key is scoped to your API key or OAuth connection.
@@ -396,7 +409,7 @@ To preview or change an active subscription:
    Scope, role, record access, amount limits and second-person controls still apply.
    The server authorizes the absolute preview adjustment in the subscription currency. Preview errors retain their status.
    A changed adjustment answers 409 `subscription_change_stale` without a write. Read and preview again before retrying.
-   A next-period plan or quantity change replaces only its same-kind schedule and returns
+   On an Iris subscription, a next-period plan or quantity change replaces only its same-kind schedule and returns
    `withdrawn_change_ids`. An immediate or dated change withdraws overlapping plan and quantity
    schedules and returns their ids. It needs `subscriptions.change_now`.
 4. Read the adjustment invoice or credit note through the document tools. An invoice can remain
@@ -420,7 +433,7 @@ Immediate upgrades through `customer_subscriptions_change` and immediate `custom
 A refused pause can return 409 `pause_not_allowed`, `subscription_change_pause_conflict`, or
 `issuer_conflict`. Invalid change fields, tax rates, allowance owner scope, or dates return 400
 `subscription_change_tax_mismatch`, `allowance_owner_scope_invalid`, or their field error code.
-A Stripe-issued subscription previews from Stripe, and plan and quantity changes apply and sync to Stripe. Interval changes return 400 `subscription_change_interval_mismatch` for an immediate Stripe change, and plans with live default tax rates return 400 `subscription_issuer_option_invalid`. `next_period` and `on_date` timing, including omitted timing, are refused for it, so use `immediate`. Preview returns 422 `preview_unavailable` when Stripe is not connected. Pause and resume return 409 `issuer_conflict` for it. Cancel returns 409 `issuer_conflict` for a bound or non-pending row, and `subscription_stripe_push_pending` while its create is before the push cursor or its organization is parked.
+A Stripe-issued subscription previews from Stripe. Immediate plan and quantity changes apply at once and sync to Stripe. Stripe plan changes across billing intervals return 400 `subscription_change_interval_mismatch` for both immediate and `next_period` changes. Plans with live default tax rates return 400 `subscription_issuer_option_invalid`. The `next_period` preview date is the Iris period boundary (`next_boundary_at`). Stripe `next_period` requests at or after that boundary return 400 `subscription_change_date_invalid` until Iris records the renewal. On a Stripe-issued subscription, a `next_period` change stays scheduled. Iris shows the old plan and seats until Stripe switches the phase at the period end. Omitted timing also uses `next_period`, with no proration or extra invoice. An immediate change prorates the paid item and releases the pending schedule. Withdrawing a scheduled change releases its schedule. A new next-period change on a Stripe subscription replaces any pending one. `on_date` stays refused (R6). Preview returns 422 `preview_unavailable` when Stripe is not connected. Pause and resume return 409 `issuer_conflict` for it. Cancel returns 409 `issuer_conflict` for a bound or non-pending row, and `subscription_stripe_push_pending` while its create is before the push cursor or its organization is parked.
 Pause dates return 422 `pause_not_on_boundary` or `pause_too_long`.
 An inaccessible subscription returns 404.
 
@@ -451,7 +464,11 @@ An Iris-issued create drafts period 1's invoice under the caller: missing `invoi
 Either refusal creates nothing.
 
 Use `customer_subscriptions_list` for `issuer`, state, plan, quantity and `next_boundary_at`; filter by
-`bill_to_contact_id` or `bill_to_group_id`;
+`bill_to_contact_id` or `bill_to_group_id`.
+Both `customer_subscriptions_list` and `customer_subscriptions_list_periods` return `{items, next_cursor}`.
+They accept `cursor` and `limit` (default 25, maximum 100).
+Pass `next_cursor` back as `cursor` until it is null. A period cursor belongs to one subscription.
+Invalid cursors or limits answer 400.
 `customer_subscriptions_get`
 adds `scheduled_changes`. Scheduled changes are ordered by `effective_at` and include the
 change kind, timing, target plan, quantity and effective date. `adjustment_minor` appears only with financial access.
@@ -1088,10 +1105,11 @@ A member can reserve only their own times at a staffed location. Holds use appoi
    `slot_taken`, `no_team_member_available` or `outside_hours`: check availability again and
    offer another time. `team_member_not_eligible`: offer another team member.
    `address_out_of_area`: tell the user the address is not covered. `duration_mismatch`: make
-   the end time match the service's `duration_minutes`. `start_in_past`: the time has passed.
-   Check availability again and offer a later time. If you retried a key, call
-   `appointments_list` first to see if the first try booked. Another 409 with no code means the
-   key was used with other details: use a new key.
+   the end time match the service's `duration_minutes`. `add_on_not_found`: read
+   `locations_booking_options` again, drop or replace that add-on, then book.
+   `start_in_past`: the time has passed. Check availability again and offer a later time.
+   If you retried a key, call `appointments_list` first to see if the first try booked.
+   Another 409 with no code means the key was used with other details: use a new key.
 8. Tell the user the appointment's time, service and team member.
 
 A location that is not staffed can also be booked with `calendar_id` from `calendars_list`
@@ -2091,6 +2109,18 @@ A new service is inactive and has no duration, so customers cannot book it until
 3. Call `offerings_update_pricing` with `price_kind`, `price_minor` and `price_currency`.
    `price_minor_exponent` applies to `price_currency`, or to the organization default when `price_currency` is null.
    A price write must send `price_currency`.
+   For an API caller, changing kind, amount, currency, unit label or display resets status to `unconfirmed`.
+   Deposit or booking policy changes alone keep the stored status. Sending `unconfirmed` sets status to `unconfirmed`.
+   This is refused if a percentage deposit would remain.
+   Sending `confirmed` through `offerings_update_pricing` does not confirm the offering price.
+   Call `offerings_confirm_price` after the user confirms the loaded fixed price.
+   `offerings_set_options` keeps the status sent for each option.
+   A signed-in OWNER or ADMIN in the dashboard keeps the status sent, or the stored status when omitted.
+   Read the returned status. The published terms version carries that status.
+   For all callers, any edit that would leave a percentage deposit on an unconfirmed price answers `percent_deposit_needs_confirmed_price`.
+   This includes sending `unconfirmed` and adding a percentage deposit to an unconfirmed price.
+   A percentage deposit needs a confirmed exact price.
+   To change the price, change the deposit in the same request (`deposit_kind` `none` or `fixed`), or have an owner or admin edit it.
 4. Call `offerings_set_locations` with every `location_ids` that offers it. It replaces the set.
 5. Call `offerings_activate`, after the user confirms: customers can then book it. A service with
    no duration, or one already active, answers 409 and changes nothing.
@@ -2291,16 +2321,32 @@ An omitted purpose on update stays unchanged. An explicit null clears it.
 
 ## Configure a custom field
 
+Contact field keys and labels must not match built-in Name, Phone or Email spellings.
+Iris normalizes names to lowercase ASCII letters and digits before comparing them.
+Reserved names: `name`, `displayname`, `customername`, `phone`, `phonenumber`, `customerphone`, `email`, `customeremail`.
+`fields_create`, `fields_update`, and `fields_restore` return 422 with `error: field_builtin_contact_name`.
+The message identifies the key or label clash, for example: `Label "Phone" matches the built-in Phone column. Pick another name.`
+A label clash can be fixed with another label. An enabled legacy field whose key clashes can only be archived with `fields_archive`.
+Its key cannot change. The message says: `Key "phone_number" matches the built-in Phone column. The key cannot change. Archive this field.`
+A restore of a field whose key clashes is refused, and the field stays archived: `Key "phone_number" matches the built-in Phone column. The key cannot change, so this field stays archived.`
+A restore of a field whose label clashes is refused: `Label "Phone" matches the built-in Phone column. This field stays archived.`
+Other record kinds can use these names.
+
 1. Call `fields_create` with `subject`, `label`, and `type`, using `fields:write` as an OWNER or ADMIN.
+
 2. Read the result with `fields_get`. Keep its id and revision.
 3. Call `fields_update` with `fieldId`, `expected_revision`, and the changed properties.
 4. Keep every existing option key. Mark a removed option with `archived: true`.
-5. Call `fields_archive` to retire the field. Call `fields_restore` to restore it with its stored values.
+5. Before an archive, call `fields_get_usage` with `fieldId`. Tell the user what it lists: the records
+   that hold a value, each entry of `uses` with its count and names, and `agent_prompt`. Archive only
+   after the user confirms. Clear every entry of `blockers` first.
+6. Call `fields_archive` to retire the field. Call `fields_restore` to restore it with its stored values.
    Both accept the last read `updated_at` as `expected_updated_at`. A stale value answers
    409 `stale_revision` and changes nothing. Read the field again before deciding.
-6. Call `fields_update_object` with `record_kind`, `singular_label`, and `plural_label` to set its business labels.
+7. Call `fields_update_object` with `record_kind`, `singular_label`, and `plural_label` to set its business labels.
 
 A designated owner or assignment field cannot be archived. Clear its designation first.
+`fields_get_usage` lists it under `blockers`. It needs `fields:read` and an OWNER or ADMIN.
 A stale revision answers 409. Read the current field before trying the intended edit again.
 A type change or an edit to an archived field answers 422. Restore an archived field before editing it.
 Contact edits refresh agent prompts. Raising `access_class` above `contact_details` requires
@@ -2350,6 +2396,8 @@ These four writes require `contacts:write`. A manager needs the contacts power a
 
 Asset availability: use `groups_list_downtime` (action `group.list`) to inspect an asset, `groups_add_downtime` to block
 new bookings for a time range, and `groups_end_downtime` with its downtime id to clear the block.
+A location-limited MANAGER key with `groups` may add and end downtime for an asset that one of its locations
+serves. When its locations only serve the asset and do not home it, `groups_list_downtime` answers 404, so keep the downtime id that `groups_add_downtime` returns.
 
 ## Name a group type
 

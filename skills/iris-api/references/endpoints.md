@@ -175,9 +175,11 @@ List allowance grants; funded_minor appears only for financial readers (OWNER, A
 
 `GET /api/v1/payments/allowances/{id}/entries`. Scope: `allowances:read`. Member: `scoped`.
 
-List allowance ledger entries; entries never include dedupe_key
+Page allowance ledger entries by cursor; entries never include dedupe_key
 
 - `id` (path, string uuid, required)
+- `cursor` (query, string): The `next_cursor` of the page before. Leave out for the first page.
+- `limit` (query, number)
 
 ### allowances_record_usage
 
@@ -2127,14 +2129,14 @@ Cancel a customer subscription at period end, or at once when the business allow
 
 `POST /api/v1/customer-subscriptions/{id}/change`. Scope: `customer_subscriptions:write`. Member: `action`. Action (`x-iris-action`): `subscriptions.change`. Confirm: required. Changes: `customer_subscriptions`, `invoices`, `allowances`.
 
-Next-period changes replace same-kind schedules and need subscriptions.change. Immediate or dated changes withdraw overlapping schedules, return withdrawn_change_ids and need subscriptions.change_now. Stripe-issued subscriptions refuse next_period and on_date, including omitted timing, so use immediate. Charges can remain draft, extra units wait for payment and credits stay unapplied. Machine gated: a key or OAuth token gets 403 needs_approval without execution, unless a matching enabled api_key or oauth_grant rule allows subscriptions.change_now. Scope, role, record access, amount limits and second-person controls still apply
+Next-period changes need subscriptions.change. On an Iris subscription, they replace same-kind schedules. A new next-period change on a Stripe subscription replaces any pending one. Immediate or dated changes withdraw overlapping schedules, return withdrawn_change_ids and need subscriptions.change_now. On a Stripe-issued subscription, a next_period change stays scheduled. Iris shows the old plan and seats until Stripe switches the phase at the period end. A Stripe next_period request at or after the Iris boundary returns 400 subscription_change_date_invalid until Iris records the renewal. Omitted timing also uses next_period, without proration or an extra invoice. Immediate changes prorate the paid item and release the pending schedule. Stripe on_date stays refused (R6). Charges can remain draft, extra units wait for payment and credits stay unapplied. Machine gated: a key or OAuth token gets 403 needs_approval without execution, unless a matching enabled api_key or oauth_grant rule allows subscriptions.change_now. Scope, role, record access, amount limits and second-person controls still apply
 
 - `id` (path, string uuid, required)
 - `kind` (body, string, required, one of `plan`, `quantity`)
 - `plan_id` (body, string uuid): Required for a plan change.
 - `quantity` (body, number): Required for a quantity change.
-- `timing` (body, string, one of `next_period`, `immediate`, `on_date`)
-- `effective_at` (body, string date-time): Required for on_date, within the current period. Stripe-issued subscriptions refuse next_period and on_date, including omitted timing, so use immediate.
+- `timing` (body, string, one of `next_period`, `immediate`, `on_date`): On a Stripe-issued subscription, a next_period change stays scheduled. Iris shows the old plan and seats until Stripe switches the phase at the period end. Omitted timing also uses next_period, with no proration or extra invoice. A new next-period change on a Stripe subscription replaces any pending one. Immediate prorates the paid item and releases the pending schedule. Stripe on_date stays refused (R6).
+- `effective_at` (body, string date-time): Required for on_date, within the current period. Stripe-issued subscriptions refuse on_date (R6).
 
 ### customer_subscriptions_create
 
@@ -2167,8 +2169,10 @@ Get a customer subscription with its issuer and scheduled changes
 
 `GET /api/v1/customer-subscriptions`. Scope: `customer_subscriptions:read`. Member: `scoped`.
 
-List customer subscriptions with issuer, state and next billing boundary
+Page customer subscriptions by cursor with issuer, state and next billing boundary
 
+- `cursor` (query, string): The `next_cursor` of the page before. Leave out for the first page.
+- `limit` (query, number)
 - `bill_to_contact_id` (query, string uuid): Only subscriptions billed to this contact. The contact must be visible to the caller.
 - `bill_to_group_id` (query, string uuid): Only subscriptions billed to this group. The group must be visible to the caller.
 
@@ -2176,9 +2180,11 @@ List customer subscriptions with issuer, state and next billing boundary
 
 `GET /api/v1/customer-subscriptions/{id}/periods`. Scope: `customer_subscriptions:read`. Member: `scoped`.
 
-List subscription periods with invoices, grants and prices under the invoices_get financial visibility rule
+Page subscription periods by cursor with invoices, grants and prices under the invoices_get financial visibility rule
 
 - `id` (path, string uuid, required)
+- `cursor` (query, string): The `next_cursor` of the page before. Leave out for the first page.
+- `limit` (query, number)
 
 ### customer_subscriptions_pause
 
@@ -2194,14 +2200,14 @@ Schedule a pause on a billing boundary, the next by default, when the plan permi
 
 `POST /api/v1/customer-subscriptions/{id}/preview-change`. Scope: `customer_subscriptions:read`. Member: `scoped`. Confirm: required. Changes: none.
 
-Preview a plan or quantity change with its effective date, prorated charge or credit and extra units. A Stripe-issued subscription previews the proration Stripe will charge and may create its Product and Price on the connected account. It refuses next_period and on_date, including omitted timing, so use immediate. It creates no Iris change, invoice or grant. Amounts follow period financial visibility
+Preview a plan or quantity change with its effective date, prorated charge or credit and extra units. A Stripe-issued subscription previews the proration Stripe will charge and may create its Product and Price on the connected account. Next_period, including omitted timing, previews a schedule phase at the Stripe period end with no proration or invoice. On a Stripe-issued subscription, a next_period change stays scheduled. Iris shows the old plan and seats until Stripe switches the phase at the period end. A Stripe next_period request at or after the Iris boundary returns 400 subscription_change_date_invalid until Iris records the renewal. It still refuses on_date (R6). It creates no Iris change, invoice or grant. Amounts follow period financial visibility
 
 - `id` (path, string uuid, required)
 - `kind` (body, string, required, one of `plan`, `quantity`)
 - `plan_id` (body, string uuid): Required for a plan change.
 - `quantity` (body, number): Required for a quantity change.
-- `timing` (body, string, one of `next_period`, `immediate`, `on_date`)
-- `effective_at` (body, string date-time): Required for on_date, within the current period. Stripe-issued subscriptions refuse next_period and on_date, including omitted timing, so use immediate.
+- `timing` (body, string, one of `next_period`, `immediate`, `on_date`): On a Stripe-issued subscription, a next_period change stays scheduled. Iris shows the old plan and seats until Stripe switches the phase at the period end. Omitted timing also uses next_period, with no proration or extra invoice. A new next-period change on a Stripe subscription replaces any pending one. Immediate prorates the paid item and releases the pending schedule. Stripe on_date stays refused (R6).
+- `effective_at` (body, string date-time): Required for on_date, within the current period. Stripe-issued subscriptions refuse on_date (R6).
 
 ### customer_subscriptions_resume
 
@@ -2974,7 +2980,7 @@ Archive a custom field while keeping its values
 
 `POST /api/v1/fields`. Scope: `fields:write`. Member: `action`. Action (`x-iris-action`): `fields.manage`. Changes: `fields`. Idempotent: send `idempotency_key`.
 
-Create a custom field on a record kind
+Create a custom field. Contact name clashes return 422 field_builtin_contact_name
 
 - `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
 - `subject` (body, string, required): The record kind this field describes.
@@ -3002,6 +3008,14 @@ Get one custom field
 
 - `fieldId` (path, string uuid, required)
 
+### fields_get_usage
+
+`GET /api/v1/fields/{fieldId}/usage`. Scope: `fields:read`. Member: `action`. Action (`x-iris-action`): `fields.manage`.
+
+See what uses a custom field before you archive it, with no names for kinds you cannot read
+
+- `fieldId` (path, string uuid, required)
+
 ### fields_list
 
 `GET /api/v1/fields`. Scope: `fields:read`. Member: `action`. Action (`x-iris-action`): `fields.view`.
@@ -3023,7 +3037,7 @@ List the record types and their business labels
 
 `POST /api/v1/fields/{fieldId}/restore`. Scope: `fields:write`. Member: `action`. Action (`x-iris-action`): `fields.manage`. Changes: `fields`.
 
-Restore an archived custom field
+Restore a custom field. Contact name clashes return 422 field_builtin_contact_name
 
 - `fieldId` (path, string uuid, required)
 - `expected_updated_at` (query, string date-time): The record’s `updated_at` exactly as its GET returned it. When the record changed after it, the call answers 409 `stale_revision` and changes nothing. Leave it out to write without the check.
@@ -3033,7 +3047,7 @@ Restore an archived custom field
 
 `PATCH /api/v1/fields/{fieldId}`. Scope: `fields:write`. Member: `action`. Action (`x-iris-action`): `fields.manage`. Changes: `fields`.
 
-Change a custom field at its current revision
+Change a custom field. Contact name clashes return 422 field_builtin_contact_name
 
 - `fieldId` (path, string uuid, required)
 - `subject` (body, string): The record kind this field describes.
@@ -4677,7 +4691,7 @@ Change a service name, description, duration or buffers
 
 `PATCH /api/v1/offerings/{offeringId}/pricing`. Scope: `offerings:write`. Member: `deny`. Changes: `offerings`.
 
-Update an offering price, deposit policy and booking policy override
+Update offering pricing. API price edits require confirmation again
 
 - `offeringId` (path, string uuid, required)
 - `price_kind` (body, string, one of `fixed`, `per_unit`, `quote`)
@@ -4685,7 +4699,7 @@ Update an offering price, deposit policy and booking policy override
 - `price_currency` (body, string)
 - `price_unit_label` (body, string)
 - `price_display` (body, string, one of `exact`, `starting_at`)
-- `price_status` (body, string, one of `unconfirmed`, `confirmed`)
+- `price_status` (body, string, one of `unconfirmed`, `confirmed`): For an API caller, sending unconfirmed sets status to unconfirmed. This is refused if a percentage deposit would remain. Sending confirmed does not confirm a price. Price field changes reset status to unconfirmed. With no price field change, the stored status stays. Use offerings_confirm_price to confirm. A signed-in OWNER or ADMIN in the dashboard keeps the status sent, or the stored status when omitted. For all callers, any edit that would leave a percentage deposit on an unconfirmed price answers percent_deposit_needs_confirmed_price. This includes sending unconfirmed and adding a percentage deposit to an unconfirmed price. A percentage deposit needs a confirmed exact price. To change the price, change the deposit in the same request (deposit_kind none or fixed), or have an owner or admin edit it.
 - `deposit_kind` (body, string, one of `none`, `fixed`, `percent`)
 - `deposit_minor` (body, number)
 - `deposit_ppm` (body, number)

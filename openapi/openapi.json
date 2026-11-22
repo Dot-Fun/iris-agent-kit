@@ -5622,7 +5622,7 @@
         "x-member-access": "action"
       },
       "post": {
-        "description": "Two shapes. Send exactly one of `location_id` and `calendar_id`.\nAdd `hold_id` to confirm a matching hold. Send the same `recurrence` for a recurring hold. An expired or unknown hold books nothing.\nUse `staff_preference` with `team_member_id`, `team_group_id` for a team, and `recurrence` for a series.\n\n- `location_id` (from `locations_list`), with `offering_id`, `team_member_id` and\n  `service_address` as the location needs. A staffed location books this way. Leave out\n  `team_member_id` to book the first team member who is free. Find times with\n  `appointments_availability` first.\n- `calendar_id` (from `calendars_list`) books a location that is not staffed on its Google calendar.\n\nWith either shape, the contact’s name, phone and email become the attendee, so reminders reach\nthem. The booking is made in the name of the user who created the API key.\nRetry with the same `idempotency_key` to get the first booking back rather than a second one.\nA retry after the start has passed answers `start_in_past`, so read `appointments_list` before booking again.\nAt a staffed location a member’s credential books and checks only its own times, and changes only its own appointments. Anything else answers 403 `insufficient_role`. A manager’s credential with the appointments power books, checks and changes anyone’s appointments at its own locations.\n\nA refused `location_id` booking answers 409 with `error` set to one of these codes and a `message`:\n\n- `staff_choice_disabled`: this offering disables customer staff selection.\n- `recurrence_rule_unsupported`: the recurrence rule cannot be expanded. Nothing is reserved.\n- `preferred_staff_unavailable`: the named person is unavailable. No substitute is booked.\n- `offering_required`: the location sells services. Choose one. The body carries `booking_options`.\n- `offering_not_offered_here`: the service is not offered here, or nobody here does it.\n- `team_member_not_eligible`: the team member does not work here, does not do this service, or does not cover the address.\n- `no_team_member_available`: nobody who can do it is free then.\n- `slot_taken`: the time is booked.\n- `hold_not_found`, `hold_expired`, `invalid_request` or `deposit_required`: the supplied hold cannot confirm.\n- `outside_hours`: the time is outside booking hours, or outside the team member’s schedule.\n- `duration_mismatch`: the end time does not match the service’s `duration_minutes`.\n- `address_out_of_area`: no territory of this location covers the postal code.\n- `location_changed`: the location changed while booking. Check availability again.\n- `start_in_past`: the start time has passed. Choose a later time. A `calendar_id` booking answers it too.\n\nAny other `calendar_id` slot that is not available is a 409 with no code.\nThe same `idempotency_key` with other details is a 409 too, with no code.",
+        "description": "Two shapes. Send exactly one of `location_id` and `calendar_id`.\nAdd `hold_id` to confirm a matching hold. Send the same `recurrence` for a recurring hold. An expired or unknown hold books nothing.\nUse `staff_preference` with `team_member_id`, `team_group_id` for a team, and `recurrence` for a series.\n\n- `location_id` (from `locations_list`), with `offering_id`, `team_member_id` and\n  `service_address` as the location needs. A staffed location books this way. Leave out\n  `team_member_id` to book the first team member who is free. Find times with\n  `appointments_availability` first.\n- `calendar_id` (from `calendars_list`) books a location that is not staffed on its Google calendar.\n\nWith either shape, the contact’s name, phone and email become the attendee, so reminders reach\nthem. The booking is made in the name of the user who created the API key.\nRetry with the same `idempotency_key` to get the first booking back rather than a second one.\nA retry after the start has passed answers `start_in_past`, so read `appointments_list` before booking again.\nAt a staffed location a member’s credential books and checks only its own times, and changes only its own appointments. Anything else answers 403 `insufficient_role`. A manager’s credential with the appointments power books, checks and changes anyone’s appointments at its own locations.\n\nA refused `location_id` booking answers 409 with `error` set to one of these codes and a `message`:\n\n- `staff_choice_disabled`: this offering disables customer staff selection.\n- `recurrence_rule_unsupported`: the recurrence rule cannot be expanded. Nothing is reserved.\n- `preferred_staff_unavailable`: the named person is unavailable. No substitute is booked.\n- `offering_required`: the location sells services. Choose one. The body carries `booking_options`.\n- `offering_not_offered_here`: the service is not offered here, or nobody here does it.\n- `add_on_not_found`: one of the selected add-ons is not available for this service.\n- `team_member_not_eligible`: the team member does not work here, does not do this service, or does not cover the address.\n- `no_team_member_available`: nobody who can do it is free then.\n- `slot_taken`: the time is booked.\n- `hold_not_found`, `hold_expired`, `invalid_request` or `deposit_required`: the supplied hold cannot confirm.\n- `outside_hours`: the time is outside booking hours, or outside the team member’s schedule.\n- `duration_mismatch`: the end time does not match the service’s `duration_minutes`.\n- `address_out_of_area`: no territory of this location covers the postal code.\n- `location_changed`: the location changed while booking. Check availability again.\n- `start_in_past`: the start time has passed. Choose a later time. A `calendar_id` booking answers it too.\n\nAny other `calendar_id` slot that is not available is a 409 with no code.\nThe same `idempotency_key` with other details is a 409 too, with no code.",
         "operationId": "appointments_create",
         "parameters": [],
         "requestBody": {
@@ -5680,7 +5680,7 @@
             }
           },
           "409": {
-            "description": "A refused `location_id` booking answers 409 with `error` set to one of these codes and a `message`:\n\n- `staff_choice_disabled`: this offering disables customer staff selection.\n- `recurrence_rule_unsupported`: the recurrence rule cannot be expanded. Nothing is reserved.\n- `preferred_staff_unavailable`: the named person is unavailable. No substitute is booked.\n- `offering_required`: the location sells services. Choose one. The body carries `booking_options`.\n- `offering_not_offered_here`: the service is not offered here, or nobody here does it.\n- `team_member_not_eligible`: the team member does not work here, does not do this service, or does not cover the address.\n- `no_team_member_available`: nobody who can do it is free then.\n- `slot_taken`: the time is booked.\n- `hold_not_found`, `hold_expired`, `invalid_request` or `deposit_required`: the supplied hold cannot confirm.\n- `outside_hours`: the time is outside booking hours, or outside the team member’s schedule.\n- `duration_mismatch`: the end time does not match the service’s `duration_minutes`.\n- `address_out_of_area`: no territory of this location covers the postal code.\n- `location_changed`: the location changed while booking. Check availability again.\n- `start_in_past`: the start time has passed. Choose a later time. A `calendar_id` booking answers it too.\n\nAny other `calendar_id` slot that is not available is a 409 with no code.\nThe same `idempotency_key` with other details is a 409 too, with no code."
+            "description": "A refused `location_id` booking answers 409 with `error` set to one of these codes and a `message`:\n\n- `staff_choice_disabled`: this offering disables customer staff selection.\n- `recurrence_rule_unsupported`: the recurrence rule cannot be expanded. Nothing is reserved.\n- `preferred_staff_unavailable`: the named person is unavailable. No substitute is booked.\n- `offering_required`: the location sells services. Choose one. The body carries `booking_options`.\n- `offering_not_offered_here`: the service is not offered here, or nobody here does it.\n- `add_on_not_found`: one of the selected add-ons is not available for this service.\n- `team_member_not_eligible`: the team member does not work here, does not do this service, or does not cover the address.\n- `no_team_member_available`: nobody who can do it is free then.\n- `slot_taken`: the time is booked.\n- `hold_not_found`, `hold_expired`, `invalid_request` or `deposit_required`: the supplied hold cannot confirm.\n- `outside_hours`: the time is outside booking hours, or outside the team member’s schedule.\n- `duration_mismatch`: the end time does not match the service’s `duration_minutes`.\n- `address_out_of_area`: no territory of this location covers the postal code.\n- `location_changed`: the location changed while booking. Check availability again.\n- `start_in_past`: the start time has passed. Choose a later time. A `calendar_id` booking answers it too.\n\nAny other `calendar_id` slot that is not available is a 409 with no code.\nThe same `idempotency_key` with other details is a 409 too, with no code."
           },
           "422": {
             "description": "The calendar is not active, or the key has no creator to book in the name of, or that user is no longer an active member of the organization"
@@ -8449,6 +8449,7 @@
     },
     "/api/v1/offerings/{offeringId}/pricing": {
       "patch": {
+        "description": "For an API caller, a change to kind, amount, currency, unit label or display resets the stored price status to unconfirmed. Deposit or booking policy changes alone keep the stored status. Sending unconfirmed sets status to unconfirmed. This is refused if a percentage deposit would remain. Sending confirmed does not confirm a price through the API. Use offerings_confirm_price to confirm. A signed-in OWNER or ADMIN in the dashboard keeps the status sent, or the stored status when omitted. The published terms version carries the stored status. For all callers, any edit that would leave a percentage deposit on an unconfirmed price answers percent_deposit_needs_confirmed_price. This includes sending unconfirmed and adding a percentage deposit to an unconfirmed price. A percentage deposit needs a confirmed exact price. To change the price, change the deposit in the same request (deposit_kind none or fixed), or have an owner or admin edit it.",
         "operationId": "offerings_update_pricing",
         "parameters": [
           {
@@ -8528,7 +8529,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Update an offering price, deposit policy and booking policy override",
+        "summary": "Update offering pricing. API price edits require confirmation again",
         "tags": [
           "Offerings",
           "Public API"
@@ -16749,6 +16750,7 @@
     },
     "/api/v1/groups/{groupId}/downtime": {
       "get": {
+        "description": "A location-limited key reads only an asset whose home location is one of its locations. An asset that one of its locations only serves answers 404 here.",
         "operationId": "groups_list_downtime",
         "parameters": [
           {
@@ -16838,6 +16840,7 @@
         "x-member-access": "action"
       },
       "post": {
+        "description": "A location-limited key reaches an asset whose home location is one of its locations, or that one of its locations serves (group_serves).",
         "operationId": "groups_add_downtime",
         "parameters": [
           {
@@ -16935,6 +16938,7 @@
     },
     "/api/v1/groups/{groupId}/downtime/end": {
       "post": {
+        "description": "A location-limited key reaches an asset whose home location is one of its locations, or that one of its locations serves (group_serves).",
         "operationId": "groups_end_downtime",
         "parameters": [
           {
@@ -44120,7 +44124,7 @@
         "x-member-access": "action"
       },
       "post": {
-        "description": "OWNER and ADMIN only. Derives a stable key from the label. Contact fields refresh agent prompts. Unsupported subject/type pairs answer 422 type_not_allowed_for_subject.",
+        "description": "OWNER and ADMIN only. Derives a stable key from the label. Contact fields refresh agent prompts. Unsupported subject/type pairs answer 422 type_not_allowed_for_subject. Contact keys or labels matching built-in Name, Phone or Email spellings answer 422 field_builtin_contact_name. The message identifies the key or label clash. Change a clashing label. An enabled legacy field with a clashing key can only be archived, because its key cannot change.",
         "operationId": "fields_create",
         "parameters": [],
         "requestBody": {
@@ -44175,7 +44179,7 @@
             }
           },
           "422": {
-            "description": "type_not_allowed_for_subject or invalid field configuration",
+            "description": "field_builtin_contact_name (message identifies the key or label clash), type_not_allowed_for_subject, or invalid field configuration",
             "content": {
               "application/json": {
                 "schema": {
@@ -44210,7 +44214,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Create a custom field on a record kind",
+        "summary": "Create a custom field. Contact name clashes return 422 field_builtin_contact_name",
         "tags": [
           "Fields",
           "Public API"
@@ -44498,7 +44502,7 @@
         "x-member-access": "action"
       },
       "patch": {
-        "description": "OWNER and ADMIN only, including access_class changes. Send expected_revision and changed properties. Type, format, subject and key stay fixed. Keep option keys and archive removed options. A restricted class requires calendar sync off in the same update. Class increases and sync-off edits remove synced calendar rows atomically. Contact edits refresh agents. Errors: 422 field_type_immutable or field_archived; 409 revision_conflict.",
+        "description": "OWNER and ADMIN only, including access_class changes. Send expected_revision and changed properties. Type, format, subject and key stay fixed. Keep option keys and archive removed options. A restricted class requires calendar sync off in the same update. Class increases and sync-off edits remove synced calendar rows atomically. Contact edits refresh agents. Errors: 422 field_type_immutable or field_archived; 409 revision_conflict. Contact keys or labels matching built-in Name, Phone or Email spellings answer 422 field_builtin_contact_name. The message identifies the key or label clash. Change a clashing label. An enabled legacy field with a clashing key can only be archived, because its key cannot change.",
         "operationId": "fields_update",
         "parameters": [
           {
@@ -44573,7 +44577,7 @@
             }
           },
           "422": {
-            "description": "field_type_immutable, field_archived, or invalid field configuration",
+            "description": "field_builtin_contact_name (message identifies the key or label clash), field_type_immutable, field_archived, or invalid field configuration",
             "content": {
               "application/json": {
                 "schema": {
@@ -44598,7 +44602,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Change a custom field at its current revision",
+        "summary": "Change a custom field. Contact name clashes return 422 field_builtin_contact_name",
         "tags": [
           "Fields",
           "Public API"
@@ -44611,6 +44615,88 @@
           "irreversible": "Option history, cardinality widening and calendar cleanup cannot be rewound automatically. Edit at the current revision."
         },
         "x-iris-scope": "fields:write",
+        "x-member-access": "action"
+      }
+    },
+    "/api/v1/fields/{fieldId}/usage": {
+      "get": {
+        "description": "OWNER and ADMIN only. Call it before fields_archive and tell the user what it lists.\n`values` counts the records that hold a value, per record kind. Archive keeps the values.\n`blockers` must be cleared first: fields_archive answers 409 field_designated while one exists.\nEach entry of `uses` has a stable `kind`, a `count` and up to five `names`. `names` is null for a kind\nthat names nothing. `names_withheld` is true when this credential cannot read some of them.\nA credential without a kind’s own read scope (`sequences:read`, `audiences:read`, `forms:read`,\n`booking_widgets:read`, `integrations:read`, `table_views:read`, `task_types:read`, `work_types:read`,\n`agents:read`) gets that kind’s count with no name and no id.\n`agent_prompt` true means archiving also takes the field out of the AI agents’ prompts.\nNo stored value is returned. A field of another organization answers 404.",
+        "operationId": "fields_get_usage",
+        "parameters": [
+          {
+            "name": "fieldId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldUsageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown, revoked or expired API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SQL action access is required. Denials return the decision reason and approvals_required. A needs_approval decision never executes. The key does not carry the `fields:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such field in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "See what uses a custom field before you archive it, with no names for kinds you cannot read",
+        "tags": [
+          "Fields",
+          "Public API"
+        ],
+        "x-iris-action": "fields.manage",
+        "x-iris-scope": "fields:read",
         "x-member-access": "action"
       }
     },
@@ -44744,7 +44830,7 @@
     },
     "/api/v1/fields/{fieldId}/restore": {
       "post": {
-        "description": "OWNER and ADMIN only. Existing values remain. An optional expected_revision refuses stale writes with 409 revision_conflict. Contact edits refresh agents.",
+        "description": "OWNER and ADMIN only. Existing values remain. An optional expected_revision refuses stale writes with 409 revision_conflict. Contact edits refresh agents. Contact keys or labels matching built-in Name, Phone or Email spellings answer 422 field_builtin_contact_name. The message identifies the key or label clash. Change a clashing label. An enabled legacy field with a clashing key can only be archived, because its key cannot change.",
         "operationId": "fields_restore",
         "parameters": [
           {
@@ -44828,6 +44914,16 @@
               }
             }
           },
+          "422": {
+            "description": "Built-in contact key or label",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
             "content": {
@@ -44844,7 +44940,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Restore an archived custom field",
+        "summary": "Restore a custom field. Contact name clashes return 422 field_builtin_contact_name",
         "tags": [
           "Fields",
           "Public API"
@@ -51744,7 +51840,7 @@
     },
     "/api/v1/invoices/{id}/send": {
       "post": {
-        "description": "For API keys and OAuth grants, this operation can return 202 approval_requested. Staff approve the request in Iris. Retry with the same idempotency or send key (idempotency_key). The server rechecks authority and approval_valid_for in the same transaction, executes once, and returns 200 with the normal result. Another retry replays that result. A rejected or expired request returns 403 approval_denied. A new idempotency_key files a new request.",
+        "description": "For API keys and OAuth grants, this operation can return 202 approval_requested. Staff approve the request in Iris. Retry with the same idempotency or send key (idempotency_key). The server rechecks authority and approval_valid_for in the same transaction, executes once, and returns 200 with the normal result. Another retry replays that result. A rejected or expired request returns 403 approval_denied. A new idempotency_key files a new request. After a completed send, a same-key retry of the same request replays the stored result while the resolved recipients stay the same, and a contact rename does not change them. It answers 409 `idempotency_conflict` when they change: a group member joins or leaves, a default recipient changes, an endpoint is archived, an endpoint value changes, or a contact gets a new primary email. Switching between select_all and an explicit list is a changed request and also answers 409. While staff approval is pending, a same-key retry of the same request answers 202 again. After approval, a changed caller list gets a new send key, files a new approval and answers 202. Only an unchanged request whose resolved recipients changed, or whose contact was renamed under select_all or defaults, answers 403 `approval_denied`.",
         "operationId": "invoices_send",
         "parameters": [
           {
@@ -51819,7 +51915,7 @@
             }
           },
           "409": {
-            "description": "Retry with the same caller arguments, including defaults or select_all, to replay the stored send result without new deliveries. A changed request or resolved recipient list answers 409 `idempotency_conflict`. `hosted_invoice_blocked`: nothing was sent. `reason` `hosted_payment_method_save_not_never`: the Stripe account lets the hosted invoice page save a payment method, so set it to never in the Stripe Dashboard. `reason` `hosted_payment_method_save_unverified`: Iris could not read the setting from Stripe, so try again, or the account has no stored setting yet, so an owner chooses Check status on the payments settings page first.",
+            "description": "Retry with the same caller arguments, including defaults or select_all, to replay the stored send result without new deliveries. A changed request or resolved recipient list answers 409 `idempotency_conflict`. Once one body under a key has deliveries, another body under that key answers 409 `idempotency_key_reused`, also while the first send still runs. Only one body is delivered. A body that waits for approval or resolves no recipients has no deliveries and does not reserve the key. `hosted_invoice_blocked`: nothing was sent. `reason` `hosted_payment_method_save_not_never`: the Stripe account lets the hosted invoice page save a payment method, so set it to never in the Stripe Dashboard. `reason` `hosted_payment_method_save_unverified`: Iris could not read the setting from Stripe, so try again, or the account has no stored setting yet, so an owner chooses Check status on the payments settings page first.",
             "content": {
               "application/json": {
                 "schema": {
@@ -52896,7 +52992,7 @@
     },
     "/api/v1/proposals/{id}/send": {
       "post": {
-        "description": "For API keys and OAuth grants, this operation can return 202 approval_requested. Staff approve the request in Iris. Retry with the same idempotency or send key (idempotency_key). The server rechecks authority and approval_valid_for in the same transaction, executes once, and returns 200 with the normal result. Another retry replays that result. A rejected or expired request returns 403 approval_denied. A new idempotency_key files a new request.",
+        "description": "For API keys and OAuth grants, this operation can return 202 approval_requested. Staff approve the request in Iris. Retry with the same idempotency or send key (idempotency_key). The server rechecks authority and approval_valid_for in the same transaction, executes once, and returns 200 with the normal result. Another retry replays that result. A rejected or expired request returns 403 approval_denied. A new idempotency_key files a new request. After a completed send, a same-key retry replays the stored result while the resolved recipients stay the same, also when a changed explicit list resolves to the same recipients. A contact rename does not change them. It answers 409 `idempotency_conflict` when they change: a group member joins or leaves, a default recipient changes, an endpoint is archived, an endpoint value changes, or a contact gets a new primary email. Switching between select_all and an explicit list is a changed request and also answers 409. While staff approval is pending, a same-key retry answers 202 again. After approval, a changed or renamed recipient list answers 403 `approval_denied`.",
         "operationId": "proposals_send",
         "parameters": [
           {
@@ -53007,7 +53103,7 @@
     },
     "/api/v1/credit-notes/{id}/send": {
       "post": {
-        "description": "For API keys and OAuth grants, this operation can return 202 approval_requested. Staff approve the request in Iris. Retry with the same idempotency or send key (idempotency_key). The server rechecks authority and approval_valid_for in the same transaction, executes once, and returns 200 with the normal result. Another retry replays that result. A rejected or expired request returns 403 approval_denied. A new idempotency_key files a new request.",
+        "description": "For API keys and OAuth grants, this operation can return 202 approval_requested. Staff approve the request in Iris. Retry with the same idempotency or send key (idempotency_key). The server rechecks authority and approval_valid_for in the same transaction, executes once, and returns 200 with the normal result. Another retry replays that result. A rejected or expired request returns 403 approval_denied. A new idempotency_key files a new request. After a completed send, a same-key retry replays the stored result while the resolved recipients stay the same, also when a changed explicit list resolves to the same recipients. A contact rename does not change them. It answers 409 `idempotency_conflict` when they change: a group member joins or leaves, a default recipient changes, an endpoint is archived, an endpoint value changes, or a contact gets a new primary email. Switching between select_all and an explicit list is a changed request and also answers 409. While staff approval is pending, a same-key retry answers 202 again. After approval, a changed or renamed recipient list answers 403 `approval_denied`.",
         "operationId": "credit_notes_send",
         "parameters": [
           {
@@ -53092,7 +53188,7 @@
             }
           },
           "409": {
-            "description": "`document_not_issued`: the credit note is a draft. `idempotency_conflict`: the same idempotency key was used with a changed request or resolved recipient list.",
+            "description": "`document_not_issued`: the credit note is a draft. `idempotency_conflict`: the same idempotency key was used and the resolved recipients changed.",
             "content": {
               "application/json": {
                 "schema": {
@@ -55247,7 +55343,7 @@
     },
     "/api/v1/receipts/{id}/send": {
       "post": {
-        "description": "Sends an issued receipt by email, SMS or PDF. Each recipient passes the billing communication gate. A blocked recipient comes back with its reason and the permitted alternatives. The same key with other details is 409 idempotency_key_reused. For API keys and OAuth grants, this operation can return 202 approval_requested. Staff approve the request in Iris. Retry with the same idempotency or send key (idempotency_key). The server rechecks authority and approval_valid_for in the same transaction, executes once, and returns 200 with the normal result. Another retry replays that result. A rejected or expired request returns 403 approval_denied. A new idempotency_key files a new request.",
+        "description": "Sends an issued receipt by email, SMS or PDF. Each recipient passes the billing communication gate. A blocked recipient comes back with its reason and the permitted alternatives. The same key with other details is 409 idempotency_key_reused. For API keys and OAuth grants, this operation can return 202 approval_requested. Staff approve the request in Iris. Retry with the same idempotency or send key (idempotency_key). The server rechecks authority and approval_valid_for in the same transaction, executes once, and returns 200 with the normal result. Another retry replays that result. A rejected or expired request returns 403 approval_denied. A new idempotency_key files a new request. The stored answer replays for 24 hours without sending again. For those 24 hours a changed request answers 409 `idempotency_key_reused`, also while staff approval is pending and after it. After that, a same-key retry of a completed send replays while the resolved recipients stay the same. It answers 409 `idempotency_conflict` when they change: a group member joins or leaves, a default recipient changes, an endpoint is archived, an endpoint value changes, or a contact gets a new primary email. Switching between select_all and an explicit list is a changed request and also answers 409. While staff approval is pending, an unchanged retry answers 202 again. After approval, an unchanged request whose resolved recipients changed or were renamed, or a changed request after the 24 hours, answers 403 `approval_denied`.",
         "operationId": "receipts_send",
         "parameters": [
           {
@@ -55322,7 +55418,7 @@
             }
           },
           "409": {
-            "description": "`receipt_payment_voided`: the payment behind the receipt is voided, so the receipt is not sent\n\n`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
+            "description": "`receipt_payment_voided`: the payment behind the receipt is voided, so the receipt is not sent. `idempotency_conflict`: after the stored answer expires, the same idempotency key was used and the resolved recipients changed.\n\n`idempotency_key_reused`: the key was sent before with other details, or before the caller’s access changed. `idempotency_in_progress`: the first call with the key is still running. `idempotency_outcome_unknown`: the first call failed after it started and may have taken effect, so read the current state before you retry with a new key",
             "content": {
               "application/json": {
                 "schema": {
@@ -56958,6 +57054,26 @@
               "format": "uuid",
               "type": "string"
             }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "The `next_cursor` of the page before. Leave out for the first page.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
           }
         ],
         "responses": {
@@ -56966,10 +57082,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AllowanceEntryDto"
-                  }
+                  "$ref": "#/components/schemas/AllowanceEntriesPageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid grant ID, cursor or limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
                 }
               }
             }
@@ -57020,7 +57143,7 @@
             "apiKey": []
           }
         ],
-        "summary": "List allowance ledger entries; entries never include dedupe_key",
+        "summary": "Page allowance ledger entries by cursor; entries never include dedupe_key",
         "tags": [
           "Allowances",
           "Public API"
@@ -57160,8 +57283,29 @@
     },
     "/api/v1/customer-subscriptions": {
       "get": {
+        "description": "Pages by cursor: pass `next_cursor` back as `cursor` until it is null.",
         "operationId": "customer_subscriptions_list",
         "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "The `next_cursor` of the page before. Leave out for the first page.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          },
           {
             "name": "bill_to_contact_id",
             "required": false,
@@ -57189,10 +57333,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CustomerSubscriptionResponseDto"
-                  }
+                  "$ref": "#/components/schemas/CustomerSubscriptionPageDto"
                 }
               }
             }
@@ -57233,7 +57374,7 @@
             "apiKey": []
           }
         ],
-        "summary": "List customer subscriptions with issuer, state and next billing boundary",
+        "summary": "Page customer subscriptions by cursor with issuer, state and next billing boundary",
         "tags": [
           "Customer subscriptions",
           "Public API"
@@ -57661,7 +57802,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Preview a plan or quantity change with its effective date, prorated charge or credit and extra units. A Stripe-issued subscription previews the proration Stripe will charge and may create its Product and Price on the connected account. It refuses next_period and on_date, including omitted timing, so use immediate. It creates no Iris change, invoice or grant. Amounts follow period financial visibility",
+        "summary": "Preview a plan or quantity change with its effective date, prorated charge or credit and extra units. A Stripe-issued subscription previews the proration Stripe will charge and may create its Product and Price on the connected account. Next_period, including omitted timing, previews a schedule phase at the Stripe period end with no proration or invoice. On a Stripe-issued subscription, a next_period change stays scheduled. Iris shows the old plan and seats until Stripe switches the phase at the period end. A Stripe next_period request at or after the Iris boundary returns 400 subscription_change_date_invalid until Iris records the renewal. It still refuses on_date (R6). It creates no Iris change, invoice or grant. Amounts follow period financial visibility",
         "tags": [
           "Customer subscriptions",
           "Public API"
@@ -57784,7 +57925,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Next-period changes replace same-kind schedules and need subscriptions.change. Immediate or dated changes withdraw overlapping schedules, return withdrawn_change_ids and need subscriptions.change_now. Stripe-issued subscriptions refuse next_period and on_date, including omitted timing, so use immediate. Charges can remain draft, extra units wait for payment and credits stay unapplied. Machine gated: a key or OAuth token gets 403 needs_approval without execution, unless a matching enabled api_key or oauth_grant rule allows subscriptions.change_now. Scope, role, record access, amount limits and second-person controls still apply",
+        "summary": "Next-period changes need subscriptions.change. On an Iris subscription, they replace same-kind schedules. A new next-period change on a Stripe subscription replaces any pending one. Immediate or dated changes withdraw overlapping schedules, return withdrawn_change_ids and need subscriptions.change_now. On a Stripe-issued subscription, a next_period change stays scheduled. Iris shows the old plan and seats until Stripe switches the phase at the period end. A Stripe next_period request at or after the Iris boundary returns 400 subscription_change_date_invalid until Iris records the renewal. Omitted timing also uses next_period, without proration or an extra invoice. Immediate changes prorate the paid item and release the pending schedule. Stripe on_date stays refused (R6). Charges can remain draft, extra units wait for payment and credits stay unapplied. Machine gated: a key or OAuth token gets 403 needs_approval without execution, unless a matching enabled api_key or oauth_grant rule allows subscriptions.change_now. Scope, role, record access, amount limits and second-person controls still apply",
         "tags": [
           "Customer subscriptions",
           "Public API"
@@ -58089,7 +58230,7 @@
     },
     "/api/v1/customer-subscriptions/{id}/periods": {
       "get": {
-        "description": "An OWNER or ADMIN principal, or a MANAGER principal with the billing power, receives unit_amount_minor, as invoices_get returns totals. An unrestricted organization key with no owner user receives neither.",
+        "description": "Pages by cursor: pass `next_cursor` back as `cursor` until it is null. An OWNER or ADMIN principal, or a MANAGER principal with the billing power, receives unit_amount_minor, as invoices_get returns totals. An unrestricted organization key with no owner user receives neither.",
         "operationId": "customer_subscriptions_list_periods",
         "parameters": [
           {
@@ -58100,9 +58241,39 @@
               "format": "uuid",
               "type": "string"
             }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "The `next_cursor` of the page before. Leave out for the first page.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
           }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerSubscriptionPeriodPageDto"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, malformed, unknown, revoked or expired API key",
             "content": {
@@ -58149,7 +58320,7 @@
             "apiKey": []
           }
         ],
-        "summary": "List subscription periods with invoices, grants and prices under the invoices_get financial visibility rule",
+        "summary": "Page subscription periods by cursor with invoices, grants and prices under the invoices_get financial visibility rule",
         "tags": [
           "Customer subscriptions",
           "Public API"
@@ -64652,7 +64823,8 @@
             "enum": [
               "unconfirmed",
               "confirmed"
-            ]
+            ],
+            "description": "For an API caller, sending unconfirmed sets status to unconfirmed. This is refused if a percentage deposit would remain. Sending confirmed does not confirm a price. Price field changes reset status to unconfirmed. With no price field change, the stored status stays. Use offerings_confirm_price to confirm. A signed-in OWNER or ADMIN in the dashboard keeps the status sent, or the stored status when omitted. For all callers, any edit that would leave a percentage deposit on an unconfirmed price answers percent_deposit_needs_confirmed_price. This includes sending unconfirmed and adding a percentage deposit to an unconfirmed price. A percentage deposit needs a confirmed exact price. To change the price, change the deposit in the same request (deposit_kind none or fixed), or have an owner or admin edit it."
           },
           "deposit_kind": {
             "type": "string",
@@ -83024,6 +83196,159 @@
           "archived_field_count"
         ]
       },
+      "FieldUsageStoreDto": {
+        "type": "object",
+        "properties": {
+          "store": {
+            "type": "string",
+            "description": "Where the values live: `crm_contacts`, `field_values` or `ce_attribute`."
+          },
+          "record_kind": {
+            "type": "string",
+            "description": "The record kind of the records, such as `contact` or `location`."
+          },
+          "count": {
+            "type": "number",
+            "description": "How many records hold a value."
+          }
+        },
+        "required": [
+          "store",
+          "record_kind",
+          "count"
+        ]
+      },
+      "FieldUsageValuesDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number",
+            "description": "How many records hold a value, over every store."
+          },
+          "stores": {
+            "description": "The stores with at least one value.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldUsageStoreDto"
+            }
+          }
+        },
+        "required": [
+          "total",
+          "stores"
+        ]
+      },
+      "FieldUsageNameDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The id of the object: a sequence, an audience, a form, a view, and so on."
+          },
+          "name": {
+            "type": "string",
+            "description": "The name the object shows in Iris."
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "FieldUsageEntryDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "record_owner",
+              "task_type_assignment",
+              "work_type_assignment",
+              "stage_designation",
+              "sequence_enrollment",
+              "sequence_branch",
+              "sequence_merge_tag",
+              "sequence_task_assignee",
+              "audience_rule",
+              "saved_view",
+              "table_settings",
+              "form_target",
+              "form_legacy_key",
+              "booking_widget",
+              "calendar_sync",
+              "hubspot_mapping",
+              "provider_authority",
+              "ghl_mapping",
+              "context_engine_agent"
+            ],
+            "description": "What uses the field. A blocker kind (`record_owner`, `task_type_assignment`, `work_type_assignment`) stops the archive until it is cleared. Every other kind is a use the archive goes past."
+          },
+          "count": {
+            "type": "number",
+            "description": "How many objects of this kind use the field."
+          },
+          "names": {
+            "nullable": true,
+            "description": "Up to five objects the credential can read, by name. Null for a kind that names nothing (`stage_designation`, `calendar_sync`, `table_settings`, `ghl_mapping`).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldUsageNameDto"
+            }
+          },
+          "names_withheld": {
+            "type": "boolean",
+            "description": "True when the credential cannot read some of the objects counted: it lacks the kind’s read scope, or a saved view is another person’s private view. Their names and ids are left out."
+          }
+        },
+        "required": [
+          "kind",
+          "count",
+          "names",
+          "names_withheld"
+        ]
+      },
+      "FieldUsageDto": {
+        "type": "object",
+        "properties": {
+          "field_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "values": {
+            "description": "Archive keeps the values, and a restore brings them back. A value that is null, \"\", [] or {} does not count.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FieldUsageValuesDto"
+              }
+            ]
+          },
+          "blockers": {
+            "description": "What must be cleared first: fields_archive answers 409 field_designated while one exists.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldUsageEntryDto"
+            }
+          },
+          "uses": {
+            "description": "What keeps working or stops after an archive, in a fixed order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldUsageEntryDto"
+            }
+          },
+          "agent_prompt": {
+            "type": "boolean",
+            "description": "True when the field is in the AI agents’ prompt today. Archiving takes it out. It is not a use."
+          }
+        },
+        "required": [
+          "field_id",
+          "values",
+          "blockers",
+          "uses",
+          "agent_prompt"
+        ]
+      },
       "FieldOptionWriteDto": {
         "type": "object",
         "properties": {
@@ -88495,6 +88820,26 @@
           "reason"
         ]
       },
+      "AllowanceEntriesPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AllowanceEntryDto"
+            }
+          },
+          "next_cursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Opaque cursor for the next page, or null at the end."
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ]
+      },
       "RecordAllowanceUsageDto": {
         "type": "object",
         "properties": {
@@ -88818,6 +89163,25 @@
           "archived_at",
           "created_at",
           "updated_at"
+        ]
+      },
+      "CustomerSubscriptionPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerSubscriptionResponseDto"
+            }
+          },
+          "next_cursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
         ]
       },
       "ScheduledSubscriptionChangeDto": {
@@ -89188,12 +89552,13 @@
               "immediate",
               "on_date"
             ],
-            "default": "next_period"
+            "default": "next_period",
+            "description": "On a Stripe-issued subscription, a next_period change stays scheduled. Iris shows the old plan and seats until Stripe switches the phase at the period end. Omitted timing also uses next_period, with no proration or extra invoice. A new next-period change on a Stripe subscription replaces any pending one. Immediate prorates the paid item and releases the pending schedule. Stripe on_date stays refused (R6)."
           },
           "effective_at": {
             "type": "string",
             "format": "date-time",
-            "description": "Required for on_date, within the current period. Stripe-issued subscriptions refuse next_period and on_date, including omitted timing, so use immediate."
+            "description": "Required for on_date, within the current period. Stripe-issued subscriptions refuse on_date (R6)."
           }
         },
         "required": [
@@ -89338,6 +89703,105 @@
             "description": "Fresh period start. Defaults to the database clock."
           }
         }
+      },
+      "CustomerSubscriptionPeriodDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "subscription_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "period_no": {
+            "type": "number"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "plan_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit_amount_minor": {
+            "type": "number",
+            "description": "Visible to readers with financial access."
+          },
+          "currency": {
+            "type": "string"
+          },
+          "terms_version_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "invoice_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "grant_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "organization_id",
+          "subscription_id",
+          "period_no",
+          "starts_at",
+          "ends_at",
+          "plan_id",
+          "quantity",
+          "currency",
+          "terms_version_id",
+          "invoice_id",
+          "grant_id",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "CustomerSubscriptionPeriodPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerSubscriptionPeriodDto"
+            }
+          },
+          "next_cursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ]
       },
       "ChangeActorDto": {
         "type": "object",
