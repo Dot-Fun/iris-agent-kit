@@ -379,6 +379,7 @@ more, and a 409 `idempotency_conflict` means the key already names another grant
 execution is enabled, `allowances_grant` answers 403 `needs_approval` and does not create a grant.
 `allowances_get_balance` needs a `contact_id` or a `group_id`. Read units from `by_unit`.
 Grant `funded_minor` appears only for OWNER, ADMIN, or MANAGER with billing.
+Organization keys without a role receive units without `funded_minor`.
 List, get, balance, entries, grant and transfer responses omit `dedupe_key` for every reader.
 Payment and source ids remain visible. Voice and chat caller balances omit funded amounts and stored dedupe keys.
 

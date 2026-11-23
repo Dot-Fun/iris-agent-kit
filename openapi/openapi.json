@@ -56645,7 +56645,7 @@
             "apiKey": []
           }
         ],
-        "summary": "List allowance grants; funded_minor appears only for financial readers (OWNER, ADMIN, or MANAGER with billing); no dedupe_key is returned",
+        "summary": "List allowance grants; funded_minor appears only for financial readers (OWNER, ADMIN, or MANAGER with billing); organization keys without a role receive units without funded_minor; no dedupe_key is returned",
         "tags": [
           "Allowances",
           "Public API"
@@ -56812,7 +56812,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Get an allowance balance; funded_minor appears on grants only for financial readers (OWNER, ADMIN, or MANAGER with billing); no dedupe_key is returned",
+        "summary": "Get an allowance balance; funded_minor appears on grants only for financial readers (OWNER, ADMIN, or MANAGER with billing); organization keys without a role receive units without funded_minor; no dedupe_key is returned",
         "tags": [
           "Allowances",
           "Public API"
@@ -56893,7 +56893,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Get an allowance grant; funded_minor appears only for financial readers (OWNER, ADMIN, or MANAGER with billing); no dedupe_key is returned",
+        "summary": "Get an allowance grant; funded_minor appears only for financial readers (OWNER, ADMIN, or MANAGER with billing); organization keys without a role receive units without funded_minor; no dedupe_key is returned",
         "tags": [
           "Allowances",
           "Public API"

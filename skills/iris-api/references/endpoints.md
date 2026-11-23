@@ -136,7 +136,7 @@ Change a phone agent’s name, greeting or prompt fields
 
 `GET /api/v1/payments/allowances/{id}`. Scope: `allowances:read`. Member: `scoped`.
 
-Get an allowance grant; funded_minor appears only for financial readers (OWNER, ADMIN, or MANAGER with billing); no dedupe_key is returned
+Get an allowance grant; funded_minor appears only for financial readers (OWNER, ADMIN, or MANAGER with billing); organization keys without a role receive units without funded_minor; no dedupe_key is returned
 
 - `id` (path, string uuid, required)
 
@@ -144,7 +144,7 @@ Get an allowance grant; funded_minor appears only for financial readers (OWNER, 
 
 `GET /api/v1/payments/allowances/balance`. Scope: `allowances:read`. Member: `scoped`.
 
-Get an allowance balance; funded_minor appears on grants only for financial readers (OWNER, ADMIN, or MANAGER with billing); no dedupe_key is returned
+Get an allowance balance; funded_minor appears on grants only for financial readers (OWNER, ADMIN, or MANAGER with billing); organization keys without a role receive units without funded_minor; no dedupe_key is returned
 
 - `contact_id` (query, string uuid)
 - `group_id` (query, string uuid)
@@ -169,7 +169,7 @@ Grant allowance units
 
 `GET /api/v1/payments/allowances`. Scope: `allowances:read`. Member: `scoped`.
 
-List allowance grants; funded_minor appears only for financial readers (OWNER, ADMIN, or MANAGER with billing); no dedupe_key is returned
+List allowance grants; funded_minor appears only for financial readers (OWNER, ADMIN, or MANAGER with billing); organization keys without a role receive units without funded_minor; no dedupe_key is returned
 
 ### allowances_list_entries
 
