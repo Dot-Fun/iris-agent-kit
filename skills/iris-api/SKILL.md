@@ -1162,6 +1162,12 @@ A MEMBER can transition and record minutes only for appointments whose primary s
 2. Call `contacts_update` to change the name, phone, email, stage, custom fields or `relationships {key: [ids]}`. Relationship keys come from the contact catalog. Each array replaces that field. Send `[]` to clear it. Targets must match its kind, cardinality and organization. An unknown
    custom field key returns 400 naming it. To move the contact to a stage, call `contacts_list_stages`
    first and send one stage `id` as `stage_id`.
+   With an API key, an email you set this way becomes confirmed: the organization's AI agents may
+   then email it. `contacts_upsert` confirms the email only when it creates the contact.
+   `contacts_add_endpoint` and `contacts_update_endpoint` confirm one only with `is_primary: true`. Set an email
+   only when a person gave it. Through `/api/v1/mcp` or an OAuth token, nothing is confirmed.
+   `contacts_add_endpoint` answers 400 for an email value with a quoted local part, a display name
+   or a second address.
 3. Call `contacts_add_note` with what you learned. The note is stored with source `api` and, as its
    author, the user you act for (an organization key stores no author).
 4. Call `contacts_add_tag` or `contacts_remove_tag` to change tags. Both are safe to repeat. An added

@@ -1242,9 +1242,9 @@ Add a phone number or email address to a contact
 - `contactId` (path, string uuid, required)
 - `idempotency_key` (body, string): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
 - `kind` (body, string, required, one of `phone`, `email`)
-- `value` (body, string, required): Phone or email value. It is normalized before storage.
+- `value` (body, string, required): Phone or email value. It is normalized before storage. An email value must be one plain address, with no quoted local part, display name or second address, or the call answers 400.
 - `label` (body, string)
-- `is_primary` (body, boolean)
+- `is_primary` (body, boolean): With an API key, only `is_primary: true` on an email endpoint confirms the address for the AI agents.
 
 ### contacts_add_note
 
@@ -1579,7 +1579,7 @@ Update an endpoint label or primary flag
 - `contactId` (path, string uuid, required)
 - `endpointId` (path, string uuid, required)
 - `label` (body, string)
-- `is_primary` (body, boolean)
+- `is_primary` (body, boolean): With an API key, only `is_primary: true` on an email endpoint confirms the address for the AI agents.
 - `value` (body, string): Endpoint values are immutable. Archive and add a new endpoint.
 
 ### contacts_upsert

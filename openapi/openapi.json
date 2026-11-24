@@ -978,7 +978,7 @@
     },
     "/api/v1/contacts": {
       "post": {
-        "description": "Upserts a contact in the organization the API key belongs to. Send an email, a phone, or both.\n\nWith an email, the email is the key, matched without regard to case. A phone sent with it is\nstored as an extra phone of that contact.\n\nWith no email, the phone alone is the key. It must start with + and a country code. Iris\nupdates the one active contact that holds the number, or creates a contact when none does.\nWhen more than one contact holds it, the call writes nothing. For a 409, find them with\n`contacts_find_by_endpoint` and update one with `contacts_update`. When no active contact holds\nit and an archived contact has it as its main phone, the call answers 409 and writes nothing:\nrestore that contact with `contacts_restore`. An archived contact never matches otherwise.\n\nA match outside the key's reach (its location scope or own-records limit) answers 404, as a missing contact does, before any write.\nWith no email, a reach-limited key gets 404 if any phone holder is outside its reach. It gets 409 for several holders only when all are reachable.\nThe holder reach check covers every holder in one database call.\nA contact outside the key's reach answers 404 even when this key created it, for example when unlinked at its location or not yet the member's client.\nFor a location key, a concurrent create of the same contact at the caller's location merges into that contact.\nAn own-records key gets 404 until the contact is the member's client.\nThis is the same existence signal Zapier upsert gives. An unknown email or phone still creates a contact.\n\nOnly contacts this call creates get a location link. Matched contacts keep their links.\nSend optional `location_id` within the key scope and organization, or receive 403 `insufficient_role`.\nA key with one location implies it. Several locations require `location_id` on creation, or 400 `location_id_required`.\nAn explicit inactive location answers 400 `location_inactive` on creation. An inactive implied location creates unlinked.\nOrganization-wide keys without `location_id` and keys with no locations create unlinked.\nA create and its location link are one write. A failed link leaves no contact and answers an error the caller can retry.\n\nA stage value in `fields` must be a pipeline stage string. Empty strings and null clear it. Whitespace-only strings clear it and are stored as an empty string.\nChanging the stage on an existing contact fires `stage_changed` automations and the\n`crm.contact.stage_changed` event. A new contact fires only lead-created automations.\n\n`cancel_events` are processed first, then `events` are fired, so one request can replace\nthe journey a contact is on. Cancellations and other events are best effort.\n`assessment_abandoned` requires transactional acceptance: failures fail the request even if\nthe contact was already upserted. Only a matching `assessmentAbandonment` receipt with\n`status: accepted` confirms durable enrollment acceptance; delivery is not guaranteed.\nAn event whose name no active sequence subscribes to leaves its `key` unspent, so a later\nretry still enrolls.\n\n`skip_automations: true` makes the upsert itself start nothing: no \"New lead\" sequence, no\n`crm.lead.created`, `crm.contact.updated` or `crm.contact.stage_changed` event, or stage-change automation.\nNamed `events` and `cancel_events` still run.\nexternal_sync keeps token-loss outages as disconnected with their last sync time. Retired bindings are omitted.",
+        "description": "Upserts a contact in the organization the API key belongs to. Send an email, a phone, or both.\n\nWith an email, the email is the key, matched without regard to case. A phone sent with it is\nstored as an extra phone of that contact.\n\nWith no email, the phone alone is the key. It must start with + and a country code. Iris\nupdates the one active contact that holds the number, or creates a contact when none does.\nWhen more than one contact holds it, the call writes nothing. For a 409, find them with\n`contacts_find_by_endpoint` and update one with `contacts_update`. When no active contact holds\nit and an archived contact has it as its main phone, the call answers 409 and writes nothing:\nrestore that contact with `contacts_restore`. An archived contact never matches otherwise.\n\nA match outside the key's reach (its location scope or own-records limit) answers 404, as a missing contact does, before any write.\nWith no email, a reach-limited key gets 404 if any phone holder is outside its reach. It gets 409 for several holders only when all are reachable.\nThe holder reach check covers every holder in one database call.\nA contact outside the key's reach answers 404 even when this key created it, for example when unlinked at its location or not yet the member's client.\nFor a location key, a concurrent create of the same contact at the caller's location merges into that contact.\nAn own-records key gets 404 until the contact is the member's client.\nThis is the same existence signal Zapier upsert gives. An unknown email or phone still creates a contact.\n\nOnly contacts this call creates get a location link. Matched contacts keep their links.\nSend optional `location_id` within the key scope and organization, or receive 403 `insufficient_role`.\nA key with one location implies it. Several locations require `location_id` on creation, or 400 `location_id_required`.\nAn explicit inactive location answers 400 `location_inactive` on creation. An inactive implied location creates unlinked.\nOrganization-wide keys without `location_id` and keys with no locations create unlinked.\nA create and its location link are one write. A failed link leaves no contact and answers an error the caller can retry.\n\nA stage value in `fields` must be a pipeline stage string. Empty strings and null clear it. Whitespace-only strings clear it and are stored as an empty string.\nChanging the stage on an existing contact fires `stage_changed` automations and the\n`crm.contact.stage_changed` event. A new contact fires only lead-created automations.\n\n`cancel_events` are processed first, then `events` are fired, so one request can replace\nthe journey a contact is on. Cancellations and other events are best effort.\n`assessment_abandoned` requires transactional acceptance: failures fail the request even if\nthe contact was already upserted. Only a matching `assessmentAbandonment` receipt with\n`status: accepted` confirms durable enrollment acceptance; delivery is not guaranteed.\nAn event whose name no active sequence subscribes to leaves its `key` unspent, so a later\nretry still enrolls.\n\n`skip_automations: true` makes the upsert itself start nothing: no \"New lead\" sequence, no\n`crm.lead.created`, `crm.contact.updated` or `crm.contact.stage_changed` event, or stage-change automation.\nNamed `events` and `cancel_events` still run.\n\nWith an API key, an upsert that creates the contact confirms its email: the AI agents may then email it model-written text. An upsert that matches an existing contact confirms nothing. Use `contacts_update` to confirm its email. A call with an OAuth token, or one made through `/api/v1/mcp`, confirms nothing.\nexternal_sync keeps token-loss outages as disconnected with their last sync time. Retired bindings are omitted.",
         "operationId": "contacts_upsert",
         "parameters": [],
         "requestBody": {
@@ -1984,7 +1984,7 @@
         "x-member-access": "action"
       },
       "patch": {
-        "description": "Changes only the fields sent. `stage_id` must be a stage of the organization’s pipeline,\nand every `custom_fields` key must be a custom field the organization defines: an unknown\none is a 400 that names it. `relationships` replaces targets per catalog key. An empty array clears it.\nTargets must match the field kind, organization and cardinality. Returns the contact as `contacts_get` does.\nexternal_sync keeps token-loss outages as disconnected with their last sync time. Retired bindings are omitted.",
+        "description": "Changes only the fields sent. `stage_id` must be a stage of the organization’s pipeline,\nand every `custom_fields` key must be a custom field the organization defines: an unknown\none is a 400 that names it. `relationships` replaces targets per catalog key. An empty array clears it.\nTargets must match the field kind, organization and cardinality. Returns the contact as `contacts_get` does.\nexternal_sync keeps token-loss outages as disconnected with their last sync time. Retired bindings are omitted.\nWith an API key, a call that leaves a new primary email on the contact confirms that email: the AI agents may then email it model-written text. A call with an OAuth token, or one made through `/api/v1/mcp`, confirms nothing.",
         "operationId": "contacts_update",
         "parameters": [
           {
@@ -2213,7 +2213,7 @@
         "x-member-access": "action"
       },
       "post": {
-        "description": "Adds or restores an endpoint. The value is normalized and never changes after it is stored.",
+        "description": "Adds or restores an endpoint. The value is normalized and never changes after it is stored. An email value must be a plain address: a quoted local part, a display name or a second address answers 400. With an API key, a call that leaves a new primary email on the contact confirms that email: the AI agents may then email it model-written text. A call with an OAuth token, or one made through `/api/v1/mcp`, confirms nothing.",
         "operationId": "contacts_add_endpoint",
         "parameters": [
           {
@@ -2335,7 +2335,7 @@
     },
     "/api/v1/contacts/{contactId}/endpoints/{endpointId}": {
       "patch": {
-        "description": "Changes only label and primary. Endpoint values are immutable.",
+        "description": "Changes only label and primary. Endpoint values are immutable. With an API key, a call that leaves a new primary email on the contact confirms that email: the AI agents may then email it model-written text. A call with an OAuth token, or one made through `/api/v1/mcp`, confirms nothing.",
         "operationId": "contacts_update_endpoint",
         "parameters": [
           {
@@ -60795,7 +60795,7 @@
           },
           "value": {
             "type": "string",
-            "description": "Phone or email value. It is normalized before storage."
+            "description": "Phone or email value. It is normalized before storage. An email value must be one plain address, with no quoted local part, display name or second address, or the call answers 400."
           },
           "label": {
             "type": "string",
@@ -60804,7 +60804,8 @@
           },
           "is_primary": {
             "type": "boolean",
-            "default": false
+            "default": false,
+            "description": "With an API key, only `is_primary: true` on an email endpoint confirms the address for the AI agents."
           }
         },
         "required": [
@@ -60821,7 +60822,8 @@
             "nullable": true
           },
           "is_primary": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "With an API key, only `is_primary: true` on an email endpoint confirms the address for the AI agents."
           },
           "value": {
             "type": "string",
