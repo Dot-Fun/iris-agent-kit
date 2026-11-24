@@ -566,6 +566,7 @@ These approval-specific money grants apply to that request alone.
 Approval responses list their fields and params keys by kind and action.
 Contact values in params require their contact or appointment field grants.
 Linked record ids outside the reader's record reach are hidden.
+A create or withdraw response also hides an id when Iris cannot check its reach. Read the approval again to see it.
 See the [approval params catalogue](../../../../architecture/public-api.md#approval-params-by-kind) for permitted keys and nested shapes.
 
 Use `approvals_create` with `approvals:write` to file a request for an action that needs approval.
