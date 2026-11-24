@@ -55582,7 +55582,7 @@
             }
           },
           "400": {
-            "description": "Unsupported subject, currency, amount or bank debit, including bank_debit_not_allowed for a hold, invalid key, or contradictory header and body keys.",
+            "description": "Unsupported subject, currency, amount or bank debit, including bank_debit_not_allowed for a hold and bank_debit_not_available for a package or signup, invalid key, or contradictory header and body keys.",
             "content": {
               "application/json": {
                 "schema": {
@@ -87885,7 +87885,7 @@
           "subject_id": {
             "type": "string",
             "format": "uuid",
-            "description": "The subject ID. Document and hold links require it. Package and subscription_signup links take plan_id instead. For package and subscription_signup links it must equal plan_id. For holds, use the live deposit-gated hold ID. Requests with mixed currencies answer 422 hold_not_payable."
+            "description": "The subject ID. Document and hold links require it. Package and subscription_signup links take plan_id instead. For package and subscription_signup links it must equal plan_id. For holds, use the live deposit-gated hold ID. A hold with mixed currencies answers 422 hold_not_payable."
           },
           "plan_kind": {
             "type": "string",
@@ -87924,7 +87924,7 @@
           },
           "allow_bank_debit": {
             "type": "boolean",
-            "description": "For invoice links, omit this field to derive eligibility from the account switch and Stripe ach_debit_payments capability. An explicit true requires both; holds always use card only. The stored value is frozen on the payment attempt."
+            "description": "For invoice links, omit this field to derive eligibility from the account switch and Stripe ach_debit_payments capability. An explicit true requires both; holds always use card only. Package and signup links use card only. An explicit true answers 400 bank_debit_not_available. The stored value is frozen on the payment attempt."
           },
           "idempotency_key": {
             "type": "string",
@@ -87955,7 +87955,7 @@
             "nullable": true
           },
           "plan_id": {
-            "type": "object",
+            "type": "string",
             "format": "uuid",
             "nullable": true
           },

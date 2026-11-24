@@ -4766,7 +4766,7 @@ Create a hosted Checkout link for an invoice, hold deposit, package, or subscrip
 
 - `Idempotency-Key` (header, string): Organization-wide durable retry key. Must match body idempotency_key when both are supplied.
 - `subject_kind` (body, string, required, one of `document`, `hold`, `package`, `subscription_signup`): Accepts document, hold, package, or subscription_signup. Package and signup links require plan_kind, plan_id, currency and bill_to_contact_id. They need an OWNER or ADMIN credential, or one acting on behalf of one. Hold deposits use card only.
-- `subject_id` (body, string uuid): The subject ID. Document and hold links require it. Package and subscription_signup links take plan_id instead. For package and subscription_signup links it must equal plan_id. For holds, use the live deposit-gated hold ID. Requests with mixed currencies answer 422 hold_not_payable.
+- `subject_id` (body, string uuid): The subject ID. Document and hold links require it. Package and subscription_signup links take plan_id instead. For package and subscription_signup links it must equal plan_id. For holds, use the live deposit-gated hold ID. A hold with mixed currencies answers 422 hold_not_payable.
 - `plan_kind` (body, string, one of `allowance_plan`, `subscription_plan`)
 - `plan_id` (body, string uuid)
 - `currency` (body, string)
@@ -4774,7 +4774,7 @@ Create a hosted Checkout link for an invoice, hold deposit, package, or subscrip
 - `bill_to_group_id` (body, string uuid)
 - `issuer` (body, string, one of `iris`, `stripe`)
 - `expires_at` (body, string date-time)
-- `allow_bank_debit` (body, boolean): For invoice links, omit this field to derive eligibility from the account switch and Stripe ach_debit_payments capability. An explicit true requires both; holds always use card only. The stored value is frozen on the payment attempt.
+- `allow_bank_debit` (body, boolean): For invoice links, omit this field to derive eligibility from the account switch and Stripe ach_debit_payments capability. An explicit true requires both; holds always use card only. Package and signup links use card only. An explicit true answers 400 bank_debit_not_available. The stored value is frozen on the payment attempt.
 - `idempotency_key` (body, string): Organization-wide retry key for MCP or REST. REST also accepts Idempotency-Key. If both are supplied, they must match. Replays recheck access and return the same URL. Changed fields answer 409 idempotency_conflict. Omit the key to create a distinct intent with a stored server key for later sending. Without a caller key, the original create request cannot be replayed.
 
 ### payment_links_get

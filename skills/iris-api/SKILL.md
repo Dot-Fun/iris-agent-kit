@@ -55,6 +55,8 @@ comes from the key, never from a request body, so you cannot reach another organ
 
 ## Request a payment link with a copied link
 
+Package and signup creation needs an OWNER or ADMIN credential, or a key acting for one, and a memberless organization key answers 403 `switch_setter_not_permitted`.
+
 1. Use `payment_links_create` with `subject_kind: package` or `subscription_signup`, plus `plan_kind`, `plan_id`, `currency` and `bill_to_contact_id`. For a hold, pass the live hold ID as `subject_id`.
    Omit amount. Iris derives it from the plan or hold.
 2. Send a unique body `idempotency_key` through MCP, or an `Idempotency-Key` header through REST.
