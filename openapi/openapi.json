@@ -63248,7 +63248,8 @@
           "recurrence_series_id": {
             "type": "string",
             "format": "uuid",
-            "nullable": true
+            "nullable": true,
+            "description": "The owning recurrence series for a recurring source, expanded instance or detached occurrence. Null for a single appointment, or when no owning series exists."
           },
           "reservation_state": {
             "type": "string",

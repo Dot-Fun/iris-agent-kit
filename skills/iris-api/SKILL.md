@@ -2455,8 +2455,8 @@ Appointment reads (`appointments_list`, `appointments_get`) include `customer_co
 `customer_link_source`. They also include `external_sync` with provider status and last sync time;
 external identifiers are omitted. Use the typed customer link for identity. Its source explains whether
 a booking, staff choice, metadata, conversation or attendee endpoint selected the contact.
-Ambiguous and unmatched appointments have a null customer ID. `appointments_get` includes
-`recurrence_series_id` for recurring source and detached appointments when a live series exists.
+Ambiguous and unmatched appointments have a null customer ID. `appointments_list` and `appointments_get` include
+`recurrence_series_id` for recurring sources, expanded instances and detached appointments when an owning series exists.
 
 ## Check the payments account
 
