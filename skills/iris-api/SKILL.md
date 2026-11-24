@@ -206,6 +206,11 @@ A paid Stripe invoice with zero Iris due returns `paid_at` and moves `closed_unp
 
 Send an issued document with `invoices_send`, `proposals_send` or `credit_notes_send`. Include a unique
 `idempotency_key`. HTTP 200 lists each queued, blocked, sent or failed delivery.
+If `invoices_send`, `proposals_send` or `credit_notes_send` answers 503 `document_delivery_busy`, another sender holds a queued delivery lease.
+Wait for the `Retry-After` seconds, currently 900, then retry the same request with the same `idempotency_key`.
+MCP tool results omit HTTP headers. For `document_delivery_busy`, wait 900 seconds and reuse the same `idempotency_key`.
+A mixed batch can send some deliveries before the 503. The same-key retry does not send them again.
+`receipts_send` keeps its 200 queued response while another sender holds the lease.
 For `credit_notes_send`, pass at least one recipient unless `select_all` is true. An empty resolved
 list answers HTTP 400 `recipients_required` and creates no approval or delivery.
 HTTP 202 `approval_requested` means staff approval is pending and no delivery was created.

@@ -2285,7 +2285,7 @@ List payment disputes
 
 `POST /api/v1/credit-notes/{id}/send`. Scope: `invoices:write`. Member: `action`. Action (`x-iris-action`): `credit_notes.send`. Confirm: required. Changes: `invoices`. Idempotent: send `idempotency_key`.
 
-Send an issued credit note to chosen recipients, or request staff approval
+Send an issued credit note to chosen recipients, or request staff approval. On document_delivery_busy, wait 900 seconds and retry with the same idempotency_key.
 
 - `id` (path, string uuid, required)
 - `idempotency_key` (body, string, required): Your own key for this send. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_conflict`.
@@ -2473,7 +2473,7 @@ Resume collection and enroll eligible invoices with reminders enabled and no liv
 
 `POST /api/v1/invoices/{id}/send`. Scope: `invoices:write`. Member: `deny`. Manager power: `billing`. Confirm: required. Changes: `invoices`. Idempotent: send `idempotency_key`.
 
-Send an issued invoice to chosen recipients, or request staff approval
+Send an issued invoice to chosen recipients, or request staff approval. On document_delivery_busy, wait 900 seconds and retry with the same idempotency_key.
 
 - `id` (path, string uuid, required)
 - `idempotency_key` (body, string, required): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
@@ -2713,7 +2713,7 @@ Start a proposal revision with an optional proposal timestamp check
 
 `POST /api/v1/proposals/{id}/send`. Scope: `proposals:write`. Member: `action`. Action (`x-iris-action`): `proposals.send`. Confirm: required. Changes: `proposals`. Idempotent: send `idempotency_key`.
 
-Send an issued proposal to chosen recipients, or request staff approval
+Send an issued proposal to chosen recipients, or request staff approval. On document_delivery_busy, wait 900 seconds and retry with the same idempotency_key.
 
 - `id` (path, string uuid, required)
 - `idempotency_key` (body, string, required): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.

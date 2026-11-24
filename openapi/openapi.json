@@ -51933,6 +51933,27 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "document_delivery_busy: another sender holds a queued delivery lease. Wait for Retry-After, then retry the same request with the same idempotency_key. Sent deliveries are not sent again.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying the same send key. Bounded by the default delivery lease.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 900,
+                  "example": 900
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -51940,7 +51961,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Send an issued invoice to chosen recipients, or request staff approval",
+        "summary": "Send an issued invoice to chosen recipients, or request staff approval. On document_delivery_busy, wait 900 seconds and retry with the same idempotency_key.",
         "tags": [
           "Documents",
           "Public API"
@@ -53075,6 +53096,27 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "document_delivery_busy: another sender holds a queued delivery lease. Wait for Retry-After, then retry the same request with the same idempotency_key. Sent deliveries are not sent again.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying the same send key. Bounded by the default delivery lease.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 900,
+                  "example": 900
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -53082,7 +53124,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Send an issued proposal to chosen recipients, or request staff approval",
+        "summary": "Send an issued proposal to chosen recipients, or request staff approval. On document_delivery_busy, wait 900 seconds and retry with the same idempotency_key.",
         "tags": [
           "Documents",
           "Public API"
@@ -53206,6 +53248,27 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "document_delivery_busy: another sender holds a queued delivery lease. Wait for Retry-After, then retry the same request with the same idempotency_key. Sent deliveries are not sent again.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying the same send key. Bounded by the default delivery lease.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 900,
+                  "example": 900
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -53213,7 +53276,7 @@
             "apiKey": []
           }
         ],
-        "summary": "Send an issued credit note to chosen recipients, or request staff approval",
+        "summary": "Send an issued credit note to chosen recipients, or request staff approval. On document_delivery_busy, wait 900 seconds and retry with the same idempotency_key.",
         "tags": [
           "Documents",
           "Public API"
