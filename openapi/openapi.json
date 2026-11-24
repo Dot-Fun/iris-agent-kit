@@ -59390,7 +59390,7 @@
           },
           "stale": {
             "type": "boolean",
-            "description": "Whether the provider has exceeded its freshness threshold."
+            "description": "Whether the provider has exceeded its freshness threshold. Always false for a disconnected connection."
           },
           "error_code": {
             "type": "string",
