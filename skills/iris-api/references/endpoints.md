@@ -4775,7 +4775,7 @@ Create a hosted Checkout link for an invoice, hold deposit, package, or subscrip
 - `issuer` (body, string, one of `iris`, `stripe`)
 - `expires_at` (body, string date-time)
 - `allow_bank_debit` (body, boolean): For invoice links, omit this field to derive eligibility from the account switch and Stripe ach_debit_payments capability. An explicit true requires both; holds always use card only. The stored value is frozen on the payment attempt.
-- `idempotency_key` (body, string): Organization-wide retry key for MCP or REST. REST also accepts Idempotency-Key. If both are supplied, they must match. Replays recheck access and return the same URL. Changed fields answer 409 idempotency_conflict.
+- `idempotency_key` (body, string): Organization-wide retry key for MCP or REST. REST also accepts Idempotency-Key. If both are supplied, they must match. Replays recheck access and return the same URL. Changed fields answer 409 idempotency_conflict. Omit the key to create a distinct intent with a stored server key for later sending. Without a caller key, the original create request cannot be replayed.
 
 ### payment_links_get
 

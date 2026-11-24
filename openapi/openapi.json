@@ -55587,6 +55587,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "payment_links_not_configured: the server has no payment link signing key, so it cannot create a link, with or without a caller key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -55903,7 +55913,7 @@
     },
     "/api/v1/payment-links/{linkId}/send": {
       "post": {
-        "description": "Sends an available invoice, booking hold, package or subscription signup link to its bill-to payer through the billing communication gate. A settled, ended, revoked or expired subject answers not_applicable. Idempotency-Key is used as the conversation key for retries. Pass Idempotency-Key for a stable retry. An overlapping send answers 200 with status unavailable and message \"Another send of this link is in progress.\" Different header and body keys answer 400 idempotency_key_mismatch. Links created without Idempotency-Key cannot be sent because their bearer token is not stored in clear text. Those links answer 422 payment_link_send_requires_idempotency_key.",
+        "description": "Sends an available invoice or booking hold link through the billing communication gate. A package or subscription signup link send answers unavailable for now: share the URL from create instead. A settled, ended, revoked or expired subject answers not_applicable with a reason. Use Idempotency-Key or MCP body idempotency_key for stable send retries. Different header and body keys answer 400 idempotency_key_mismatch. An overlapping send answers 200 unavailable with message \"Another send of this link is in progress.\" New creates without a caller key store a server key and remain sendable, but the original create request cannot be replayed without a caller key. Legacy links with no stored key answer 422 payment_link_send_requires_idempotency_key. Revoke the live legacy invoice or hold link before creating a replacement with an idempotency key.",
         "operationId": "payment_links_send",
         "parameters": [
           {
@@ -87853,7 +87863,7 @@
           "idempotency_key": {
             "type": "string",
             "maxLength": 255,
-            "description": "Organization-wide retry key for MCP or REST. REST also accepts Idempotency-Key. If both are supplied, they must match. Replays recheck access and return the same URL. Changed fields answer 409 idempotency_conflict."
+            "description": "Organization-wide retry key for MCP or REST. REST also accepts Idempotency-Key. If both are supplied, they must match. Replays recheck access and return the same URL. Changed fields answer 409 idempotency_conflict. Omit the key to create a distinct intent with a stored server key for later sending. Without a caller key, the original create request cannot be replayed."
           }
         },
         "required": [

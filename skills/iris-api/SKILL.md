@@ -83,7 +83,7 @@ A slot-lost deposit remains recorded, triggers no automatic refund, and tells th
 5. Use `payment_links_cancel` to revoke the link. Send its `updated_at` as query `expected_updated_at` for a conditional cancellation.
 
 Scopes are `payment_links:read` and `payment_links:write`. Every operation checks subject location and own-client access.
-Create and cancel require OWNER, ADMIN or a MANAGER with `billing`. Member credentials may list and read reachable links.
+Create and cancel require OWNER, ADMIN or a MANAGER with `billing`. Scoped members may list, read and send reachable links.
 New links require enabled Stripe, otherwise create answers 409 `connected_account_unavailable`. A keyed replay of an existing link answers 200 before this account check.
 Another collecting invoice or hold link answers 409 `payment_link_exists`.
 For disconnected-account ACH settlement, `details.blocking_reason` is `payment_settling_account_disconnected` with `details.payment_started_at`, only with `details.existing_link_id`, after `payment_links:read` and organization, location and own-client access checks.
@@ -95,7 +95,18 @@ A missing or inaccessible hold answers 404 `payment_link_not_found`.
 A lost-access replay answers 404. A changed request under the same organization key answers 409 `idempotency_conflict`.
 Read and cancel responses omit the URL. Processing means pending until a verified receipt records success.
 After a deposit void, newer live links without a recorded, unvoided deposit block older links unless they have their own created, open or processing attempts. Other collecting links block them.
-Copied links support issued invoices and hold deposits. Sending rechecks that the invoice or hold is available, then returns `sent`, or `blocked` with permitted alternatives; a held collection answers `collection_held`. Send `Idempotency-Key` through REST to reuse the same conversation key on retries. A link created without that key answers 422 `payment_link_send_requires_idempotency_key` because Iris stores only its token hash.
+Send invoice and hold links with `payment_links_send`. It rechecks availability and the billing gate.
+Package and signup link sends answer `unavailable` for now: share the `link.url` from create instead.
+Use a stable REST `Idempotency-Key` header or MCP body `idempotency_key` for send retries.
+Matching header/body keys are required, otherwise 400 `idempotency_key_mismatch`.
+Send returns `sent` or `blocked` with permitted alternatives. Held collections answer 409 `collection_held`.
+Nonpayable links return `not_applicable` with a reason: `paid`, `expired`, `revoked`, `hold_ended`,
+`subject_not_payable` or `account_unavailable`. Overlap returns 200 `unavailable` with
+“Another send of this link is in progress.” Neither pending sends nor sending prove payment.
+New omitted-key creates store server keys and remain sendable. Each is a separate create intent.
+Without a caller key, the original create request cannot be replayed.
+Legacy links without stored keys answer 422 `payment_link_send_requires_idempotency_key`.
+Revoke the live legacy invoice or hold link before creating a replacement with an idempotency key.
 Create answers 400 `checkout_currency_not_supported` for BTN, CUP, ERN, IQD, IRR, ISK, KPW, LYD, MGA, MRU,
 SDG, SSP, STN, SVC, SYP, TMT, UGX, VED, VES, XCG and ZWG.
 BHD, JOD, KWD, OMR and TND amounts must be divisible by 10 minor units.
