@@ -2288,7 +2288,7 @@ List payment disputes
 Send an issued credit note to chosen recipients, or request staff approval. On document_delivery_busy, wait 900 seconds and retry with the same idempotency_key.
 
 - `id` (path, string uuid, required)
-- `idempotency_key` (body, string, required): Your own key for this send. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_conflict`.
+- `idempotency_key` (body, string, required): Your own key for this send. New receipts replay a completed send only while resolved recipient identities, endpoint values and select_all mode stay unchanged. Changed bound material answers 409 `idempotency_conflict`. Legacy receipts instead bind the original caller arguments. While approval is pending, a same-key retry answers 202. Changed approval material can answer 403 `approval_denied`.
 - `recipients` (body, array of DocumentRecipientInputDto): Pass at least one recipient. An empty resolved list answers 400 `recipients_required` unless select_all is true.
   - `contact_id` (body, string uuid)
   - `endpoint_id` (body, string uuid)
@@ -2476,7 +2476,7 @@ Resume collection and enroll eligible invoices with reminders enabled and no liv
 Send an issued invoice to chosen recipients, or request staff approval. On document_delivery_busy, wait 900 seconds and retry with the same idempotency_key.
 
 - `id` (path, string uuid, required)
-- `idempotency_key` (body, string, required): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `idempotency_key` (body, string, required): Your own key for this send. New receipts replay a completed send only while resolved recipient identities, endpoint values and select_all mode stay unchanged. Changed bound material answers 409 `idempotency_conflict`. Legacy receipts instead bind the original caller arguments. While approval is pending, a same-key retry answers 202. Changed approval material can answer 403 `approval_denied`.
 - `recipients` (body, array of DocumentRecipientInputDto)
   - `contact_id` (body, string uuid)
   - `endpoint_id` (body, string uuid)
@@ -2716,7 +2716,7 @@ Start a proposal revision with an optional proposal timestamp check
 Send an issued proposal to chosen recipients, or request staff approval. On document_delivery_busy, wait 900 seconds and retry with the same idempotency_key.
 
 - `id` (path, string uuid, required)
-- `idempotency_key` (body, string, required): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `idempotency_key` (body, string, required): Your own key for this send. New receipts replay a completed send only while resolved recipient identities, endpoint values and select_all mode stay unchanged. Changed bound material answers 409 `idempotency_conflict`. Legacy receipts instead bind the original caller arguments. While approval is pending, a same-key retry answers 202. Changed approval material can answer 403 `approval_denied`.
 - `recipients` (body, array of DocumentRecipientInputDto)
   - `contact_id` (body, string uuid)
   - `endpoint_id` (body, string uuid)
@@ -4142,7 +4142,7 @@ Save the HubSpot contact field mappings
 
 `GET /api/v1/integrations`. Scope: `integrations:read`. Member: `deny`.
 
-List connected provider accounts and their sync status
+List provider sync status and sanitized unresolved binding issues
 
 - `page` (query, number): 1-based page number
 - `limit` (query, number): Page size (capped at 100)
@@ -4940,7 +4940,7 @@ List payment receipts
 Send a payment receipt to chosen recipients, or request staff approval
 
 - `id` (path, string uuid, required)
-- `idempotency_key` (body, string, required): Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`.
+- `idempotency_key` (body, string, required): Your own key for this send. The stored answer replays for 24 hours without sending again. For those 24 hours a changed request answers 409 `idempotency_key_reused`, including while approval is pending and after it. After that, a same-key retry of a completed send replays while resolved recipients stay the same. Changed recipients or select_all mode answer 409 `idempotency_conflict`. While staff approval is pending, an unchanged retry answers 202. After approval, changed approval material can answer 403 `approval_denied`.
 - `recipients` (body, array of DocumentRecipientInputDto)
   - `contact_id` (body, string uuid)
   - `endpoint_id` (body, string uuid)

@@ -2455,8 +2455,18 @@ For update, move, archive, restore or a relationship replacement, pass `expected
 2. Call `integrations_list` to read account status, masked account labels, mode and sync timestamps. Google Calendar rows include deployment environment, first failure time, and a sanitized error code.
 3. Call `integrations_list_bindings` with `provider`, `status`, `record_kind`, `record_id` or `external_type` to narrow the linked objects.
 4. Read every page using `page` and `limit`. Compare the result count with `total`.
-5. Use `total`, `page` and `limit` from each response to track the current page.
+5. For `integrations_list`, read `items`, `total` and `issues`. Track the requested `page` and `limit` yourself.
    A temporary Supabase failure answers 503 `Service temporarily unavailable`. Read the current state before retrying a write whose outcome is unknown.
+
+`total` counts accounts only. Each unresolved binding issue contains only `id`, `provider`,
+`binding_id`, `kind`, `created_at` and `reason`. `reason` is `collection_revert_failed` or null
+for an unknown category. No matching issues returns `issues: []`. Only `provider` filters issues.
+Account `status`, `page` and `limit` do not filter or paginate issues. An empty account page can still carry issues.
+Issues are ordered newest first and limited to 100 rows after the provider filter.
+Cause IDs, provider text, private details and resolution data stay on the server.
+OWNER and ADMIN staff acknowledge issues in the dashboard, including Stripe collection cap issues.
+Stripe `collection_revert_failed` issues stay open while Iris retries cleanup. The staff route answers 409 `binding_issue_retrying`.
+There is no public acknowledgement operation.
 
 These operations show the current deployment only. Disconnected bindings remain visible.
 ElevenLabs and Twilio Verify bindings are private. Error codes contain no raw provider error text.

@@ -457,7 +457,7 @@
     },
     "/api/v1/integrations": {
       "get": {
-        "description": "Groups visible bindings by provider, account and mode in this deployment. Account labels are masked. Google Calendar connection health uses calendar bindings only, so active appointment event bindings do not hide token loss. Rows include environment, sync timestamps, failure start time and a sanitized error code. Paused status takes precedence over active, account_unknown and disconnected. Error codes contain no provider error text. Results are ordered by provider, account and mode. Connecting and authority configuration remain owner actions in the browser.",
+        "description": "Returns items, total and issues for this organization in this deployment. Accounts are grouped and ordered by provider, account and mode. Account labels are masked and error codes contain no provider text. Google Calendar health uses calendar bindings only. Paused status takes precedence over active, account_unknown and disconnected. Each unresolved binding issue contains only id, provider, binding_id, kind, created_at and reason. reason is collection_revert_failed or null for an unknown category. Cause IDs and private evidence stay on the server. issues is empty when none match. Only provider filters issues. Issues are ordered newest first and limited to 100 rows after the provider filter. Account status, page and limit do not filter or paginate issues. total counts accounts only, so an empty account page can still contain issues. OWNER and ADMIN staff acknowledge issues in the dashboard, including Stripe collection cap issues. Stripe collection_revert_failed issues stay open while Iris retries cleanup. The staff route answers 409 binding_issue_retrying. Connecting and authority configuration remain owner actions in the browser.",
         "operationId": "integrations_list",
         "parameters": [
           {
@@ -564,7 +564,7 @@
             "apiKey": []
           }
         ],
-        "summary": "List connected provider accounts and their sync status",
+        "summary": "List provider sync status and sanitized unresolved binding issues",
         "tags": [
           "Integrations",
           "Public API"
@@ -51840,7 +51840,7 @@
     },
     "/api/v1/invoices/{id}/send": {
       "post": {
-        "description": "For API keys and OAuth grants, this operation can return 202 approval_requested. Staff approve the request in Iris. Retry with the same idempotency or send key (idempotency_key). The server rechecks authority and approval_valid_for in the same transaction, executes once, and returns 200 with the normal result. Another retry replays that result. A rejected or expired request returns 403 approval_denied. A new idempotency_key files a new request. After a completed send, a same-key retry of the same request replays the stored result while the resolved recipients stay the same, and a contact rename does not change them. It answers 409 `idempotency_conflict` when they change: a group member joins or leaves, a default recipient changes, an endpoint is archived, an endpoint value changes, or a contact gets a new primary email. Switching between select_all and an explicit list is a changed request and also answers 409. While staff approval is pending, a same-key retry of the same request answers 202 again. After approval, a changed caller list gets a new send key, files a new approval and answers 202. Only an unchanged request whose resolved recipients changed, or whose contact was renamed under select_all or defaults, answers 403 `approval_denied`.",
+        "description": "For API keys and OAuth grants, this operation can return 202 approval_requested. Staff approve the request in Iris. Retry with the same idempotency or send key (idempotency_key). The server rechecks authority and approval_valid_for in the same transaction, executes once, and returns 200 with the normal result. Another retry replays that result. A rejected or expired request returns 403 approval_denied. A new idempotency_key files a new request. New receipts bind resolved recipient identities, endpoint values and select_all mode. After a completed send, a same-key retry of the same request replays the stored result only while this bound material stays unchanged. A contact rename does not change its identity. Changed bound material answers 409 `idempotency_conflict`: a group member joins or leaves, a default recipient changes, an endpoint is archived, an endpoint value changes, or a contact gets a new primary email. Switching between select_all and an explicit list also answers 409. Legacy receipts instead bind the original caller arguments. While staff approval is pending, a same-key retry of the same request answers 202 again. After approval, a changed caller list gets a new send key, files a new approval and answers 202. Only an unchanged request whose resolved recipients changed, or whose contact was renamed under select_all or defaults, answers 403 `approval_denied`.",
         "operationId": "invoices_send",
         "parameters": [
           {
@@ -51915,7 +51915,7 @@
             }
           },
           "409": {
-            "description": "Retry with the same caller arguments, including defaults or select_all, to replay the stored send result without new deliveries. A changed request or resolved recipient list answers 409 `idempotency_conflict`. Once one body under a key has deliveries, another body under that key answers 409 `idempotency_key_reused`, also while the first send still runs. Only one body is delivered. A body that waits for approval or resolves no recipients has no deliveries and does not reserve the key. `hosted_invoice_blocked`: nothing was sent. `reason` `hosted_payment_method_save_not_never`: the Stripe account lets the hosted invoice page save a payment method, so set it to never in the Stripe Dashboard. `reason` `hosted_payment_method_save_unverified`: Iris could not read the setting from Stripe, so try again, or the account has no stored setting yet, so an owner chooses Check status on the payments settings page first.",
+            "description": "Retry with the same caller arguments, including defaults or select_all. New receipts replay a completed send only while resolved recipient identities, endpoint values and select_all mode stay unchanged. Changed bound material answers 409 `idempotency_conflict`. Legacy receipts instead bind the original caller arguments. Once one body under a key has deliveries, another body under that key answers 409 `idempotency_key_reused`, also while the first send still runs. Only one body is delivered. A body that waits for approval or resolves no recipients has no deliveries and does not reserve the key. `hosted_invoice_blocked`: nothing was sent. `reason` `hosted_payment_method_save_not_never`: the Stripe account lets the hosted invoice page save a payment method, so set it to never in the Stripe Dashboard. `reason` `hosted_payment_method_save_unverified`: Iris could not read the setting from Stripe, so try again, or the account has no stored setting yet, so an owner chooses Check status on the payments settings page first.",
             "content": {
               "application/json": {
                 "schema": {
@@ -53013,7 +53013,7 @@
     },
     "/api/v1/proposals/{id}/send": {
       "post": {
-        "description": "For API keys and OAuth grants, this operation can return 202 approval_requested. Staff approve the request in Iris. Retry with the same idempotency or send key (idempotency_key). The server rechecks authority and approval_valid_for in the same transaction, executes once, and returns 200 with the normal result. Another retry replays that result. A rejected or expired request returns 403 approval_denied. A new idempotency_key files a new request. After a completed send, a same-key retry replays the stored result while the resolved recipients stay the same, also when a changed explicit list resolves to the same recipients. A contact rename does not change them. It answers 409 `idempotency_conflict` when they change: a group member joins or leaves, a default recipient changes, an endpoint is archived, an endpoint value changes, or a contact gets a new primary email. Switching between select_all and an explicit list is a changed request and also answers 409. While staff approval is pending, a same-key retry answers 202 again. After approval, a changed or renamed recipient list answers 403 `approval_denied`.",
+        "description": "For API keys and OAuth grants, this operation can return 202 approval_requested. Staff approve the request in Iris. Retry with the same idempotency or send key (idempotency_key). The server rechecks authority and approval_valid_for in the same transaction, executes once, and returns 200 with the normal result. Another retry replays that result. A rejected or expired request returns 403 approval_denied. A new idempotency_key files a new request. New receipts bind resolved recipient identities, endpoint values and select_all mode. After a completed send, a same-key retry replays the stored result only while this bound material stays unchanged, also when a changed explicit list resolves to the same recipients. A contact rename does not change its identity. Changed bound material answers 409 `idempotency_conflict`: a group member joins or leaves, a default recipient changes, an endpoint is archived, an endpoint value changes, or a contact gets a new primary email. Switching between select_all and an explicit list also answers 409. Legacy receipts instead bind the original caller arguments. While staff approval is pending, a same-key retry answers 202 again. After approval, a changed or renamed recipient list answers 403 `approval_denied`.",
         "operationId": "proposals_send",
         "parameters": [
           {
@@ -53087,6 +53087,16 @@
               }
             }
           },
+          "409": {
+            "description": "New receipts replay a completed send only while resolved recipient identities, endpoint values and select_all mode stay unchanged. Changed bound material or switching modes answers 409 `idempotency_conflict`. Legacy receipts instead bind the original caller arguments.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
             "content": {
@@ -53145,7 +53155,7 @@
     },
     "/api/v1/credit-notes/{id}/send": {
       "post": {
-        "description": "For API keys and OAuth grants, this operation can return 202 approval_requested. Staff approve the request in Iris. Retry with the same idempotency or send key (idempotency_key). The server rechecks authority and approval_valid_for in the same transaction, executes once, and returns 200 with the normal result. Another retry replays that result. A rejected or expired request returns 403 approval_denied. A new idempotency_key files a new request. After a completed send, a same-key retry replays the stored result while the resolved recipients stay the same, also when a changed explicit list resolves to the same recipients. A contact rename does not change them. It answers 409 `idempotency_conflict` when they change: a group member joins or leaves, a default recipient changes, an endpoint is archived, an endpoint value changes, or a contact gets a new primary email. Switching between select_all and an explicit list is a changed request and also answers 409. While staff approval is pending, a same-key retry answers 202 again. After approval, a changed or renamed recipient list answers 403 `approval_denied`.",
+        "description": "For API keys and OAuth grants, this operation can return 202 approval_requested. Staff approve the request in Iris. Retry with the same idempotency or send key (idempotency_key). The server rechecks authority and approval_valid_for in the same transaction, executes once, and returns 200 with the normal result. Another retry replays that result. A rejected or expired request returns 403 approval_denied. A new idempotency_key files a new request. New receipts bind resolved recipient identities, endpoint values and select_all mode. After a completed send, a same-key retry replays the stored result only while this bound material stays unchanged, also when a changed explicit list resolves to the same recipients. A contact rename does not change its identity. Changed bound material answers 409 `idempotency_conflict`: a group member joins or leaves, a default recipient changes, an endpoint is archived, an endpoint value changes, or a contact gets a new primary email. Switching between select_all and an explicit list also answers 409. Legacy receipts instead bind the original caller arguments. While staff approval is pending, a same-key retry answers 202 again. After approval, a changed or renamed recipient list answers 403 `approval_denied`.",
         "operationId": "credit_notes_send",
         "parameters": [
           {
@@ -53230,7 +53240,7 @@
             }
           },
           "409": {
-            "description": "`document_not_issued`: the credit note is a draft. `idempotency_conflict`: the same idempotency key was used and the resolved recipients changed.",
+            "description": "`document_not_issued`: the credit note is a draft. New receipts replay a completed send only while resolved recipient identities, endpoint values and select_all mode stay unchanged. Changed bound material or switching modes answers 409 `idempotency_conflict`. Legacy receipts instead bind the original caller arguments.",
             "content": {
               "application/json": {
                 "schema": {
@@ -55424,7 +55434,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SendDocumentDto"
+                "$ref": "#/components/schemas/ReceiptSendDto"
               }
             }
           }
@@ -59410,6 +59420,45 @@
           "error_code"
         ]
       },
+      "IntegrationStatusIssueDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "binding_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "collection_revert_failed"
+            ],
+            "description": "Allowlisted issue category, or null for an unknown category. Cause IDs and provider text stay private."
+          }
+        },
+        "required": [
+          "id",
+          "provider",
+          "binding_id",
+          "kind",
+          "created_at",
+          "reason"
+        ]
+      },
       "IntegrationListDto": {
         "type": "object",
         "properties": {
@@ -59421,11 +59470,18 @@
           },
           "total": {
             "type": "integer"
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationStatusIssueDto"
+            }
           }
         },
         "required": [
           "items",
-          "total"
+          "total",
+          "issues"
         ]
       },
       "BindingDto": {
@@ -87008,7 +87064,7 @@
           "idempotency_key": {
             "type": "string",
             "maxLength": 255,
-            "description": "Your own key for this call. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_key_reused`."
+            "description": "Your own key for this send. New receipts replay a completed send only while resolved recipient identities, endpoint values and select_all mode stay unchanged. Changed bound material answers 409 `idempotency_conflict`. Legacy receipts instead bind the original caller arguments. While approval is pending, a same-key retry answers 202. Changed approval material can answer 403 `approval_denied`."
           },
           "recipients": {
             "type": "array",
@@ -87245,7 +87301,7 @@
           "idempotency_key": {
             "type": "string",
             "maxLength": 255,
-            "description": "Your own key for this send. A retry with the same key and the same details within 24 hours returns the first answer and does not run the call again. The same key with other details is a 409 `idempotency_conflict`."
+            "description": "Your own key for this send. New receipts replay a completed send only while resolved recipient identities, endpoint values and select_all mode stay unchanged. Changed bound material answers 409 `idempotency_conflict`. Legacy receipts instead bind the original caller arguments. While approval is pending, a same-key retry answers 202. Changed approval material can answer 403 `approval_denied`."
           },
           "recipients": {
             "description": "Pass at least one recipient. An empty resolved list answers 400 `recipients_required` unless select_all is true.",
@@ -87867,6 +87923,29 @@
           "amount_minor",
           "currency",
           "reason"
+        ]
+      },
+      "ReceiptSendDto": {
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Your own key for this send. The stored answer replays for 24 hours without sending again. For those 24 hours a changed request answers 409 `idempotency_key_reused`, including while approval is pending and after it. After that, a same-key retry of a completed send replays while resolved recipients stay the same. Changed recipients or select_all mode answer 409 `idempotency_conflict`. While staff approval is pending, an unchanged retry answers 202. After approval, changed approval material can answer 403 `approval_denied`."
+          },
+          "recipients": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentRecipientInputDto"
+            }
+          },
+          "select_all": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "idempotency_key"
         ]
       },
       "CreatePaymentLinkDto": {
