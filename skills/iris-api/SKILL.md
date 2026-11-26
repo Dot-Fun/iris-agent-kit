@@ -222,24 +222,30 @@ A second retry replays that result. A rejected or expired request answers HTTP 4
 A new send key files a new request.
 Follow `approval_request_id` with `approvals_get` and `approvals:read`, or ask staff to review it in Iris.
 Read the approval outcome and the document before reporting a send. Do not repeat the send with a new key while approval is pending.
-For `invoices_send`, retry with the same caller arguments, including defaults or `select_all`, to replay the stored send result.
-It creates no new deliveries when the resolved recipients are unchanged.
-The server expands groups and defaults, normalizes endpoints, and hashes who each recipient is and the endpoint value it reaches.
+For `invoices_send`, while an earlier email or SMS delivery under the key is still queued, a same-key retry of the same request answers 200 with the stored result and resumes those deliveries to their stored values, with no new recipient, even if the resolved recipients changed.
+A key sent before receipts existed resumes only when the caller's rule allows `invoices.send`. Otherwise the approval flow applies.
+Retry with the same caller arguments, including defaults or `select_all`.
+Once every email or SMS delivery has left queued, a completed send replays with 200 when the resolved recipients are unchanged.
+The 409 `idempotency_conflict` stays after forget and for a send that made no delivery.
+A same-key retry of the same request creates no new deliveries when the resolved recipients are unchanged.
+New sends and completed retries expand groups and defaults, normalize endpoints, and hash who each recipient is and the endpoint value it reaches.
 A contact rename does not change that set.
 A recipient with no contact, endpoint or value counts by its name, so renaming it is a change.
 After a completed send, a same-key retry answers 409 `idempotency_conflict` when the set changed: a group member joined or left, a default recipient changed, an endpoint was archived, an endpoint value changed, or a contact got a new primary email.
 Switching between `select_all` and an explicit list is a changed request and also answers 409.
-The same applies to `proposals_send`, `credit_notes_send` and `receipts_send`.
+For `proposals_send`, `credit_notes_send` and `receipts_send`, the existing resolved-recipient conflict rules still apply.
 For `proposals_send` and `credit_notes_send`, a pending same-key retry answers 202 again. After approval, a changed or renamed recipient list answers 403 `approval_denied`. A changed explicit list that resolves to the same recipients replays with 200.
 For `invoices_send`, a pending retry of the same request answers 202 again. After approval, a changed caller list gets a new send key, files a new approval and answers 202. Only an unchanged request whose resolved recipients changed, or whose contact was renamed under `select_all` or defaults, answers 403 `approval_denied`.
 `receipts_send` replays its stored answer for 24 hours without sending again. For those 24 hours a changed request answers 409 `idempotency_key_reused`, also while approval is pending and after it. Only an unchanged request, or a retry after the 24 hours, reaches the recipient check and can answer 403 `approval_denied`.
 Once one body under a key has deliveries, another body under that key answers 409 `idempotency_key_reused`, also while the first send still runs.
 Only one body is delivered. A body that waits for approval or resolves no recipients has no deliveries and does not reserve the key.
-With a new key, `invoices_send` answers `409 hosted_invoice_blocked` while the business's Stripe
-account lets the hosted invoice page save a payment method. It sends nothing. With `reason`
+`invoices_send` answers `409 hosted_invoice_blocked` until the send key has deliveries: a new key,
+a same-key retry while staff approval is pending, or the retry that executes the approval.
+A same-key retry of a send that already created deliveries skips the check.
+The check blocks while the business's Stripe account lets the hosted invoice page save a payment method. It sends nothing. With `reason`
 `hosted_payment_method_save_not_never`, tell the user to set "Save payment method on hosted invoice
 page" to never in the Stripe Dashboard. With `hosted_payment_method_save_unverified`, try again later.
-While `connected_account_get` shows `hosted_payment_method_save` as null, a send with a new key answers
+While `connected_account_get` shows `hosted_payment_method_save` as null, a send key without deliveries answers
 `hosted_payment_method_save_unverified`. Tell an owner or admin to choose Check status on the payments
 settings page, which sets it to never.
 
