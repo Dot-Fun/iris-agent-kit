@@ -1589,7 +1589,7 @@ Update an endpoint label or primary flag
 Upsert a contact by email or phone, checking pipeline stages
 
 - `name` (body, string, required): Contact full name
-- `location_id` (body, string uuid): Location to link only when this call creates a contact. Must belong to the key scope and organization. One scoped location is implied. Several scoped locations require this field on creation. Explicit inactive locations answer location_inactive. An inactive implied location creates unlinked. Matched contacts keep their links.
+- `location_id` (body, string uuid): Location to link only when this call creates a contact. Must belong to the key scope and organization. One scoped location is implied. Several scoped locations require this field on creation. Explicit inactive locations answer location_inactive. An inactive or deleted implied location answers location_inactive on creation. Matched contacts keep their links.
 - `email` (body, string email): Contact email address. When present it is the upsert key, matched case-insensitively. Send an email, a phone, or both.
 - `phone` (body, string): Contact phone number. With an email, it is stored as a non-primary lead endpoint and the contact stays email-keyed with phone_number NULL. With no email, it is the upsert key: it must start with + and a country code, and it matches every active contact that holds the number.
 - `source` (body, string, required): Attribution source

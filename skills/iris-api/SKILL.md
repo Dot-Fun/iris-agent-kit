@@ -867,27 +867,37 @@ when the caller has `contacts.details`; otherwise its `items` is empty because t
 When `contacts_upsert` includes an email and a phone, the email-keyed contact keeps its identity
 and the phone is recorded as a non-primary lead endpoint. With a phone and no email, the phone is the
 key. Send it with + and a country code. Iris updates the one contact that holds the number, or
-creates one when none does. A 409 means more than one contact holds it: call
+creates one when none does when the credential can reach it. A 409 means more than one contact holds it: call
 `contacts_find_by_endpoint` with the phone, ask the user which contact they mean, and change it
 with `contacts_update`. A 409 that names `contacts_restore` means an archived contact has the
 phone as its main phone: ask the user before you restore it, then retry.
+A credential that reaches no location gets 403 `insufficient_role` before any lookup, even when the email or phone exists.
 For `contacts_upsert`, a 404 means the match is outside the key's location scope or own-records reach.
 It writes nothing. Do not retry with another key or guess another contact.
 With no email, a reach-limited key gets 404 if any phone holder is outside its reach. It gets 409 for several holders only when all are reachable.
 The holder reach check covers every holder in one database call.
-A contact outside the key's reach answers 404 even when this key created it, for example when unlinked at its location or not yet the member's client.
+A contact outside the key's reach answers 404 even when this key created it.
 For a location key, a concurrent create of the same contact at the caller's location merges into that contact.
-An own-records key gets 404 until the contact is the member's client.
-An unknown email or phone still creates a contact. This is the same existence signal Zapier upsert gives.
+An own-records key gets 404 until an existing contact is the member's client.
+An unknown email or phone creates a contact only when the credential can reach it. An unknown email still answers differently from a known one outside reach. This is the same existence signal Zapier upsert gives (IRIS-7115).
 
 For `contacts_upsert`, send optional UUID `location_id` within the key scope and organization.
 A key with one location links a new contact there. A key with several locations requires this field on creation.
 A 400 `location_id_required` writes nothing. Ask which location the user wants, then retry with that location.
 A 403 `insufficient_role` with message `Location access denied` means the location is outside the key scope or organization.
 A 400 `location_inactive` means an explicit location is inactive on creation. Choose an active location before retrying.
-A sole inactive implied location creates unlinked. An organization-wide key without `location_id`, or a key with no locations, creates unlinked.
+An organization-wide key without `location_id` creates unlinked.
+
+A new contact must be one the credential can reach, or the call writes nothing.
+An own-records credential gets 403 `insufficient_role` for a new email or phone. An existing client still merges.
+Both 403 refusals say `This credential cannot reach the contact it would create`. With no location, ask an owner or admin to give the holder a location. With own records, ask someone with wider access to create the contact.
+The 400 `location_inactive` for a credential with one location names that location, not a `location_id` the caller sent. Another `location_id` answers 403. Ask for the location to be made active.
+The same credential gets the same answer until the holder's locations, the location's status or the contact changes. `me_get` shows the holder's current role and locations.
+The no-location 403 comes first. The own-records 403 comes after the lookup and before field and stage checks. The sole-location 400 comes after field, stage and location checks.
+A matched contact that is gone at write time answers 404 and creates nothing. An active phone holder archived during the call answers 404, and a retry gets the 409.
 Only new contacts get the link. Matched contacts keep their links, including when `location_id` is supplied.
-A create and its location link are one write. A failed link leaves no contact and answers an error the caller can retry.
+A personal key or OAuth grant keeps working after its holder is demoted. It then acts with the holder's current role and locations. Without the `contacts.ingest` action it gets 403 `action_not_held`.
+A create and its location link are one write. A failed link leaves no contact and answers the error 400 `location_inactive`. A retry gets the same answer until the location is active again.
 
 For a stage in `contacts_upsert.fields`, read `crm_fields_get_stage_config` for the stage key and
 `contacts_list_stages` for valid stage ids. Send a stage id under that key. An unknown non-empty value
@@ -2305,9 +2315,7 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
   after you read it: read it again before you decide. Only an owner or admin changes members, with
   their own credential: an organization key gets 403 `no_acting_user`, and a staff member 403
   `insufficient_role`. Nobody changes their own membership, and an admin does not change an
-  owner. Ownership transfer is in the dashboard only. Confirm a role change, a deactivation, an
-  SMS change and a removal with the user first: a demotion, a deactivation and a removal revoke
-  the keys the person created.
+  owner. Ownership transfer is in the dashboard only. Confirm a role change, a deactivation, an SMS change and a removal with the user first: a demotion, a deactivation and a removal revoke the organization keys the person created, and a demotion keeps their personal keys and MCP grants at the new role.
 - GoHighLevel: what a pair syncs is `ghl_update_capabilities`, then the settings with their
   GoHighLevel reads. Appointments: `ghl_get_appointment_settings`,
   `ghl_list_appointment_options`, `ghl_update_appointment_settings`, `ghl_list_appointment_reviews`,
