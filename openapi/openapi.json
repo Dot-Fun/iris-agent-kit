@@ -26721,7 +26721,7 @@
     },
     "/api/v1/context-engine/facts": {
       "get": {
-        "description": "Every topic with its fields, and the value of each field that has one. A field with no value has a null `entity_id`.\nA member’s credential does not see `restricted` facts.",
+        "description": "Every topic with its fields, and the value of each field that has one. A field with no value has a null `entity_id`.\nA member’s credential does not see `restricted` facts, except finance figures when the member holds the finance_manager role.",
         "operationId": "context_engine_list_facts",
         "parameters": [],
         "responses": {
