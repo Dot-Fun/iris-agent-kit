@@ -97,14 +97,14 @@ A missing or inaccessible hold answers 404 `payment_link_not_found`.
 A lost-access replay answers 404. A changed request under the same organization key answers 409 `idempotency_conflict`.
 Read and cancel responses omit the URL. Processing means pending until a verified receipt records success.
 After a deposit void, newer live links without a recorded, unvoided deposit block older links unless they have their own created, open or processing attempts. Other collecting links block them.
-Send invoice and hold links with `payment_links_send`. It rechecks availability and the billing gate.
-Package and signup link sends answer `unavailable` for now: share the `link.url` from create instead.
+Send invoice, hold, package and signup links with `payment_links_send`.
+Invoice, hold, package and signup sends recheck availability and the billing gate.
 Use a stable REST `Idempotency-Key` header or MCP body `idempotency_key` for send retries.
 Matching header/body keys are required, otherwise 400 `idempotency_key_mismatch`.
 Send returns `sent` or `blocked` with permitted alternatives. Held collections answer 409 `collection_held`.
 Nonpayable links return `not_applicable` with a reason: `paid`, `expired`, `revoked`, `hold_ended`,
-`subject_not_payable` or `account_unavailable`. Overlap returns 200 `unavailable` with
-“Another send of this link is in progress.” Neither pending sends nor sending prove payment.
+`subject_not_payable` or `account_unavailable`. Overlap, including a same-key retry before a send is recorded, returns 200 `unavailable` with
+“Another send of this link is in progress.” A same-key retry replays `sent` once the send is recorded. Sending does not prove payment.
 New omitted-key creates store server keys and remain sendable. Each is a separate create intent.
 Without a caller key, the original create request cannot be replayed.
 Legacy links without stored keys answer 422 `payment_link_send_requires_idempotency_key`.

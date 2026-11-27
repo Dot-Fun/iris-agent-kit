@@ -4811,7 +4811,7 @@ List invoice, hold, package and subscription signup links at reachable locations
 Send a hosted payment link through the billing communication gate
 
 - `linkId` (path, string uuid, required)
-- `Idempotency-Key` (header, string): Conversation retry key. Reusing it for the same link returns the previous sent answer.
+- `Idempotency-Key` (header, string): Conversation retry key. Reusing it for the same link returns the previous sent answer once that send is recorded. A same-key retry before then answers 200 unavailable with message "Another send of this link is in progress."
 - `channel` (body, string, one of `sms`, `email`)
 - `idempotency_key` (body, string): Retry key. REST also accepts Idempotency-Key, and both values must match when supplied.
 

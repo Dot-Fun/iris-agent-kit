@@ -56094,7 +56094,7 @@
     },
     "/api/v1/payment-links/{linkId}/send": {
       "post": {
-        "description": "Sends an available invoice or booking hold link through the billing communication gate. A package or subscription signup link send answers unavailable for now: share the URL from create instead. A settled, ended, revoked or expired subject answers not_applicable with a reason. Use Idempotency-Key or MCP body idempotency_key for stable send retries. Different header and body keys answer 400 idempotency_key_mismatch. An overlapping send answers 200 unavailable with message \"Another send of this link is in progress.\" New creates without a caller key store a server key and remain sendable, but the original create request cannot be replayed without a caller key. Legacy links with no stored key answer 422 payment_link_send_requires_idempotency_key. Revoke the live legacy invoice or hold link before creating a replacement with an idempotency key.",
+        "description": "Sends an available invoice, booking hold, package or subscription signup link through the billing communication gate. Sends of invoice, booking hold, package and subscription signup links answer sent after provider acceptance. A settled, ended, revoked or expired subject answers not_applicable with a reason. Use Idempotency-Key or MCP body idempotency_key for stable send retries. Different header and body keys answer 400 idempotency_key_mismatch. An overlapping send, including a same-key retry before a send is recorded, answers 200 unavailable with message \"Another send of this link is in progress.\" New creates without a caller key store a server key and remain sendable, but the original create request cannot be replayed without a caller key. Legacy links with no stored key answer 422 payment_link_send_requires_idempotency_key. Revoke the live legacy invoice or hold link before creating a replacement with an idempotency key.",
         "operationId": "payment_links_send",
         "parameters": [
           {
@@ -56109,7 +56109,7 @@
           {
             "name": "Idempotency-Key",
             "in": "header",
-            "description": "Conversation retry key. Reusing it for the same link returns the previous sent answer.",
+            "description": "Conversation retry key. Reusing it for the same link returns the previous sent answer once that send is recorded. A same-key retry before then answers 200 unavailable with message \"Another send of this link is in progress.\"",
             "required": false,
             "schema": {
               "type": "string",
