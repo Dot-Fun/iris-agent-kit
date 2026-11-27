@@ -3230,7 +3230,7 @@
     },
     "/api/v1/contacts/{contactId}/archive": {
       "post": {
-        "description": "Hides a contact from lists. Deletes nothing and cancels no appointments or communication. Restore reverses visibility.",
+        "description": "Hides a contact from lists and cancels no appointments or communication. Clears the caller phone number and request details from its calendar audit logs. An unreleased preservation hold in the organization keeps them. Archiving a merged-away contact clears only its own rows and preserves those of the contact it was merged into. Restore does not bring them back.",
         "operationId": "contacts_archive",
         "parameters": [
           {
@@ -3309,8 +3309,9 @@
         "x-iris-changes": [
           "contacts"
         ],
+        "x-iris-confirm": true,
         "x-iris-reverse": {
-          "irreversible": "Automatic rewind cannot preserve a prior archive timestamp. Restore visibility with contacts_restore."
+          "irreversible": "Use contacts_restore to show the contact again. It cannot recover the caller phone number or request details cleared from calendar audit logs."
         },
         "x-iris-scope": "contacts:write",
         "x-member-access": "action"
@@ -60967,7 +60968,7 @@
             "type": "string",
             "format": "date-time",
             "nullable": true,
-            "description": "When the contact was archived, or null. Archiving deletes nothing. Absent when the credential reads identity only: a MEMBER, or a MANAGER without the contacts power."
+            "description": "When the contact was archived, or null. Archiving keeps the contact's records. It clears the caller phone number and request details from its calendar audit logs, unless a preservation hold applies. Absent when the credential reads identity only: a MEMBER, or a MANAGER without the contacts power."
           },
           "merged_into_contact_id": {
             "type": "string",

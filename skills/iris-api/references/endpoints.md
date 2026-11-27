@@ -1268,7 +1268,7 @@ Add a tag to a contact
 
 ### contacts_archive
 
-`POST /api/v1/contacts/{contactId}/archive`. Scope: `contacts:write`. Member: `action`. Action (`x-iris-action`): `contact.archive`. Changes: `contacts`.
+`POST /api/v1/contacts/{contactId}/archive`. Scope: `contacts:write`. Member: `action`. Action (`x-iris-action`): `contact.archive`. Confirm: required. Changes: `contacts`.
 
 Archive a contact
 

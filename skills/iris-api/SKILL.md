@@ -2427,6 +2427,9 @@ or `refund`. Archive a non-default policy through `booking_policies_update` with
 
 1. Find the contact with `contacts_search` or read its known ID with `contacts_get`.
 2. Call `contacts_archive` to hide it from lists. Its appointments and messages remain unchanged.
+   The archive also clears the caller phone number and request details from its calendar audit logs,
+   unless the organization has an unreleased preservation hold. Restore does not bring them back.
+   Archiving a merged-away contact clears only its own rows and preserves those of the contact it was merged into.
 3. Call `contacts_restore` to show it again. A returning caller also restores it.
 4. Call `contacts_suggest_merge` with the other contact ID and a reason to flag a duplicate.
 5. Read `contacts_list_merge_suggestions` to review the pair. A person confirms the merge in the dashboard.
