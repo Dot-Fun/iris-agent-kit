@@ -272,6 +272,21 @@ To learn whether an invoice arrived or was opened, call `invoices_list_events` w
 `delivery_confirmed` and `delivery_failed` are provider outcomes of a sent delivery. `link_viewed`
 and `pdf_downloaded` are opens of its public link. Read on while `page * limit` is less than `total`.
 
+## Read invoice deliveries
+
+Call `invoices_list_deliveries` with the invoice id and `invoices:read`.
+Use `GET /api/v1/invoices/{id}/deliveries?page=1&limit=25`.
+Read each page until `page * limit` reaches `total`. The maximum limit is 100.
+Rows sort oldest first by `created_at`, then `id`. A past-end page has empty items and keeps total.
+An invoice outside organization or location reach answers 404.
+Each send has its channel and state. `reason_code` is stable and `reason_text` is a fixed staff sentence.
+Blocked `stopped` maps to `channel_stop` and `no_endpoint` maps to `invalid_endpoint`.
+`restricted`, `opted_out` and `no_consent` stay unchanged. `invoices_send` still publishes stored blocked values.
+Known failure codes use shared sentences. Valid callback diagnostics become `provider_failed`.
+Unknown failures use `delivery_failed` with `Invoice delivery failed.` and drop the stored value.
+Sending exposes only the exact stale-lease warning as `delivery_needs_review`. Other states have null reasons.
+These reads never return recipient identity, addresses or raw provider text. Invoice details do not embed deliveries.
+
 ## Correct invoices and close collection
 
 1. Call `credit_notes_list` or `credit_notes_get` with `invoices:read` to inspect issued and draft credit notes.

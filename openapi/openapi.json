@@ -51329,6 +51329,110 @@
         "x-member-access": "action"
       }
     },
+    "/api/v1/invoices/{id}/deliveries": {
+      "get": {
+        "description": "Each send with its channel, state and safe reason, oldest first by created_at then id. Pages by page and limit, default 25 and maximum 100. Read until page * limit reaches total. A past-end range, including PGRST103, returns an empty page with total preserved. An invoice of another organization, wrong type or outside permitted locations answers 404. reason_code is an exact allowlisted failure code, provider_failed for valid callback diagnostics, delivery_failed for unknown failures or delivery_needs_review for the exact sending warning. Other states have null reasons. Blocked stopped maps to channel_stop and no_endpoint maps to invalid_endpoint. restricted, opted_out and no_consent stay unchanged. Unlike invoices_send, this read translates stored blocked values. reason_text is a fixed sentence and never stored recipient or provider text. reason_code values: delivery_read_failed, sender_unavailable, link_unavailable, opted_out, channel_stop, no_consent, communication_denied, hosted_invoice_blocked, hosted_payment_method_save_unverified, hosted_payment_method_save_not_never, invalid_endpoint, restricted, no_opt_in, voice_not_supported, provider_failed, automatic_send_expired, superseded_version, recipient_removed, superseded_by_later_send, collection_stopped:not_invoice, collection_stopped:voided, collection_stopped:not_issued, collection_stopped:paid, collection_stopped:closed_unpaid, collection_stopped:collection_held, collection_stopped:collection_paused, automatic_send_not_allowed:not_agent_eligible, automatic_send_not_allowed:principal_unresolved, automatic_send_not_allowed:second_person, automatic_send_not_allowed:amount_limit, automatic_send_not_allowed:machine_actor, collection_stopped:amount_limit, delivery_failed, delivery_needs_review.",
+        "operationId": "invoices_list_deliveries",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (capped at 100)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentDeliveryPageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown, revoked or expired API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The key does not carry the `invoices:read` scope; `required` names it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such invoice in this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 600 requests in 60 seconds from this client address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List an invoice's delivery channels, states and safe failure reasons, oldest first",
+        "tags": [
+          "Documents",
+          "Public API"
+        ],
+        "x-iris-scope": "invoices:read",
+        "x-member-access": "scoped"
+      }
+    },
     "/api/v1/invoices/{id}/events": {
       "get": {
         "description": "Each time the customer opened the public link (`link_viewed`) or its PDF (`pdf_downloaded`), and each delivery outcome a provider reported (`delivery_confirmed`, `delivery_failed`), oldest first. Each event names the exact version. Pages by `page` and `limit`: read on until `page * limit` reaches `total`. An invoice of another organization, or outside the key's locations, answers 404.",
@@ -86278,17 +86382,20 @@
           },
           "contact_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true
           },
           "group_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true
           },
           "name_snapshot": {
             "type": "string"
           },
           "address_snapshot": {
-            "type": "object"
+            "type": "object",
+            "nullable": true
           }
         },
         "required": [
@@ -86511,6 +86618,138 @@
           "state",
           "revision",
           "updated_at"
+        ]
+      },
+      "DocumentDeliveryReadDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms",
+              "pdf"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "blocked",
+              "sending",
+              "sent",
+              "delivered",
+              "failed"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sent_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "delivered_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "failed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "reason_code": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "delivery_read_failed",
+              "sender_unavailable",
+              "link_unavailable",
+              "opted_out",
+              "channel_stop",
+              "no_consent",
+              "communication_denied",
+              "hosted_invoice_blocked",
+              "hosted_payment_method_save_unverified",
+              "hosted_payment_method_save_not_never",
+              "invalid_endpoint",
+              "restricted",
+              "no_opt_in",
+              "voice_not_supported",
+              "provider_failed",
+              "automatic_send_expired",
+              "superseded_version",
+              "recipient_removed",
+              "superseded_by_later_send",
+              "collection_stopped:not_invoice",
+              "collection_stopped:voided",
+              "collection_stopped:not_issued",
+              "collection_stopped:paid",
+              "collection_stopped:closed_unpaid",
+              "collection_stopped:collection_held",
+              "collection_stopped:collection_paused",
+              "automatic_send_not_allowed:not_agent_eligible",
+              "automatic_send_not_allowed:principal_unresolved",
+              "automatic_send_not_allowed:second_person",
+              "automatic_send_not_allowed:amount_limit",
+              "automatic_send_not_allowed:machine_actor",
+              "collection_stopped:amount_limit",
+              "delivery_failed",
+              "delivery_needs_review"
+            ],
+            "description": "Safe allowlisted code. Blocked stopped maps to channel_stop and no_endpoint maps to invalid_endpoint. restricted, opted_out and no_consent stay unchanged. Unknown failures use delivery_failed. Unlike invoices_send, this read translates stored blocked values. Sending exposes only the exact stale-lease warning as delivery_needs_review. Other states have null reasons."
+          },
+          "reason_text": {
+            "type": "string",
+            "nullable": true,
+            "description": "Fixed staff sentence for reason_code. Unknown failures use Invoice delivery failed. Never stored provider or recipient text."
+          }
+        },
+        "required": [
+          "id",
+          "channel",
+          "state",
+          "created_at",
+          "sent_at",
+          "delivered_at",
+          "failed_at",
+          "reason_code",
+          "reason_text"
+        ]
+      },
+      "DocumentDeliveryPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Oldest first by created_at, then id.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentDeliveryReadDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total deliveries across every page, including an empty past-end page."
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
         ]
       },
       "DocumentEventDto": {

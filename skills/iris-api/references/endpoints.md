@@ -2395,6 +2395,16 @@ List invoices with issuer and, for financial readers, due and provider_amount_re
 
 - `include_archived` (query, boolean)
 
+### invoices_list_deliveries
+
+`GET /api/v1/invoices/{id}/deliveries`. Scope: `invoices:read`. Member: `scoped`.
+
+List an invoice's delivery channels, states and safe failure reasons, oldest first
+
+- `id` (path, string uuid, required)
+- `page` (query, number): 1-based page number
+- `limit` (query, number): Page size (capped at 100)
+
 ### invoices_list_draft_rules
 
 `GET /api/v1/invoices/draft-rules`. Scope: `invoices:read`. Member: `action`. Action (`x-iris-action`): `invoices.draft_write`.
