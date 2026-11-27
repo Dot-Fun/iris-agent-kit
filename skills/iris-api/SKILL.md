@@ -2334,7 +2334,10 @@ These follow the same rules. Their parameters are in `references/endpoints.md`.
   `ghl_get_associations`, `ghl_get_association_catalog`, `ghl_update_associations`. Enrichment:
   `ghl_list_enrichment_recovery`, `ghl_reconcile_enrichment`. Conflicts: `ghl_list_conflicts`,
   `ghl_resolve_conflict`. Contact recovery and relinks: `ghl_list_contact_recovery`,
-  `ghl_reconcile_contact`, `ghl_list_relink_options`, `ghl_preview_relink`, `ghl_apply_relink`.
+  `ghl_reconcile_contact` (409 for deletes stopped by a connection change or by repeated failed
+  local claims, and updates whose repair after a connection change failed repeatedly, which the
+  owner decides), `ghl_list_relink_options`, `ghl_preview_relink`,
+  `ghl_apply_relink`.
   Reconciliation: `ghl_list_reconciliations`, `ghl_begin_reconciliation`. Migration cutover:
   `ghl_list_cutovers`, `ghl_preview_cutover`, `ghl_freeze_cutover`, `ghl_rollback_cutover`. A
   settling action on held work tells GoHighLevel nothing new: settle an item only after the user

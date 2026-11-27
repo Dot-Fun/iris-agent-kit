@@ -33188,7 +33188,7 @@
     },
     "/api/v1/integrations/ghl/mappings/{mappingId}/contact-recovery": {
       "get": {
-        "description": "Contact writes Iris is unsure reached GoHighLevel, with their state and error. Check one with `ghl_reconcile_contact`.",
+        "description": "Contact writes Iris is unsure reached GoHighLevel, with their state and error. Check one with `ghl_reconcile_contact`. The list also includes deletes stopped by a connection change or by repeated failed local claims, and updates whose repair after a connection change failed repeatedly.",
         "operationId": "ghl_list_contact_recovery",
         "parameters": [
           {
@@ -33272,7 +33272,7 @@
     },
     "/api/v1/integrations/ghl/mappings/{mappingId}/contact-recovery/{operationId}/reconcile": {
       "post": {
-        "description": "Iris reads the contact in GoHighLevel and marks the write `confirmed`, `review` or still `reconcile`. It writes nothing to GoHighLevel.\nSend `remote_id` when a create lost its answer and the user found the contact in GoHighLevel.",
+        "description": "Iris reads the contact in GoHighLevel and marks the write `confirmed`, `review` or still `reconcile`. It writes nothing to GoHighLevel.\nSend `remote_id` when a create lost its answer and the user found the contact in GoHighLevel.\nThis call answers 409 for deletes stopped by a connection change or by repeated failed local claims, and updates whose repair after a connection change failed repeatedly.",
         "operationId": "ghl_reconcile_contact",
         "parameters": [
           {
@@ -33345,6 +33345,9 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "The operation can no longer be reconciled. This includes deletes stopped by a connection change or repeated failed local claims, and updates whose repair after a connection change failed repeatedly."
           },
           "429": {
             "description": "More than 600 requests in 60 seconds from this client address",
